@@ -10,7 +10,7 @@ Cadastre em Environment Variables (Production e Preview, conforme necessário):
 
 | Variável | Valor |
 | --- | --- |
-| `DRIVEVISION_DB_HOST` | Host exato de **Supabase → Connect → Transaction pooler** |
+| `DRIVEVISION_DB_HOST` | `aws-1-sa-east-1.pooler.supabase.com` (validado para este projeto) |
 | `DRIVEVISION_DB_PORT` | `6543` |
 | `DRIVEVISION_DB_DATABASE` | `postgres` |
 | `DRIVEVISION_DB_USER` | `drivevision_app.` seguido do project ref do banco |
@@ -21,6 +21,8 @@ Cadastre em Environment Variables (Production e Preview, conforme necessário):
 Também é aceita `DRIVEVISION_DATABASE_URL` no servidor; caracteres especiais da senha devem ser percent-encoded. Nunca use prefixos `VITE_` ou `NEXT_PUBLIC_` para credenciais. O certificado CA do Supabase está incluído e a verificação SSL permanece habilitada. Um banco futuro com outra CA pode usar `DRIVEVISION_DB_CA`.
 
 O host direto fornecido funciona nesta máquina por IPv6. Para funções serverless use o **Transaction pooler**, conforme a [documentação do Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres). O host do pooler precisa ser copiado do projeto, não deduzido da região.
+
+O servidor também aceita uma URI Postgres copiada no campo HOST, extraindo apenas endereço e porta e mantendo as credenciais de runtime separadas. Na Vercel, o host direto deste projeto é roteado para o pooler IPv4 acima, validado por conexão TLS e consulta da conta existente. Essa regra é específica deste projeto; outros hosts continuam usando a configuração fornecida. O cliente preserva as autoridades TLS públicas e a CA Supabase. O limite SQL é aplicado dentro de cada transação, pois PgBouncer rejeita `statement_timeout` como parâmetro de inicialização.
 
 Depois de configurar as variáveis, faça um redeploy. A conexão com o banco em produção só está confirmada após testar cadastro/login, importar, salvar e reabrir um painel nessa URL. A configuração local validada não substitui esse teste.
 

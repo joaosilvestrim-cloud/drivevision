@@ -19,13 +19,19 @@ export function connectionOptions(admin = false) {
     ? decodeURIComponent(uri.username)
     : process.env[admin ? "DRIVEVISION_DB_ADMIN_USER" : "DRIVEVISION_DB_USER"])?.trim();
   const directProject = /^db\.([a-z\d]+)\.supabase\.co$/i.exec(endpoint.host)?.[1];
+  // Verified project-specific route: this direct endpoint has no IPv4 DNS record.
+  // Other database hosts are unaffected; a future migration uses its own env host.
+  const productionPooler = process.env.VERCEL && endpoint.host === "db.tqzqtcmlhmkwhhjrexjk.supabase.co"
+    ? "aws-1-sa-east-1.pooler.supabase.com"
+    : undefined;
   // The project suffix routes shared Supavisor connections, not the dedicated pooler.
-  const user = directProject && configuredUser?.endsWith(`.${directProject}`)
+  const directUser = directProject && configuredUser?.endsWith(`.${directProject}`)
     ? configuredUser.slice(0, -(directProject.length + 1))
     : configuredUser;
+  const user = productionPooler && directUser ? `${directUser}.${directProject}` : directUser;
   return {
-    host: endpoint.host,
-    port: Number(uri?.port || endpoint.port || process.env.DRIVEVISION_DB_PORT || 5432),
+    host: productionPooler || endpoint.host,
+    port: productionPooler ? 6543 : Number(uri?.port || endpoint.port || process.env.DRIVEVISION_DB_PORT || 5432),
     database: uri
       ? decodeURIComponent(uri.pathname.slice(1))
       : process.env.DRIVEVISION_DB_DATABASE || "postgres",
