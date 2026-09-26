@@ -13,7 +13,7 @@ const options = ts.convertCompilerOptionsFromJson(
 ).options;
 mkdirSync("work", { recursive: true });
 const root = mkdtempSync(resolve("work", "server-build-"));
-const queue = ["api/[...path].ts"],
+const queue = ["api/index.ts"],
   visited = new Set();
 for (const file of queue) {
   if (visited.has(file)) continue;
@@ -36,7 +36,7 @@ for (const file of queue) {
     );
 }
 const { default: handler } = await import(
-  pathToFileURL(resolve(root, "api/[...path].js"))
+  pathToFileURL(resolve(root, "api/index.js"))
 );
 const http = createServer(handler);
 await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
