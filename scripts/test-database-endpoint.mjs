@@ -18,4 +18,8 @@ assert.equal(config.host, host);
 assert.equal(config.port, 6543);
 assert.equal(config.ssl.rejectUnauthorized, true);
 assert.ok(config.ssl.ca.length > 1);
+process.env.DRIVEVISION_DB_USER = "drivevision_app.example";
+assert.equal(connectionOptions().user, "drivevision_app");
+assert.equal(connectionOptions().statement_timeout, undefined);
+assert.equal(connectionOptions().query_timeout, 20000);
 console.log("PASS copied URI parsing, separate runtime credentials and TLS verification");

@@ -15,17 +15,21 @@ export function connectionOptions(admin = false) {
   const raw = admin ? undefined : process.env.DRIVEVISION_DATABASE_URL;
   const uri = raw ? new URL(raw) : null;
   const endpoint = databaseEndpoint(uri?.hostname || process.env.DRIVEVISION_DB_HOST);
+  const configuredUser = (uri
+    ? decodeURIComponent(uri.username)
+    : process.env[admin ? "DRIVEVISION_DB_ADMIN_USER" : "DRIVEVISION_DB_USER"])?.trim();
+  const directProject = /^db\.([a-z\d]+)\.supabase\.co$/i.exec(endpoint.host)?.[1];
+  // The project suffix routes shared Supavisor connections, not the dedicated pooler.
+  const user = directProject && configuredUser?.endsWith(`.${directProject}`)
+    ? configuredUser.slice(0, -(directProject.length + 1))
+    : configuredUser;
   return {
     host: endpoint.host,
     port: Number(uri?.port || endpoint.port || process.env.DRIVEVISION_DB_PORT || 5432),
     database: uri
       ? decodeURIComponent(uri.pathname.slice(1))
       : process.env.DRIVEVISION_DB_DATABASE || "postgres",
-    user: (uri
-      ? decodeURIComponent(uri.username)
-      : process.env[
-          admin ? "DRIVEVISION_DB_ADMIN_USER" : "DRIVEVISION_DB_USER"
-        ])?.trim(),
+    user,
     password: uri
       ? decodeURIComponent(uri.password)
       : process.env[
@@ -42,7 +46,7 @@ export function connectionOptions(admin = false) {
     max: 3,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 10000,
-    statement_timeout: 20000,
+    query_timeout: 20000,
     application_name: "drivevision",
   };
 }
@@ -66,6 +70,7 @@ export async function transaction<T>(
   const client = await database().connect();
   try {
     await client.query("begin");
+    await client.query("set local statement_timeout = '20s'");
     await client.query("select set_config('drivevision.user_id', $1, true)", [
       userId,
     ]);
