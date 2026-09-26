@@ -77,15 +77,19 @@ export default function App() {
         Abrindo seu workspace…
       </div>
     );
-  if (!user && !localMode)
+  if (activationToken || (!user && !localMode))
     return (
       <LoginScreen
         configured={configured}
+        hasSession={!!user}
         activationToken={activationToken}
         onClearActivation={() => setActivationToken(null)}
         onLocal={() => {
-          setLocalMode(true);
-          setEntrance("Explorador");
+          setActivationToken(null);
+          if (!user) {
+            setLocalMode(true);
+            setEntrance("Explorador");
+          }
         }}
         onLogin={(account) => {
           setActivationToken(null);

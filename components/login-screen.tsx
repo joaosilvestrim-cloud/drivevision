@@ -22,12 +22,14 @@ export function LoginScreen({
   configured,
   activationToken,
   onClearActivation,
+  hasSession = false,
 }: {
   onLogin: (user: Account) => void;
   onLocal: () => void;
   configured: boolean;
   activationToken: string | null;
   onClearActivation: () => void;
+  hasSession?: boolean;
 }) {
   const [register, setRegister] = useState(false),
     [email, setEmail] = useState(""),
@@ -340,7 +342,7 @@ export function LoginScreen({
               </p>
             </details>
           )}
-          {activate && (
+          {activate && !hasSession && (
             <button
               className="login-back"
               type="button"
@@ -351,11 +353,22 @@ export function LoginScreen({
             </button>
           )}
           <div className="login-local">
-            <span>Quer conhecer primeiro?</span>
+            <span>
+              {hasSession
+                ? "Sua conta já está conectada."
+                : "Quer conhecer primeiro?"}
+            </span>
             <button type="button" disabled={busy} onClick={onLocal}>
-              Explorar no modo local <ChevronRight size={15} />
+              {hasSession
+                ? "Voltar ao meu workspace"
+                : "Explorar no modo local"}{" "}
+              <ChevronRight size={15} />
             </button>
-            <small>As análises ficam apenas neste navegador.</small>
+            <small>
+              {hasSession
+                ? "Seu acesso atual continua ativo."
+                : "As análises ficam apenas neste navegador."}
+            </small>
           </div>
         </section>
       </div>

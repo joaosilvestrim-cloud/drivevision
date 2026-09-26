@@ -805,7 +805,7 @@ export default function Workspace({
                     toast.success(
                       "Dashboard criado e salvo. Personalize seus visuais.",
                     );
-                  }
+                  } else if (dirty) setDirty(true);
                 })();
               });
             }}
@@ -1049,10 +1049,17 @@ export default function Workspace({
           <div className="help-limit">
             <strong>O que esta prévia inclui</strong>
             <p>
-              Gráficos e cálculos reais, comandos guiados e armazenamento local
-              ou na sua conta. Ainda sem IA generativa, login, equipes ou
-              publicação de painéis. Os arquivos salvos não são sincronizados
-              com outros dispositivos.
+              Área de trabalho com pastas, favoritos e múltiplos dashboards.
+              Importação de planilhas, preparação de dados, filtros, exploração
+              e 14 tipos de visualização. Arraste e redimensione seus gráficos e
+              salve o resultado.
+            </p>
+            <p>
+              {storage.cloud
+                ? "Sua conta mantém fontes e painéis disponíveis em outros dispositivos."
+                : "No modo local, os dados ficam neste navegador. Entre em uma conta para salvar na nuvem."}{" "}
+              Ainda não há atualização automática de fontes, coedição ou
+              publicação de painéis para terceiros.
             </p>
           </div>
         </DialogContent>

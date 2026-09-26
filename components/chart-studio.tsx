@@ -65,6 +65,10 @@ export function ChartStudio({
     () => chartData(rows, source, draft, color),
     [rows, source, draft, color],
   );
+  const cartesian = ["line", "area", "bar", "horizontal", "combo"].includes(
+    draft.type,
+  );
+  const hasLegend = cartesian || ["donut", "radar"].includes(draft.type);
   const isSingle = [
       "kpi",
       "donut",
@@ -295,7 +299,7 @@ export function ChartStudio({
                     </label>
                   ) : (
                     <>
-                      {draft.type !== "kpi" && (
+                      {!["kpi", "gauge"].includes(draft.type) && (
                         <>
                           <Field
                             label="Eixo de categorias / agrupamento"
@@ -493,7 +497,7 @@ export function ChartStudio({
                             ]}
                           />
                         )}{" "}
-                      {draft.type !== "kpi" && (
+                      {!["kpi", "gauge"].includes(draft.type) && (
                         <div className="model-two">
                           <Field
                             label="Ordenação dos grupos"
@@ -622,9 +626,10 @@ export function ChartStudio({
                     Abreviar milhares e milhões
                   </label>
                   <div className="model-section-label">LEITURA DO GRÁFICO</div>
-                  {toggle("Exibir valores sobre o gráfico", "labels")}
-                  {toggle("Exibir legenda", "legend")}
-                  {draft.legend && (
+                  {(cartesian || draft.type === "donut") &&
+                    toggle("Exibir valores sobre o gráfico", "labels")}
+                  {hasLegend && toggle("Exibir legenda", "legend")}
+                  {hasLegend && draft.legend && (
                     <Field
                       label="Posição da legenda"
                       value={draft.legendPosition ?? "bottom"}
@@ -647,46 +652,58 @@ export function ChartStudio({
                         label: v ? `${v}%` : "Pizza sem abertura",
                       }))}
                     />
-                  ) : (
+                  ) : cartesian || ["kpi", "gauge"].includes(draft.type) ? (
                     <>
-                      {toggle("Linhas de grade", "grid")}
-                      {toggle("Exibir eixo horizontal", "axisX")}
-                      {toggle("Exibir eixo vertical", "axisY")}
+                      {cartesian && (
+                        <>
+                          {toggle("Linhas de grade", "grid")}
+                          {toggle("Exibir eixo horizontal", "axisX")}
+                          {toggle("Exibir eixo vertical", "axisY")}
+                          <TextField
+                            label="Título do eixo horizontal"
+                            value={draft.xTitle ?? ""}
+                            onChange={(xTitle) => patch({ xTitle })}
+                          />
+                          <TextField
+                            label="Título do eixo vertical"
+                            value={draft.yTitle ?? ""}
+                            onChange={(yTitle) => patch({ yTitle })}
+                          />
+                          <div className="model-two">
+                            <TextField
+                              label="Mínimo do eixo numérico"
+                              type="number"
+                              value={String(draft.yMin ?? "")}
+                              onChange={(v) =>
+                                patch({
+                                  yMin: v === "" ? undefined : Number(v),
+                                })
+                              }
+                              placeholder="Automático"
+                            />
+                            <TextField
+                              label="Máximo do eixo numérico"
+                              type="number"
+                              value={String(draft.yMax ?? "")}
+                              onChange={(v) =>
+                                patch({
+                                  yMax: v === "" ? undefined : Number(v),
+                                })
+                              }
+                              placeholder="Automático"
+                            />
+                          </div>
+                          <p className="model-note">
+                            Limites manuais recortam valores fora do intervalo.
+                          </p>
+                        </>
+                      )}
                       <TextField
-                        label="Título do eixo horizontal"
-                        value={draft.xTitle ?? ""}
-                        onChange={(xTitle) => patch({ xTitle })}
-                      />
-                      <TextField
-                        label="Título do eixo vertical"
-                        value={draft.yTitle ?? ""}
-                        onChange={(yTitle) => patch({ yTitle })}
-                      />
-                      <div className="model-two">
-                        <TextField
-                          label="Mínimo do eixo numérico"
-                          type="number"
-                          value={String(draft.yMin ?? "")}
-                          onChange={(v) =>
-                            patch({ yMin: v === "" ? undefined : Number(v) })
-                          }
-                          placeholder="Automático"
-                        />
-                        <TextField
-                          label="Máximo do eixo numérico"
-                          type="number"
-                          value={String(draft.yMax ?? "")}
-                          onChange={(v) =>
-                            patch({ yMax: v === "" ? undefined : Number(v) })
-                          }
-                          placeholder="Automático"
-                        />
-                      </div>
-                      <p className="model-note">
-                        Limites manuais recortam valores fora do intervalo.
-                      </p>
-                      <TextField
-                        label="Linha de meta / referência"
+                        label={
+                          draft.type === "gauge"
+                            ? "Valor da meta"
+                            : "Linha de meta / referência"
+                        }
                         type="number"
                         value={String(draft.target ?? "")}
                         onChange={(v) =>
@@ -702,7 +719,8 @@ export function ChartStudio({
                         />
                       )}
                     </>
-                  )}
+                  ) : null}
+                  {draft.type === "radar" && toggle("Linhas de grade", "grid")}
                   {["line", "area", "combo"].includes(draft.type) && (
                     <>
                       <Field
