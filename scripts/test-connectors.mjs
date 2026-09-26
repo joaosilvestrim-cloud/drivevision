@@ -6,6 +6,7 @@ import { Client } from "pg";
 import handler from "../server/handler.ts";
 import {
   connectionOptions,
+  database,
   transaction,
   closeDatabase,
 } from "../server/database.ts";
@@ -152,6 +153,28 @@ const base = `http://127.0.0.1:${http.address().port}`;
 const admin = new Client(connectionOptions(true));
 await admin.connect();
 const owners = [];
+// Restrict the global cron queue to this test's accounts. Never process real
+// users' scheduled sources with fixture OAuth credentials in a shared database.
+const pool = database(),
+  originalQuery = pool.query;
+pool.query = function (query, ...args) {
+  if (
+    typeof query === "string" &&
+    query.startsWith(
+      "select binding_id,owner_id from drivevision.cloud_schedule",
+    )
+  ) {
+    return originalQuery.call(
+      this,
+      query.replace(
+        "where due_at",
+        "where owner_id=any($1::uuid[]) and due_at",
+      ),
+      [owners],
+    );
+  }
+  return originalQuery.call(this, query, ...args);
+};
 async function account() {
   const id = randomUUID(),
     token = newToken();
@@ -524,6 +547,7 @@ try {
   );
 } finally {
   globalThis.fetch = realFetch;
+  pool.query = originalQuery;
   for (const id of owners) {
     await admin.query("delete from drivevision.workspaces where owner_id=$1", [
       id,
