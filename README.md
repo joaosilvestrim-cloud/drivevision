@@ -2,6 +2,8 @@
 
 Projeto DriveVision / DriveData Assist. Execute `npm ci` e `npm run dev`; prévia em http://127.0.0.1:5173/. Para hospedar, siga [Publicar na Vercel](DEPLOY-VERCEL.md).
 
+O menu **Conexões** acompanha arquivos e pastas do SharePoint, OneDrive e Google Drive. Consulte [Fontes conectadas](CONNECTED-SOURCES.md) para registrar os aplicativos OAuth, configurar o agendamento e conferir os limites. A ativação de cada provedor depende das respectivas credenciais no servidor.
+
 ## Fluxo principal
 
 1. Importe Excel, CSV ou TSV em Fontes de dados, revise a estrutura sugerida ou use a demonstração.

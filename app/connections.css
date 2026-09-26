@@ -1,0 +1,507 @@
+.connections-page {
+  display: grid;
+  gap: 32px;
+}
+.workspace-refresh {
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.workspace-refresh > span {
+  flex: 1;
+  min-width: 180px;
+}
+.connection-intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 36px;
+  background: var(--mint-chip, #d1ffca);
+  border-radius: 28px;
+}
+.connection-intro h2 {
+  font:
+    700 clamp(34px, 4vw, 56px)/1 "Barlow Condensed",
+    sans-serif;
+  text-transform: uppercase;
+  margin: 16px 0;
+}
+.connection-intro p {
+  max-width: 570px;
+  color: #444;
+  line-height: 1.6;
+}
+.connection-steps {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  min-width: 220px;
+}
+.connection-steps span {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.connection-steps b {
+  font:
+    12px "IBM Plex Mono",
+    monospace;
+  border: 1px solid #0003;
+  border-radius: 50%;
+  padding: 9px;
+}
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.provider-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 26px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 14px;
+}
+.provider-card h3,
+.connection-account h3,
+.watched-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+.provider-card p {
+  color: #555;
+  font-size: 14px;
+  line-height: 1.6;
+  flex: 1;
+}
+.provider-card small {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+.provider-card button {
+  width: 100%;
+  justify-content: space-between;
+}
+.provider-symbol {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #f3f3f3;
+  font-weight: 800;
+  font-size: 25px;
+  flex-shrink: 0;
+}
+.provider-symbol.sharepoint {
+  background: #d1ffca;
+}
+.provider-symbol.onedrive {
+  background: #e5efff;
+}
+.provider-symbol.google {
+  background: #fff3ca;
+}
+.connection-tag {
+  font:
+    10px "IBM Plex Mono",
+    monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #ddd;
+  padding: 7px 10px;
+  border-radius: 20px;
+}
+.connections-section-title {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.connections-section-title h2 {
+  font:
+    700 28px "Barlow Condensed",
+    sans-serif;
+  text-transform: uppercase;
+}
+.connection-muted {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.connection-account {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 20px;
+  margin: 12px 0;
+}
+.connection-account > div {
+  flex: 1;
+  min-width: 0;
+}
+.connection-account p {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  color: #666;
+  margin: 5px 0 0;
+}
+.connections-empty {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+  gap: 16px;
+  background: #fff;
+  border-radius: 28px;
+  padding: 65px 24px;
+}
+.connections-empty h2 {
+  font:
+    700 40px "Barlow Condensed",
+    sans-serif;
+}
+.connections-empty p {
+  max-width: 520px;
+  color: #555;
+  line-height: 1.6;
+}
+.connections-empty.compact {
+  padding: 36px 24px;
+  border: 1px dashed #bbb;
+  background: transparent;
+}
+.connection-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  background: #fff4d5;
+  border-left: 3px solid #9b6b00;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.watched-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.watched-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  min-width: 0;
+}
+.watched-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.connection-state {
+  font-size: 11px;
+  color: #305d30;
+}
+.connection-state.error {
+  color: #875900;
+}
+.watched-card h3 {
+  overflow-wrap: anywhere;
+}
+.connection-path {
+  font-size: 12px;
+  color: #666;
+  margin: 10px 0 20px;
+  overflow-wrap: anywhere;
+}
+.watched-card dl {
+  display: grid;
+  gap: 12px;
+  font-size: 12px;
+}
+.watched-card dl div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+}
+.watched-card dt {
+  color: #666;
+}
+.watched-card dd {
+  margin: 0;
+}
+.watched-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.watched-actions button {
+  min-height: 40px;
+}
+.connection-browser {
+  width: min(1000px, calc(100vw - 24px)) !important;
+  max-width: 1000px !important;
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 28px !important;
+  background: #fff;
+}
+.connection-dialog {
+  max-width: 700px !important;
+  max-height: 85dvh;
+  overflow: auto;
+}
+.remote-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.remote-toolbar strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  flex: 1;
+}
+.remote-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.remote-search label {
+  font-size: 12px;
+}
+.remote-search input {
+  min-width: 150px;
+  flex: 1;
+}
+.remote-list {
+  max-height: 45dvh;
+  overflow: auto;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+}
+.remote-list > button {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  min-height: 60px;
+}
+.remote-list > button:hover {
+  background: #efffea;
+}
+.remote-list > button span {
+  flex: 1;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.remote-list small {
+  display: block;
+  color: #777;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.remote-list p {
+  padding: 24px;
+}
+.remote-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.remote-fields label {
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.remote-fields input,
+.remote-fields select,
+.remote-search input {
+  background: #f3f3f3;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 11px;
+  font:
+    14px Inter,
+    sans-serif;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+}
+.remote-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.remote-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: black;
+}
+.remote-selection {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px;
+  background: #f3f3f3;
+  border-radius: 12px;
+}
+.remote-selection strong {
+  flex: 1;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.remote-preview {
+  overflow: auto;
+  max-height: 260px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+.remote-preview table {
+  font-size: 12px;
+  border-collapse: collapse;
+  min-width: 100%;
+}
+.remote-preview th {
+  background: #efffea;
+  text-align: left;
+  font-weight: 600;
+}
+.remote-preview th,
+.remote-preview td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.remote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  border-top: 1px solid #ddd;
+  padding-top: 18px;
+}
+.remote-footer span {
+  font-size: 12px;
+  color: #666;
+}
+.connection-history article {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+.connection-history svg {
+  flex-shrink: 0;
+}
+.connection-history p {
+  font-size: 12px;
+  color: #666;
+  margin: 6px 0;
+}
+.connections-page button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.connections-page button:focus-visible,
+.connection-browser button:focus-visible,
+.connection-browser input:focus-visible,
+.connection-browser select:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+  .provider-grid {
+    gap: 12px;
+  }
+  .provider-card {
+    padding: 20px;
+  }
+  .watched-grid {
+    grid-template-columns: 1fr;
+  }
+  .connection-intro {
+    gap: 24px;
+    padding: 26px;
+  }
+  .remote-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .provider-grid {
+    grid-template-columns: 1fr;
+  }
+  .connection-intro {
+    flex-direction: column;
+  }
+  .connection-account {
+    flex-wrap: wrap;
+  }
+  .connection-account > .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .connections-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .connection-browser {
+    padding: 20px !important;
+  }
+  .remote-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .remote-footer .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .watched-card dl div {
+    grid-template-columns: 90px 1fr;
+  }
+  .remote-selection strong {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .remote-fields {
+    grid-template-columns: 1fr;
+  }
+  .watched-card {
+    padding: 18px;
+  }
+  .remote-toolbar > .primary-button {
+    width: 100%;
+  }
+}

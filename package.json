@@ -19,7 +19,9 @@
     "db:generate": "drizzle-kit generate",
     "db:activation": "node scripts/setup-activation.mjs",
     "account:create": "node scripts/create-account.mjs",
-    "account:create-ready": "node scripts/create-ready-account.mjs"
+    "account:create-ready": "node scripts/create-ready-account.mjs",
+    "db:connectors": "node scripts/setup-connectors.mjs",
+    "test:connectors": "node scripts/test-connectors.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

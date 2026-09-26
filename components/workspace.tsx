@@ -70,8 +70,9 @@ import {
 import { DashboardLibrary } from "./dashboard-library";
 import { duplicateDashboard } from "@/lib/dashboard-library";
 import { makeVisual } from "@/lib/visual-builder";
+import { CloudConnections } from "./cloud-connections";
 
-type View = "studio" | "library" | "sources";
+type View = "studio" | "library" | "sources" | "connections";
 const initial: LocalWorkspace = { version: 1, sources: [], dashboards: [] };
 function Nav({
   view,
@@ -109,6 +110,7 @@ function Nav({
           { icon: LayoutDashboard, label: "Estúdio", id: "studio" },
           { icon: Layers, label: "Área de trabalho", id: "library" },
           { icon: Database, label: "Dados", id: "sources" },
+          { icon: Cloud, label: "Conexões", id: "connections" },
         ].map(({ icon: Icon, label, id }) => (
           <button
             key={id}
@@ -152,7 +154,12 @@ export default function Workspace({
   account?: Account | null;
   onAccount?: () => void;
 }) {
-  const [view, setView] = useState<View>("library"),
+  const [view, setView] = useState<View>(() =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("view") === "connections"
+        ? "connections"
+        : "library",
+    ),
     [workspace, setWorkspace] = useState<LocalWorkspace>(initial);
   const [source, setSource] = useState<Source>(DEMO),
     [config, setConfig] = useState<Config>(() => defaultConfig(DEMO));
@@ -163,6 +170,7 @@ export default function Workspace({
     [storageError, setStorageError] = useState(false),
     [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const [remoteChanged, setRemoteChanged] = useState(false);
   const [modal, setModal] = useState<
     "new" | "save" | "import" | "help" | "source" | null
   >(null);
@@ -209,6 +217,31 @@ export default function Workspace({
     };
   }, [storage]);
   useEffect(() => {
+    if (!loaded || !storage.hasRemoteChanges) return;
+    let live = true,
+      checking = false;
+    const check = async () => {
+      if (document.visibilityState !== "visible" || checking || busyRef.current)
+        return;
+      checking = true;
+      try {
+        const changed = await storage.hasRemoteChanges!();
+        if (live) setRemoteChanged(changed);
+      } catch {
+        /* Keep the current workspace usable during transient failures. */
+      } finally {
+        checking = false;
+      }
+    };
+    const timer = window.setInterval(check, 60000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      live = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [loaded, storage]);
+  useEffect(() => {
     if (!dirty) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -240,6 +273,19 @@ export default function Workspace({
       busyRef.current = false;
       setBusy(false);
     }
+  }
+
+  async function reloadRemoteWorkspace() {
+    if (dirty)
+      throw new Error(
+        "Salve seu rascunho antes de carregar as fontes atualizadas.",
+      );
+    const next = await storage.load();
+    setWorkspace(next);
+    setStorageError(false);
+    setRemoteChanged(false);
+    const active = next.sources.find((s) => s.id === source.id);
+    if (active) setSource(active);
   }
   function switchDraft(
     nextSource: Source,
@@ -369,9 +415,8 @@ export default function Workspace({
         },
         annotations: { readOnlyHint: true },
         execute: async () => {
-          const { boardRows, initialVisuals } = await import(
-            "@/lib/visual-builder"
-          );
+          const { boardRows, initialVisuals } =
+            await import("@/lib/visual-builder");
           const { prepareSource } = await import("@/lib/data-model");
           const { chartData } = await import("@/lib/chart-model");
           const prepared = prepareSource(source, config.dataSteps);
@@ -464,7 +509,9 @@ export default function Workspace({
       ? config.title
       : view === "library"
         ? "Sua área de trabalho"
-        : "Fontes de dados";
+        : view === "connections"
+          ? "Conexões"
+          : "Fontes de dados";
   return (
     <div className="product-shell">
       <Nav
@@ -499,7 +546,9 @@ export default function Workspace({
                   ? "Modele seus dados. Crie seus gráficos. Encontre suas respostas."
                   : view === "library"
                     ? "Suas análises organizadas. Prontas para o próximo passo."
-                    : "Traga sua planilha como ela está. Organize e conecte os dados aqui."}
+                    : view === "connections"
+                      ? "Conecte suas origens. Escolha o conteúdo. Mantenha suas análises atualizadas."
+                      : "Traga sua planilha como ela está. Organize e conecte os dados aqui."}
               </p>
             </div>
             <div className="heading-actions">
@@ -522,14 +571,16 @@ export default function Workspace({
                   <Save size={16} /> Salvar
                 </button>
               )}
-              <button
-                className="primary-button"
-                disabled={!loaded || busy}
-                onClick={view === "sources" ? openImport : openNew}
-              >
-                <Plus size={17} />
-                {view === "sources" ? "Importar planilha" : "Novo dashboard"}
-              </button>
+              {view !== "connections" && (
+                <button
+                  className="primary-button"
+                  disabled={!loaded || busy}
+                  onClick={view === "sources" ? openImport : openNew}
+                >
+                  <Plus size={17} />
+                  {view === "sources" ? "Importar planilha" : "Novo dashboard"}
+                </button>
+              )}
             </div>
           </div>
           {storageError && (
@@ -537,6 +588,35 @@ export default function Workspace({
               O armazenamento está indisponível. A demonstração continua
               disponível; seus dados ainda não podem ser salvos.
             </div>
+          )}
+          {remoteChanged && (
+            <div className="connection-alert workspace-refresh" role="status">
+              <Cloud size={18} />
+              <span>
+                Novos dados estão disponíveis na nuvem. Recarregue para
+                atualizar suas análises.
+                {dirty ? " Exporte seu rascunho antes de recarregar." : ""}
+              </span>
+              <button
+                className="secondary-button"
+                disabled={busy}
+                onClick={() => guard(() => window.location.reload())}
+              >
+                Recarregar dados
+              </button>
+            </div>
+          )}
+          {view === "connections" && (
+            <CloudConnections
+              cloud={storage.cloud}
+              onLogin={onAccount}
+              onReload={reloadRemoteWorkspace}
+              locked={dirty || busy || !loaded || storageError}
+              onAnalyze={(id) => {
+                const s = workspace.sources.find((s) => s.id === id);
+                if (s) guard(() => switchDraft(s, defaultConfig(s)));
+              }}
+            />
           )}
           {view === "studio" && (
             <>
@@ -618,6 +698,13 @@ export default function Workspace({
           )}
           {view === "sources" && (
             <>
+              <button
+                className="secondary-button"
+                onClick={() => setView("connections")}
+              >
+                <Cloud size={16} /> Conectar SharePoint, OneDrive ou Google
+                Drive <ArrowRight size={15} />
+              </button>
               <div className="import-banner">
                 <span className="import-icon">
                   <FileSpreadsheet size={28} />

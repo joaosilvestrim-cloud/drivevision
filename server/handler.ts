@@ -3,6 +3,9 @@ import { randomUUID } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { database, databaseConfigured, transaction } from "./database.ts";
 import { databaseFailureCode } from "./database-errors.ts";
+import { ConnectorError, secretMatches } from "./connector-security.ts";
+import { connectorsRoute } from "./connectors.ts";
+import { syncDue } from "./cloud-sync.ts";
 import {
   credentialsSchema,
   saveSchema,
@@ -38,9 +41,9 @@ function assertOrigin(req: IncomingMessage) {
   try {
     valid = Boolean(
       origin &&
-        (allowed
-          ? origin === new URL(allowed).origin
-          : new URL(origin).host === host),
+      (allowed
+        ? origin === new URL(allowed).origin
+        : new URL(origin).host === host),
     );
   } catch {}
   if (!valid) throw new HttpError(403, "Origem da requisição não permitida.");
@@ -136,6 +139,19 @@ export default async function handler(
     }
     if (!databaseConfigured())
       throw new HttpError(503, "O servidor ainda não está conectado ao banco.");
+    if (path === "/api/cron/sources" && req.method === "GET") {
+      if (
+        !secretMatches(
+          req.headers.authorization,
+          process.env.CRON_SECRET
+            ? `Bearer ${process.env.CRON_SECRET}`
+            : undefined,
+        )
+      )
+        throw new HttpError(401, "Não autorizado.");
+      json(res, 200, await syncDue());
+      return;
+    }
     if (!["GET", "HEAD"].includes(req.method || "")) assertOrigin(req);
     if (path === "/api/session" && req.method === "GET") {
       json(res, 200, { user: await userFor(req) });
@@ -275,6 +291,51 @@ export default async function handler(
         401,
         "Sua sessão expirou. Entre novamente para salvar na nuvem.",
       );
+    if (path === "/api/connectors" || path.startsWith("/api/connectors/")) {
+      if (req.method === "POST")
+        await rateLimit(`connectors:${user.id}`, 60, 300);
+      const origin =
+        process.env.DRIVEVISION_APP_ORIGIN ||
+        `${process.env.VERCEL ? "https" : "http"}://${req.headers.host}`;
+      try {
+        const result = await connectorsRoute(
+          user.id,
+          tokenHash(cookieToken(req)),
+          path,
+          req.method || "GET",
+          req.method === "POST" ? await body(req) : undefined,
+          new URL(req.url || "/", origin),
+          new URL(origin).origin,
+        );
+        if (result.redirect) {
+          res.statusCode = 303;
+          res.setHeader("Location", result.redirect);
+          res.setHeader("Referrer-Policy", "no-referrer");
+          res.end();
+        } else json(res, 200, result.data);
+      } catch (error) {
+        if (path.startsWith("/api/connectors/callback/")) {
+          res.statusCode = 303;
+          res.setHeader("Location", "/?view=connections&connection=error");
+          res.end();
+        } else throw error;
+      }
+      return;
+    }
+    if (path === "/api/workspace/revision" && req.method === "GET") {
+      const revision = await transaction(user.id, async (c) => {
+        const row = (
+          await c.query(
+            "select revision from drivevision.workspaces where owner_id=$1",
+            [user.id],
+          )
+        ).rows[0];
+        if (!row) throw new HttpError(404, "Workspace não encontrado.");
+        return Number(row.revision);
+      });
+      json(res, 200, { revision });
+      return;
+    }
     if (path === "/api/workspace" && req.method === "GET") {
       const result = await transaction(user.id, async (c) => {
         const workspace = (
@@ -343,6 +404,11 @@ export default async function handler(
             "Outra aba ou dispositivo atualizou este workspace. Exporte seu rascunho e recarregue antes de salvar.",
           );
         const id = current.id;
+        // Removing a source stops its refresh and retains the last saved dashboards policy.
+        await c.query(
+          "delete from drivevision.cloud_bindings where owner_id=$1 and source_id in (select id from drivevision.sources where workspace_id=$2) and not (source_id=any($3::text[]))",
+          [user.id, id, workspace.sources.map((s) => s.id)],
+        );
         // Identifiers are fixed constants; all user data is parameterized.
         for (const [table, items] of [
           ["sources", workspace.sources],
@@ -373,7 +439,7 @@ export default async function handler(
       res.end();
       return;
     }
-    if (error instanceof HttpError) {
+    if (error instanceof HttpError || error instanceof ConnectorError) {
       json(res, error.status, { error: error.message });
       return;
     }

@@ -8,6 +8,7 @@ export type Persistence = {
   cloud: boolean;
   load: () => Promise<Workspace>;
   save: (w: Workspace) => Promise<void>;
+  hasRemoteChanges?: () => Promise<boolean>;
 };
 export const localPersistence: Persistence = {
   cloud: false,
@@ -22,7 +23,9 @@ export async function apiJson<T>(path: string, body?: unknown): Promise<T> {
     headers:
       body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(
+      path.startsWith("connectors/") ? 115000 : 30000,
+    ),
   });
   if (!response.headers.get("content-type")?.includes("application/json"))
     throw new Error("O servidor da conta não está disponível neste endereço.");
@@ -35,6 +38,10 @@ export function cloudPersistence(): Persistence {
   let revision: number | null = null;
   return {
     cloud: true,
+    async hasRemoteChanges() {
+      const current = await apiJson<{ revision: number }>("workspace/revision");
+      return revision !== null && current.revision !== revision;
+    },
     async load() {
       const response = await fetch("/api/workspace", {
         credentials: "same-origin",
