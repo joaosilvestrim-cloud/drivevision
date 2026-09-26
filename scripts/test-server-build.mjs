@@ -10,7 +10,7 @@ const config = ts.readConfigFile("tsconfig.json", ts.sys.readFile).config;
 const options = ts.convertCompilerOptionsFromJson(config.compilerOptions, ".").options;
 mkdirSync("work", { recursive: true });
 const root = mkdtempSync(resolve("work", "server-build-"));
-for (const file of ["api/[...path].ts", "server/handler.ts", "server/database.ts", "server/security.ts", "server/validation.ts"]) {
+for (const file of ["api/[...path].ts", "server/handler.ts", "server/database.ts", "server/database-errors.ts", "server/security.ts", "server/validation.ts"]) {
   const output = resolve(root, file.replace(/\.ts$/, ".js"));
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, ts.transpileModule(readFileSync(file, "utf8"), {

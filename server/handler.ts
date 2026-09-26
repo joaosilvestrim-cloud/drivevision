@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { database, databaseConfigured, transaction } from "./database.ts";
+import { databaseFailureCode } from "./database-errors.ts";
 import {
   credentialsSchema,
   saveSchema,
@@ -376,10 +377,13 @@ export default async function handler(
       json(res, error.status, { error: error.message });
       return;
     }
+    const diagnostic = databaseFailureCode(error);
     console.error("DriveVision API failure", {
+      diagnostic,
       code: (error as { code?: string }).code || "INTERNAL",
     });
     json(res, 503, {
+      code: diagnostic,
       error:
         "Não foi possível acessar o banco. Seus dados atuais continuam na tela; tente novamente.",
     });
