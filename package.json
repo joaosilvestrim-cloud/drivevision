@@ -11,14 +11,15 @@
     "build": "tsc --noEmit && vite build --config vite.preview.config.ts",
     "start": "vite preview --config vite.preview.config.ts --host 127.0.0.1",
     "test": "node scripts/test-analytics.mjs && node scripts/test-data-model.mjs && node scripts/test-visual-builder.mjs && node scripts/test-exploration.mjs && node scripts/test-smart-import.mjs && node scripts/test-desktop.mjs",
-    "test:server": "node scripts/test-server.mjs && node scripts/test-activation.mjs",
+    "test:server": "node scripts/test-server-build.mjs && node scripts/test-server.mjs && node scripts/test-activation.mjs",
     "db:inspect": "node scripts/inspect-database.mjs",
     "db:setup": "node scripts/setup-database.mjs",
     "build:framework": "node scripts/run-framework.mjs build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:activation": "node scripts/setup-activation.mjs",
-    "account:create": "node scripts/create-account.mjs"
+    "account:create": "node scripts/create-account.mjs",
+    "account:create-ready": "node scripts/create-ready-account.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
