@@ -2,7 +2,7 @@
 export function databaseFailureCode(error: unknown): string {
   const failure = error as { code?: string; message?: string };
   switch (failure?.code) {
-    case "ENOTFOUND": case "EAI_AGAIN": return "DB_HOST";
+    case "DB_INVALID_HOST": case "ENOTFOUND": case "EAI_AGAIN": return "DB_HOST";
     case "ECONNREFUSED": case "ENETUNREACH": case "EHOSTUNREACH": return "DB_NETWORK";
     case "ETIMEDOUT": return "DB_TIMEOUT";
     case "28P01": case "28000": return "DB_AUTH";

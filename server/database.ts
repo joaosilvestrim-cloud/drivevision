@@ -1,6 +1,8 @@
 import { Pool, type PoolClient } from "pg";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { getCACertificates } from "node:tls";
+import { databaseEndpoint } from "./database-endpoint.ts";
 
 let pool: Pool | undefined;
 export function databaseConfigured() {
@@ -12,17 +14,18 @@ export function databaseConfigured() {
 export function connectionOptions(admin = false) {
   const raw = admin ? undefined : process.env.DRIVEVISION_DATABASE_URL;
   const uri = raw ? new URL(raw) : null;
+  const endpoint = databaseEndpoint(uri?.hostname || process.env.DRIVEVISION_DB_HOST);
   return {
-    host: uri?.hostname || process.env.DRIVEVISION_DB_HOST,
-    port: Number(uri?.port || process.env.DRIVEVISION_DB_PORT || 5432),
+    host: endpoint.host,
+    port: Number(uri?.port || endpoint.port || process.env.DRIVEVISION_DB_PORT || 5432),
     database: uri
       ? decodeURIComponent(uri.pathname.slice(1))
       : process.env.DRIVEVISION_DB_DATABASE || "postgres",
-    user: uri
+    user: (uri
       ? decodeURIComponent(uri.username)
       : process.env[
           admin ? "DRIVEVISION_DB_ADMIN_USER" : "DRIVEVISION_DB_USER"
-        ],
+        ])?.trim(),
     password: uri
       ? decodeURIComponent(uri.password)
       : process.env[
@@ -30,9 +33,11 @@ export function connectionOptions(admin = false) {
         ],
     ssl: {
       rejectUnauthorized: true,
-      ca:
+      ca: [
+        ...getCACertificates("default"),
         process.env.DRIVEVISION_DB_CA?.replace(/\\n/g, "\n") ||
         readFileSync(resolve("server/certs/supabase-ca.crt"), "utf8"),
+      ],
     },
     max: 3,
     idleTimeoutMillis: 10000,

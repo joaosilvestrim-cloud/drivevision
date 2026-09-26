@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import { databaseEndpoint } from "../server/database-endpoint.ts";
+import { connectionOptions } from "../server/database.ts";
+const host = "db.example.supabase.co";
+assert.deepEqual(databaseEndpoint(` ${host} `), { host, port: undefined });
+assert.deepEqual(databaseEndpoint(`${host}:6543`), { host, port: 6543 });
+assert.deepEqual(databaseEndpoint(`postgresql://postgres:example#password@${host}:6543/postgres`), { host, port: 6543 });
+assert.deepEqual(databaseEndpoint("[::1]:5432"), { host: "::1", port: 5432 });
+for (const invalid of ["", "HOST_PENDENTE", "https://example.com", "example.com:99999"])
+  assert.throws(() => databaseEndpoint(invalid));
+process.env.DRIVEVISION_DB_HOST = `postgresql://postgres:example#password@${host}:6543/postgres`;
+process.env.DRIVEVISION_DB_USER = "drivevision_app";
+process.env.DRIVEVISION_DB_PASSWORD = "runtime-password";
+const config = connectionOptions();
+assert.equal(config.user, "drivevision_app");
+assert.equal(config.password, "runtime-password");
+assert.equal(config.host, host);
+assert.equal(config.port, 6543);
+assert.equal(config.ssl.rejectUnauthorized, true);
+assert.ok(config.ssl.ca.length > 1);
+console.log("PASS copied URI parsing, separate runtime credentials and TLS verification");
