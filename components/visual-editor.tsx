@@ -1,4 +1,13 @@
 "use client";
+import { useBoardPointer } from "@/hooks/use-board-pointer";
+import { useVisualResize } from "@/hooks/use-visual-resize";
+import {
+  MoveDiagonal2,
+  Radar,
+  PanelsTopLeft,
+  Funnel,
+  Gauge,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -94,6 +103,10 @@ const icons = {
   text: Type,
   combo: BarChart3,
   pivot: Table2,
+  radar: Radar,
+  treemap: PanelsTopLeft,
+  funnel: Funnel,
+  gauge: Gauge,
 };
 const modes = [
   { value: "sum", label: "Soma" },
@@ -139,8 +152,12 @@ export function VisualEditor({
   const [small, setSmall] = useState(false),
     [panelOpen, setPanelOpen] = useState(false),
     [panelTab, setPanelTab] = useState("visual");
-  const [dragged, setDragged] = useState<string | null>(null),
-    [dropId, setDropId] = useState<string | null>(null);
+  const drag = useBoardPointer((from, to) => {
+    if (from !== to) changeVisuals(reorderVisuals(visuals, from, to));
+  }, "[data-visual-drop]");
+  const resize = useVisualResize((id, patch) =>
+    changeVisuals(visuals.map((v) => (v.id === id ? { ...v, ...patch } : v))),
+  );
   const [prompt, setPrompt] = useState(""),
     [answer, setAnswer] = useState("");
   const [filterField, setFilterField] = useState(
@@ -821,49 +838,64 @@ export function VisualEditor({
               {source.demo ? "DADOS DE EXEMPLO" : "DADOS DA SUA EMPRESA"}
             </span>
           </div>
+          {editing && (
+            <div className="layout-feedback">
+              <span>
+                Arraste pela alça para reorganizar. Use o canto para
+                redimensionar.
+              </span>
+              <b role="status">
+                {resize.preview
+                  ? `${resize.preview.span}/12 colunas · ${resize.preview.height}px`
+                  : drag.state
+                    ? "Solte sobre outro gráfico · Esc cancela"
+                    : "Teclado: setas nos controles"}
+              </b>
+            </div>
+          )}
           <div className="visual-grid">
             {visuals.map((v, index) => (
               <article
                 key={v.id}
-                className={`visual-card span-${v.span} ${editing && selectedId === v.id ? "is-selected" : ""} ${dropId === v.id ? "drop-target" : ""}`}
+                data-visual-drop
+                data-drop-id={v.id}
+                className={`visual-card span-${resize.preview?.id === v.id ? resize.preview.span : v.span} ${editing && selectedId === v.id ? "is-selected" : ""} ${drag.state?.target === v.id ? "drop-target" : ""} ${drag.state?.id === v.id ? "pointer-dragging" : ""} ${resize.preview?.id === v.id ? "resize-active" : ""}`}
                 style={{
-                  minHeight: v.height,
-                  height: v.type === "text" ? "auto" : v.height,
-                }}
-                onDragOver={(e) => {
-                  if (dragged) {
-                    e.preventDefault();
-                    setDropId(v.id);
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragged)
-                    changeVisuals(reorderVisuals(visuals, dragged, v.id));
-                  setDragged(null);
-                  setDropId(null);
+                  minHeight:
+                    resize.preview?.id === v.id
+                      ? resize.preview.height
+                      : v.height,
+                  height:
+                    v.type === "text"
+                      ? "auto"
+                      : resize.preview?.id === v.id
+                        ? resize.preview.height
+                        : v.height,
                 }}
               >
                 <div className="visual-card-heading">
                   <div className="visual-title-wrap">
                     {editing && (
-                      <span
+                      <button
                         className="drag-handle"
-                        draggable
                         aria-label={`Arrastar ${v.title}`}
-                        title="Arraste para reorganizar"
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData("text/plain", v.id);
-                          e.dataTransfer.effectAllowed = "move";
-                          setDragged(v.id);
-                        }}
-                        onDragEnd={() => {
-                          setDragged(null);
-                          setDropId(null);
+                        title="Arraste ou use as setas para reorganizar"
+                        {...drag.handle(v.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                            e.preventDefault();
+                            move(v.id, -1);
+                          } else if (
+                            e.key === "ArrowDown" ||
+                            e.key === "ArrowRight"
+                          ) {
+                            e.preventDefault();
+                            move(v.id, 1);
+                          } else drag.handle(v.id).onKeyDown(e);
                         }}
                       >
                         <GripVertical size={16} />
-                      </span>
+                      </button>
                     )}
                     <div>
                       <h3>{v.title || "Visual sem título"}</h3>
@@ -958,6 +990,16 @@ export function VisualEditor({
                       </button>
                     </div>
                   </div>
+                )}
+                {editing && (
+                  <button
+                    className="visual-resize"
+                    aria-label={`Redimensionar ${v.title}`}
+                    title="Arraste para ajustar largura e altura; ou use as setas"
+                    {...resize.handle(v)}
+                  >
+                    <MoveDiagonal2 size={15} />
+                  </button>
                 )}
               </article>
             ))}

@@ -23,7 +23,11 @@ export type VisualType =
   | "table"
   | "text"
   | "combo"
-  | "pivot";
+  | "pivot"
+  | "treemap"
+  | "radar"
+  | "funnel"
+  | "gauge";
 export type Visual = {
   pivotColumn?: string;
   heatmap?: boolean;
@@ -87,6 +91,26 @@ export const VISUAL_TYPES: {
   label: string;
   description: string;
 }[] = [
+  {
+    type: "treemap",
+    label: "Mapa de árvore",
+    description: "Participação em blocos proporcionais",
+  },
+  {
+    type: "radar",
+    label: "Radar",
+    description: "Compare perfis entre categorias",
+  },
+  {
+    type: "funnel",
+    label: "Funil comparativo",
+    description: "Volumes por etapa ou categoria",
+  },
+  {
+    type: "gauge",
+    label: "Medidor de meta",
+    description: "Acompanhe o realizado e a meta",
+  },
   { type: "kpi", label: "Indicador", description: "Um número que importa" },
   { type: "line", label: "Linhas", description: "Evolução e tendências" },
   { type: "area", label: "Área", description: "Volume ao longo do tempo" },

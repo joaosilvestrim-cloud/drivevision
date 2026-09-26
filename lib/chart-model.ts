@@ -161,7 +161,7 @@ export function chartData(
   const split =
     visual.splitBy &&
     source.columns.includes(visual.splitBy) &&
-    !["donut", "kpi"].includes(visual.type)
+    !["donut", "kpi", "treemap", "funnel", "gauge"].includes(visual.type)
       ? visual.splitBy
       : undefined;
   const categories = split
@@ -170,17 +170,20 @@ export function chartData(
       )
     : [];
   const series = split
-    ? categories
-        .slice(0, 8)
-        .map((name, i) => ({
-          key: `s${i}`,
-          label: name,
-          color: SERIES_COLORS[i],
-          field: measures[0].field,
-          aggregation: measures[0].aggregation,
-        }))
+    ? categories.slice(0, 8).map((name, i) => ({
+        key: `s${i}`,
+        label: name,
+        color: SERIES_COLORS[i],
+        field: measures[0].field,
+        aggregation: measures[0].aggregation,
+      }))
     : measures
-        .slice(0, ["donut", "kpi"].includes(visual.type) ? 1 : 4)
+        .slice(
+          0,
+          ["donut", "kpi", "treemap", "funnel", "gauge"].includes(visual.type)
+            ? 1
+            : 4,
+        )
         .map((m, i) => ({
           key: `s${i}`,
           label: m.label || m.field,

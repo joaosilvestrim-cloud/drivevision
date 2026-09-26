@@ -67,6 +67,10 @@ import {
   type Account,
 } from "@/lib/cloud-workspace";
 
+import { DashboardLibrary } from "./dashboard-library";
+import { duplicateDashboard } from "@/lib/dashboard-library";
+import { makeVisual } from "@/lib/visual-builder";
+
 type View = "studio" | "library" | "sources";
 const initial: LocalWorkspace = { version: 1, sources: [], dashboards: [] };
 function Nav({
@@ -86,20 +90,24 @@ function Nav({
     <header className="product-navigation">
       <button
         className="product-brand"
-        onClick={() => onNavigate("studio")}
-        aria-label="DriveData Assist, início"
+        onClick={() => onNavigate("library")}
+        aria-label="DriveVision, início"
       >
-        <span className="product-mark">
-          <BarChart3 size={25} strokeWidth={2.5} />
-        </span>
+        <img
+          className="product-logo"
+          src="/drivedata-logo.png"
+          alt=""
+          width={36}
+          height={36}
+        />
         <span>
-          drivedata<span className="product-brand-label">ASSIST</span>
+          drivedata<span className="product-brand-label">DRIVEVISION</span>
         </span>
       </button>
       <nav className="product-nav-links" aria-label="Navegação principal">
         {[
           { icon: LayoutDashboard, label: "Estúdio", id: "studio" },
-          { icon: Layers, label: "Dashboards", id: "library" },
+          { icon: Layers, label: "Área de trabalho", id: "library" },
           { icon: Database, label: "Dados", id: "sources" },
         ].map(({ icon: Icon, label, id }) => (
           <button
@@ -135,29 +143,6 @@ function Nav({
     </header>
   );
 }
-function MiniChart({ source, config }: { source: Source; config: Config }) {
-  const values = analytics(source, { ...config, chart: "area" })
-    .series.filter(
-      (_, i) => i % Math.max(1, Math.floor(source.rows.length / 60)) === 0,
-    )
-    .slice(0, 18)
-    .map((r) => r.value);
-  const max = Math.max(1, ...values.map(Math.abs));
-  return (
-    <div className="mini-chart" aria-hidden="true">
-      {values.map((v, i) => (
-        <i
-          key={i}
-          style={{
-            height: `${Math.max(5, (Math.abs(v) / max) * 100)}%`,
-            opacity: 0.4 + (i / values.length) * 0.6,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function Workspace({
   storage = localPersistence,
   account = null,
@@ -167,7 +152,7 @@ export default function Workspace({
   account?: Account | null;
   onAccount?: () => void;
 }) {
-  const [view, setView] = useState<View>("studio"),
+  const [view, setView] = useState<View>("library"),
     [workspace, setWorkspace] = useState<LocalWorkspace>(initial);
   const [source, setSource] = useState<Source>(DEMO),
     [config, setConfig] = useState<Config>(() => defaultConfig(DEMO));
@@ -192,6 +177,7 @@ export default function Workspace({
   const [discard, setDiscard] = useState(false),
     pending = useRef<(() => void) | null>(null);
   const [combineOpen, setCombineOpen] = useState(false);
+  const [template, setTemplate] = useState("overview");
 
   const sources = [DEMO, ...workspace.sources];
   const changed = useCallback((next: Config) => {
@@ -290,6 +276,7 @@ export default function Workspace({
     if (!name) return;
     const id = currentId || crypto.randomUUID();
     const saved: SavedDashboard = {
+      ...workspace.dashboards.find((d) => d.id === id),
       id,
       sourceId: source.id,
       config: { ...config, title: name },
@@ -476,7 +463,7 @@ export default function Workspace({
     view === "studio"
       ? config.title
       : view === "library"
-        ? "Meus dashboards"
+        ? "Sua área de trabalho"
         : "Fontes de dados";
   return (
     <div className="product-shell">
@@ -582,102 +569,52 @@ export default function Workspace({
             </>
           )}
           {view === "library" && (
-            <>
-              <div className="section-toolbar">
-                <span>
-                  {workspace.dashboards.length}{" "}
-                  {workspace.dashboards.length === 1
-                    ? "dashboard salvo"
-                    : "dashboards salvos"}
-                </span>
-                <span>
-                  {storage.cloud ? (
-                    <Cloud size={14} />
-                  ) : (
-                    <HardDrive size={14} />
-                  )}{" "}
-                  {storage.cloud ? "Na sua conta" : "Neste navegador"}
-                </span>
-              </div>
-              {!loaded ? (
-                <div className="empty-state">
-                  <Loader2 className="spin" />
-                  Carregando suas análises…
-                </div>
-              ) : workspace.dashboards.length === 0 ? (
-                <div className="empty-state">
-                  <span className="empty-icon">
-                    <Layers size={30} />
-                  </span>
-                  <h2>Seu primeiro dashboard começa aqui.</h2>
-                  <p>
-                    Explore a base de exemplo ou importe uma planilha.
-                    <br />
-                    Salve a análise para encontrá-la neste espaço.
-                  </p>
-                  <button className="primary-button" onClick={openNew}>
-                    <Plus size={17} /> Criar meu primeiro dashboard
-                  </button>
-                </div>
-              ) : (
-                <div className="library-grid">
-                  {workspace.dashboards.map((d) => {
-                    const s = sources.find((s) => s.id === d.sourceId);
-                    if (!s) return null;
-                    return (
-                      <article className="dashboard-tile" key={d.id}>
-                        <button
-                          className="tile-open"
-                          onClick={() =>
-                            guard(() => switchDraft(s, d.config, d.id))
-                          }
-                        >
-                          <div className="tile-badge">
-                            <BarChart3 size={17} />
-                            <span>
-                              {s.demo ? "DEMONSTRAÇÃO" : "DADOS LOCAIS"}
-                            </span>
-                            <ArrowRight size={16} />
-                          </div>
-                          <MiniChart source={s} config={d.config} />
-                          <h2>{d.config.title}</h2>
-                          <p>{s.name}</p>
-                        </button>
-                        <div className="tile-footer">
-                          <span>
-                            {new Intl.DateTimeFormat("pt-BR", {
-                              dateStyle: "short",
-                            }).format(new Date(d.updatedAt))}{" "}
-                            · {s.rows.length} registros
-                          </span>
-                          <button
-                            className="icon-button"
-                            aria-label={`Excluir ${d.config.title}`}
-                            onClick={() =>
-                              setRemove({
-                                type: "dashboard",
-                                id: d.id,
-                                name: d.config.title,
-                              })
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-              <div className="local-note">
-                <HardDrive size={18} />
-                <p>
-                  {storage.cloud
-                    ? "Os dashboards e suas fontes ficam salvos na sua conta. Entre em outro dispositivo para continuar suas análises."
-                    : "Os dashboards e suas fontes ficam neste navegador. Entre ou crie uma conta para salvar na nuvem."}
-                </p>
-              </div>
-            </>
+            <DashboardLibrary
+              dashboards={workspace.dashboards}
+              sources={sources}
+              loaded={loaded}
+              busy={busy || !loaded || storageError}
+              cloud={storage.cloud}
+              onNew={openNew}
+              onImport={openImport}
+              onOpen={(d) => {
+                const s = sources.find((s) => s.id === d.sourceId);
+                if (s) guard(() => switchDraft(s, d.config, d.id));
+              }}
+              onDelete={(d) =>
+                setRemove({ type: "dashboard", id: d.id, name: d.config.title })
+              }
+              onDuplicate={async (d) => {
+                const copy = duplicateDashboard(
+                  d,
+                  crypto.randomUUID(),
+                  new Date().toISOString(),
+                );
+                if (
+                  await persist({
+                    ...workspace,
+                    dashboards: [copy, ...workspace.dashboards],
+                  })
+                )
+                  toast.success("Cópia criada. Edite sem alterar o original.");
+              }}
+              onUpdate={async (d, patch) => {
+                const saved = {
+                  ...d,
+                  ...patch,
+                  updatedAt: new Date().toISOString(),
+                };
+                const ok = await persist({
+                  ...workspace,
+                  dashboards: workspace.dashboards.map((item) =>
+                    item.id === d.id ? saved : item,
+                  ),
+                });
+                if (ok && currentId === d.id && patch.config)
+                  setConfig((c) => ({ ...c, title: patch.config!.title }));
+                return ok;
+              }}
+            />
           )}
           {view === "sources" && (
             <>
@@ -779,7 +716,7 @@ export default function Workspace({
             </>
           )}
           <footer className="page-footer">
-            <span>DriveData Assist</span>
+            <span>DriveVision · DriveData</span>
             <span>Transforme dados em próximos passos.</span>
           </footer>
         </div>
@@ -820,10 +757,57 @@ export default function Workspace({
               e.preventDefault();
               const s = sources.find((s) => s.id === newSource);
               if (!s || !title.trim()) return;
+              const nextConfig: Config = {
+                ...defaultConfig(s),
+                title: title.trim(),
+                ...(template === "blank"
+                  ? { visuals: [] }
+                  : template === "comparison"
+                    ? {
+                        visuals: ["bar", "horizontal", "table"].map((type) =>
+                          makeVisual(
+                            type as "bar" | "horizontal" | "table",
+                            s,
+                            defaultConfig(s),
+                            crypto.randomUUID(),
+                          ),
+                        ),
+                      }
+                    : template === "trends"
+                      ? {
+                          visuals: ["line", "area", "kpi"].map((type) =>
+                            makeVisual(
+                              type as "line" | "area" | "kpi",
+                              s,
+                              defaultConfig(s),
+                              crypto.randomUUID(),
+                            ),
+                          ),
+                        }
+                      : {}),
+              };
               setModal(null);
-              guard(() =>
-                switchDraft(s, { ...defaultConfig(s), title: title.trim() }),
-              );
+              guard(() => {
+                void (async () => {
+                  const dashboard: SavedDashboard = {
+                    id: crypto.randomUUID(),
+                    sourceId: s.id,
+                    config: nextConfig,
+                    updatedAt: new Date().toISOString(),
+                  };
+                  if (
+                    await persist({
+                      ...workspace,
+                      dashboards: [dashboard, ...workspace.dashboards],
+                    })
+                  ) {
+                    switchDraft(s, nextConfig, dashboard.id);
+                    toast.success(
+                      "Dashboard criado e salvo. Personalize seus visuais.",
+                    );
+                  }
+                })();
+              });
             }}
           >
             <div className="form-fields">
@@ -837,6 +821,32 @@ export default function Workspace({
                   maxLength={80}
                   required
                   autoFocus
+                />
+              </label>
+              <label>
+                Ponto de partida
+                <Choice
+                  label="Modelo inicial"
+                  value={template}
+                  onChange={setTemplate}
+                  items={[
+                    {
+                      value: "overview",
+                      label: "Visão executiva · indicadores e evolução",
+                    },
+                    {
+                      value: "comparison",
+                      label: "Comparativo · categorias e ranking",
+                    },
+                    {
+                      value: "trends",
+                      label: "Tendências · séries ao longo do tempo",
+                    },
+                    {
+                      value: "blank",
+                      label: "Em branco · construa do seu jeito",
+                    },
+                  ]}
                 />
               </label>
               <label>

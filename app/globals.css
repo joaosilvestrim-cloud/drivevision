@@ -9,3 +9,7 @@
 @import "./exploration.css";
 @import "./smart-import.css";
 @import "./account.css";
+
+@import "./desktop.css";
+
+@import "./login.css";

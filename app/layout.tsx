@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DriveData Assist | Seu workspace de análises",
+  title: "DriveVision | Seu workspace de análises",
   description:
     "Explore seus dados e transforme perguntas em dashboards no seu workspace DriveData.",
   other: {
     "codex-preview": "development",
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/drivedata-logo.png",
+    shortcut: "/drivedata-logo.png",
   },
 };
 

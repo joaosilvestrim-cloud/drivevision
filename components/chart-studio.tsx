@@ -65,7 +65,14 @@ export function ChartStudio({
     () => chartData(rows, source, draft, color),
     [rows, source, draft, color],
   );
-  const isSingle = ["kpi", "donut", "pivot"].includes(draft.type),
+  const isSingle = [
+      "kpi",
+      "donut",
+      "pivot",
+      "treemap",
+      "funnel",
+      "gauge",
+    ].includes(draft.type),
     isText = draft.type === "text";
   function patch(patch: Partial<Visual>) {
     setDraft((v) => ({ ...v, ...patch }));

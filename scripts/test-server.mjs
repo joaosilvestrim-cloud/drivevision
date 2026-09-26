@@ -16,6 +16,7 @@ const http = createServer(handler);
 await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${http.address().port}`;
 const accounts = [];
+const testIp = `198.18.${Math.floor(Math.random() * 254)}.${Math.floor(Math.random() * 254)}`;
 let checks = 0;
 const admin = new Client(connectionOptions(true));
 await admin.connect();
@@ -32,6 +33,7 @@ async function request(
     method,
     headers: {
       Origin: origin,
+      "X-Forwarded-For": testIp,
       ...(cookie ? { Cookie: cookie } : {}),
       ...(body
         ? {
@@ -132,6 +134,24 @@ try {
     chart: "bar",
     aggregation: "sum",
     period: "all",
+    visuals: [
+      {
+        id: "qa-visual",
+        type: "treemap",
+        title: "Participação",
+        metric: "Valor",
+        dimension: "Grupo",
+        aggregation: "sum",
+        span: 8,
+        height: 440,
+        grid: true,
+        legend: true,
+        limit: 8,
+        sort: "desc",
+        grain: "day",
+        text: "",
+      },
+    ],
     dataSteps: [
       {
         id: "step",
@@ -152,6 +172,8 @@ try {
     dashboards: [
       {
         id: "qa-board",
+        folder: "Diretoria",
+        starred: true,
         sourceId: source.id,
         config,
         updatedAt: new Date().toISOString(),
@@ -159,7 +181,7 @@ try {
     ],
   };
   await check(
-    "compressed workspace round-trips sources, dashboards and transformations",
+    "compressed workspace round-trips sources, folders, favorites, resized charts and transformations",
     async () => {
       const saved = await request("/api/workspace", {
         method: "PUT",

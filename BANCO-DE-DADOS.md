@@ -36,8 +36,11 @@ O certificado público incluído foi obtido em `https://supabase-downloads.s3-ap
 
 ## Limites desta versão
 
-Um workspace por conta; até 50 fontes e 100 dashboards, até 50 MB de JSON e 3,5 MB compactados por workspace. Transferência usa gzip para caber no limite de funções serverless. Não há coedição em tempo real: uma gravação concorrente retorna conflito e preserva o rascunho atual na tela.
+Um workspace por conta; até 50 fontes, sem limite fixo de quantidade de dashboards, até 50 MB de JSON e 3,5 MB compactados por workspace. Transferência usa gzip para caber no limite de funções serverless. Não há coedição em tempo real: uma gravação concorrente retorna conflito e preserva o rascunho atual na tela.
 
 Autenticação própria inicial, sem verificação de e-mail, recuperação de senha, MFA, convites, equipes ou cobrança. O e-mail funciona como identificador de login, não como identidade verificada. Esses fluxos precisam evoluir antes de uma oferta pública com requisitos completos de administração de contas.
 
 A aplicação não usa a API Auth do Supabase da outra aplicação. Os testes automatizados de servidor cobrem persistência, senhas, cookies, bloqueio de origens externas, sessões, concorrência, referências inválidas, privilégios e isolamento entre contas.
+
+
+Ativação de contas: execute `npm run db:activation` para conceder ao servidor apenas UPDATE na coluna `drivevision.accounts.password_hash`. Veja `AREA-DE-TRABALHO-E-ACESSO.md`.

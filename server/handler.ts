@@ -2,7 +2,11 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { database, databaseConfigured, transaction } from "./database.ts";
-import { credentialsSchema, saveSchema } from "./validation.ts";
+import {
+  credentialsSchema,
+  saveSchema,
+  activationSchema,
+} from "./validation.ts";
 import {
   hashPassword,
   verifyPassword,
@@ -136,6 +140,54 @@ export default async function handler(
       json(res, 200, { user: await userFor(req) });
       return;
     }
+    if (path === "/api/activate" && req.method === "POST") {
+      const ip = (
+        req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+        req.socket.remoteAddress ||
+        "unknown"
+      ).trim();
+      await rateLimit(`activation-ip:${ip}`, 20, 900);
+      const parsed = activationSchema.safeParse(await body(req));
+      if (!parsed.success)
+        throw new HttpError(
+          400,
+          "Confira o link e use uma senha de 12 a 128 caracteres.",
+        );
+      const { token, password } = parsed.data;
+      await rateLimit(`activation-token:${tokenHash(token)}`, 6, 900);
+      const session = newToken();
+      const user = await transaction("", async (c) => {
+        const found = await c.query(
+          "select id,email,name,password_hash from drivevision.accounts where password_hash like $1 and disabled_at is null for update",
+          [`setup:${tokenHash(token)}:%`],
+        );
+        const account = found.rows[0];
+        if (
+          !account ||
+          !Number.isFinite(Number(account.password_hash.split(":")[2])) ||
+          Number(account.password_hash.split(":")[2]) <= Date.now()
+        )
+          throw new HttpError(
+            401,
+            "Este link de ativação expirou ou já foi utilizado. Solicite um novo ao administrador.",
+          );
+        await c.query(
+          "update drivevision.accounts set password_hash=$1 where id=$2",
+          [await hashPassword(password), account.id],
+        );
+        await c.query("delete from drivevision.sessions where user_id=$1", [
+          account.id,
+        ]);
+        await c.query(
+          "insert into drivevision.sessions(token_hash,user_id,expires_at) values($1,$2,now()+interval '7 days')",
+          [tokenHash(session), account.id],
+        );
+        return { id: account.id, email: account.email, name: account.name };
+      });
+      res.setHeader("Set-Cookie", sessionCookie(req, session));
+      json(res, 200, { user });
+      return;
+    }
     if (
       (path === "/api/login" || path === "/api/register") &&
       req.method === "POST"
@@ -265,7 +317,7 @@ export default async function handler(
       if (!parsed.success)
         throw new HttpError(
           400,
-          "O workspace contém campos inválidos ou ultrapassa os limites de 50 bases e 100 dashboards.",
+          "O workspace contém campos inválidos ou ultrapassa o limite de 50 bases, 24 visuais por painel ou 60 etapas de preparação.",
         );
       const { workspace, revision } = parsed.data;
       const wire = gzipSync(

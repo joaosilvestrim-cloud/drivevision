@@ -4,6 +4,12 @@ import type { Selection } from "@/lib/exploration";
 
 import { useMemo, useState } from "react";
 import {
+  Treemap,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
   Area,
   Bar,
   Line,
@@ -22,6 +28,7 @@ import {
 } from "recharts";
 import { parseDate, type DataRow, type Source } from "@/lib/analytics";
 import { chartData, formatChartNumber, measuresFor } from "@/lib/chart-model";
+import { gaugeProgress } from "@/lib/layout";
 import type { Visual } from "@/lib/visual-builder";
 
 export function VisualChart({
@@ -140,6 +147,112 @@ export function VisualChart({
         Nenhum registro atende aos filtros deste visual.
       </div>
     );
+  if (visual.type === "gauge") {
+    const progress = gaugeProgress(result.value, visual.target);
+    if (!progress)
+      return (
+        <div className="visual-empty">
+          Configure uma meta maior que zero na aba Formato. O medidor precisa de
+          um resultado não negativo.
+        </div>
+      );
+    return (
+      <div className="target-gauge">
+        <svg
+          viewBox="0 0 240 140"
+          role="img"
+          aria-label={`${format(result.value)} de ${format(visual.target!)}: ${(progress.ratio * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% da meta`}
+        >
+          <path
+            d="M25 120 A95 95 0 0 1 215 120"
+            fill="none"
+            stroke={grid}
+            strokeWidth="18"
+            strokeLinecap="round"
+          />
+          <path
+            d="M25 120 A95 95 0 0 1 215 120"
+            fill="none"
+            stroke={primary.color}
+            strokeWidth="18"
+            strokeLinecap="round"
+            pathLength="100"
+            strokeDasharray={`${progress.arc * 100} 100`}
+          />
+          <text
+            x="120"
+            y="108"
+            textAnchor="middle"
+            fill={dark ? "#e3eef5" : "#24382d"}
+            fontSize="29"
+            fontWeight="600"
+          >
+            {(progress.ratio * 100).toLocaleString("pt-BR", {
+              maximumFractionDigits: 1,
+            })}
+            %
+          </text>
+        </svg>
+        <strong>{format(result.value)}</strong>
+        <span>
+          {visual.targetLabel || "Meta"}: {format(visual.target!)}
+        </span>
+        {progress.ratio > 1 && (
+          <small>
+            Meta superada em {format(result.value! - visual.target!)}
+          </small>
+        )}
+      </div>
+    );
+  }
+  if (visual.type === "funnel") {
+    if (result.negative || !data.some((g) => Number(g.s0) > 0))
+      return (
+        <div className="visual-empty">
+          O funil precisa de valores não negativos e pelo menos um valor
+          positivo.
+        </div>
+      );
+    const max = Math.max(...data.map((g) => Number(g.s0)));
+    return (
+      <div className="comparison-funnel">
+        {data.map((g, i) => (
+          <button
+            key={String(g.name)}
+            disabled={!onFilter}
+            onClick={() => onFilter?.(String(g.name))}
+            title={`${g.name}: ${format(Number(g.s0))}`}
+          >
+            <span>{label(String(g.name))}</span>
+            <div className="funnel-track">
+              <i
+                style={{
+                  width: `${(Number(g.s0) / max) * 100}%`,
+                  background: primary.color,
+                  opacity: 1 - (i / (data.length + 2)) * 0.5,
+                }}
+              />
+            </div>
+            <strong>{g.s0 === null ? "—" : format(Number(g.s0))}</strong>
+          </button>
+        ))}
+        <p className="visual-caption">
+          Largura proporcional ao maior valor. Ordenação configurada no visual;
+          não representa taxa de conversão.
+          {result.totalGroups > data.length
+            ? ` Exibindo ${data.length} de ${result.totalGroups} grupos.`
+            : ""}
+        </p>
+      </div>
+    );
+  }
+  if (visual.type === "radar" && (result.negative || data.length < 3))
+    return (
+      <div className="visual-empty">
+        O radar precisa de pelo menos três categorias e valores não negativos.
+        Ajuste os filtros ou use barras.
+      </div>
+    );
   if (visual.type === "pivot")
     return visual.pivotColumn && source.columns.includes(visual.pivotColumn) ? (
       <PivotTable
@@ -208,12 +321,12 @@ export function VisualChart({
       </div>
     );
   if (
-    visual.type === "donut" &&
+    ["donut", "treemap"].includes(visual.type) &&
     (result.negative || !data.some((g) => Number(g.s0) > 0))
   )
     return (
       <div className="visual-empty">
-        A rosca exige valores positivos. Use barras para apresentar valores
+        Este visual exige valores positivos. Use barras para apresentar valores
         negativos ou nulos.
       </div>
     );
@@ -262,7 +375,83 @@ export function VisualChart({
     `${primary.color}99`,
   ];
   const content =
-    visual.type === "donut" ? (
+    visual.type === "radar" ? (
+      <RadarChart data={data} outerRadius="65%">
+        {visual.grid && <PolarGrid stroke={grid} />}
+        <PolarAngleAxis
+          dataKey="name"
+          tickFormatter={label}
+          tick={{ fontSize: 11, fill: ink }}
+        />
+        <PolarRadiusAxis
+          tickFormatter={(v) => format(Number(v))}
+          tick={{ fontSize: 9, fill: ink }}
+          domain={[0, "auto"]}
+        />
+        {tip}
+        {legend}
+        {series.map((s) => (
+          <Radar
+            key={s.key}
+            name={s.label}
+            dataKey={s.key}
+            stroke={s.color}
+            fill={s.color}
+            fillOpacity={0.18}
+            isAnimationActive={false}
+          />
+        ))}
+      </RadarChart>
+    ) : visual.type === "treemap" ? (
+      <Treemap
+        data={data.filter((g) => Number(g.s0) > 0)}
+        dataKey="s0"
+        nameKey="name"
+        isAnimationActive={false}
+        fill={primary.color}
+        stroke={dark ? "#182c3b" : "white"}
+        onClick={(node) => onFilter?.(String(node.name))}
+        content={(node) => (
+          <g>
+            <rect
+              x={node.x}
+              y={node.y}
+              width={node.width}
+              height={node.height}
+              fill={fills[node.index % fills.length]}
+              stroke={dark ? "#182c3b" : "white"}
+              strokeWidth={3}
+            />
+            {node.depth > 0 && node.width > 55 && node.height > 35 && (
+              <text
+                x={node.x + 9}
+                y={node.y + 22}
+                fontSize={11}
+                fill={dark ? "#fff" : "#10261c"}
+              >
+                {String(node.name).slice(
+                  0,
+                  Math.max(3, Math.floor(node.width / 7) - 2),
+                )}
+              </text>
+            )}
+            {node.depth > 0 && node.width > 80 && node.height > 62 && (
+              <text
+                x={node.x + 9}
+                y={node.y + 43}
+                fontSize={12}
+                fontWeight={600}
+                fill={dark ? "#fff" : "#10261c"}
+              >
+                {format(node.value)}
+              </text>
+            )}
+          </g>
+        )}
+      >
+        {tip}
+      </Treemap>
+    ) : visual.type === "donut" ? (
       <PieChart>
         {tip}
         {legend}
@@ -491,7 +680,7 @@ export function VisualChart({
           {result.omittedSeries
             ? ` · ${result.omittedSeries} séries adicionais não exibidas`
             : ""}
-          {visual.type === "donut"
+          {["donut", "treemap"].includes(visual.type)
             ? " · participação somente entre grupos exibidos"
             : ""}
         </p>

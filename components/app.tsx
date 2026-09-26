@@ -1,7 +1,15 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  lazy,
+  Suspense,
+} from "react";
 import { Cloud, Loader2, LogOut, ShieldCheck } from "lucide-react";
-import Workspace from "./workspace";
+import { LoginScreen, WorkspaceEntrance } from "./login-screen";
+const Workspace = lazy(() => import("./workspace"));
 import {
   Dialog,
   DialogContent,
@@ -22,6 +30,23 @@ export default function App() {
     [checking, setChecking] = useState(true),
     [accountOpen, setAccountOpen] = useState(false),
     [generation, setGeneration] = useState(0);
+  const [localMode, setLocalMode] = useState(false);
+  const [configured, setConfigured] = useState(false);
+  const [entrance, setEntrance] = useState<string | null>(null);
+  const [activationToken, setActivationToken] = useState(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.hash.slice(1)).get("activate"),
+  );
+  const finishEntrance = useCallback(() => setEntrance(null), []);
+  useEffect(() => {
+    if (activationToken)
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+  }, [activationToken]);
   const storage = useMemo(
     () => (user ? cloudPersistence() : localPersistence),
     [user, generation],
@@ -30,6 +55,7 @@ export default function App() {
     let live = true;
     apiJson<{ configured: boolean }>("status")
       .then(async (status) => {
+        if (live) setConfigured(status.configured);
         if (status.configured) {
           const result = await apiJson<{ user: Account | null }>("session");
           if (live) setUser(result.user);
@@ -45,25 +71,62 @@ export default function App() {
   }, []);
   if (checking)
     return (
-      <div className="account-loading">
-        <Loader2 className="spin" />
+      <div className="login-boot">
+        <img src="/drivedata-logo.png" width={60} height={60} alt="DriveData" />
+        <Loader2 className="spin" size={18} />
         Abrindo seu workspace…
       </div>
     );
+  if (!user && !localMode)
+    return (
+      <LoginScreen
+        configured={configured}
+        activationToken={activationToken}
+        onClearActivation={() => setActivationToken(null)}
+        onLocal={() => {
+          setLocalMode(true);
+          setEntrance("Explorador");
+        }}
+        onLogin={(account) => {
+          setActivationToken(null);
+          setUser(account);
+          setLocalMode(false);
+          setEntrance(account.name);
+        }}
+      />
+    );
   return (
     <>
-      <Workspace
-        key={`${user?.id || "local"}:${generation}`}
-        storage={storage}
-        account={user}
-        onAccount={() => setAccountOpen(true)}
-      />
+      {entrance && (
+        <WorkspaceEntrance name={entrance} onDone={finishEntrance} />
+      )}
+      <Suspense
+        fallback={
+          <div className="workspace-loading">
+            <img
+              src="/drivedata-logo.png"
+              width={64}
+              height={64}
+              alt="DriveData"
+            />
+            <span>Abrindo sua área de trabalho…</span>
+          </div>
+        }
+      >
+        <Workspace
+          key={`${user?.id || "local"}:${generation}`}
+          storage={storage}
+          account={user}
+          onAccount={() => (user ? setAccountOpen(true) : setLocalMode(false))}
+        />
+      </Suspense>
       {accountOpen && (
         <AccountDialog
           user={user}
           onClose={() => setAccountOpen(false)}
           onChange={(next) => {
             setUser(next);
+            if (!next) setLocalMode(false);
             setAccountOpen(false);
           }}
           onCopied={() => {
@@ -214,7 +277,7 @@ function AccountDialog({
               }
             >
               <LogOut size={16} />
-              Sair para o modo local
+              Sair da conta
             </button>
           </div>
         ) : (

@@ -67,3 +67,8 @@ Prévia: React/Vite no cliente. Arquivos centrais: lib/data-model.ts, lib/chart-
 
 Veja [Pesquisa e evolução](PESQUISA-E-EVOLUCAO.md) para importação de planilhas desestruturadas, combinação de bases, tabelas dinâmicas, investigação de registros, recortes salvos, qualidade, colunas condicionais e extração de períodos. A interpretação usa regras locais, sem IA generativa ou API externa.
 
+
+
+### Área de trabalho e identidade DriveData
+
+Login com logo, ativação por link de uso único e entrada animada. Biblioteca em cartões, lista e quadro por pasta, favoritos, duplicação e quatro modelos iniciais. Editor com alças para mover/redimensionar e novos tipos árvore, radar, funil comparativo e medidor. Consulte [instruções e validação](AREA-DE-TRABALHO-E-ACESSO.md).

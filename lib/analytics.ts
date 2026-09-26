@@ -2,7 +2,14 @@ import type { Selection, Bookmark } from "./exploration";
 import type { Visual, BoardAppearance } from "./visual-builder";
 import type { DataStep, FilterSet } from "./data-model";
 export type DataRow = Record<string, string>;
-export type Source = { importNotes?: {file:string;sheet:string;header:number;end:number;details:string};
+export type Source = {
+  importNotes?: {
+    file: string;
+    sheet: string;
+    header: number;
+    end: number;
+    details: string;
+  };
   id: string;
   name: string;
   columns: string[];
@@ -28,6 +35,8 @@ export type Config = {
   period: "all" | "30" | "90";
 };
 export type SavedDashboard = {
+  folder?: string;
+  starred?: boolean;
   id: string;
   sourceId: string;
   config: Config;
@@ -405,4 +414,3 @@ export function interpretRequest(
     changed: true,
   };
 }
-

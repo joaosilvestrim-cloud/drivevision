@@ -53,6 +53,8 @@ const dashboard = z
   .object({
     id,
     sourceId: id,
+    folder: z.string().max(80).optional(),
+    starred: z.boolean().optional(),
     config: config.extend({
       dataSteps: z
         .array(z.object({ id, kind: z.string() }).passthrough())
@@ -66,7 +68,7 @@ export const workspaceSchema = z
   .object({
     version: z.literal(1),
     sources: z.array(source).max(50),
-    dashboards: z.array(dashboard).max(100),
+    dashboards: z.array(dashboard),
   })
   .strict()
   .superRefine((w, ctx) => {
@@ -96,5 +98,12 @@ export const saveSchema = z
   .object({
     revision: z.number().int().nonnegative(),
     workspace: workspaceSchema,
+  })
+  .strict();
+
+export const activationSchema = z
+  .object({
+    token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    password: z.string().min(12).max(128),
   })
   .strict();

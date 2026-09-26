@@ -48,3 +48,6 @@ npm run dev
 Veja [Banco de dados](BANCO-DE-DADOS.md). O setup é manual, nunca executado durante build/deploy. Não execute `supabase db reset` nem aplique migrações globais no projeto compartilhado.
 
 Esta entrega inclui configuração e código; não afirma que um deployment da Vercel já foi concluído. Referência: [configuração da Vercel](https://vercel.com/docs/project-configuration).
+
+
+Para habilitar a ativação de contas, aplique `npm run db:activation` uma vez no banco de destino. A migração altera somente a permissão da coluna de senha no schema privado DriveVision. O HTML privado gerado por `npm run account:create` fica em `work/` e não deve ser enviado ao Git ou ao deploy.
