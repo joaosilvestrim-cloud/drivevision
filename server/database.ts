@@ -1,3 +1,4 @@
+import { ConnectorError } from "./connector-security.ts";
 import { Pool, type PoolClient } from "pg";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -14,24 +15,40 @@ export function databaseConfigured() {
 export function connectionOptions(admin = false) {
   const raw = admin ? undefined : process.env.DRIVEVISION_DATABASE_URL;
   const uri = raw ? new URL(raw) : null;
-  const endpoint = databaseEndpoint(uri?.hostname || process.env.DRIVEVISION_DB_HOST);
-  const configuredUser = (uri
-    ? decodeURIComponent(uri.username)
-    : process.env[admin ? "DRIVEVISION_DB_ADMIN_USER" : "DRIVEVISION_DB_USER"])?.trim();
-  const directProject = /^db\.([a-z\d]+)\.supabase\.co$/i.exec(endpoint.host)?.[1];
+  const endpoint = databaseEndpoint(
+    uri?.hostname || process.env.DRIVEVISION_DB_HOST,
+  );
+  const configuredUser = (
+    uri
+      ? decodeURIComponent(uri.username)
+      : process.env[admin ? "DRIVEVISION_DB_ADMIN_USER" : "DRIVEVISION_DB_USER"]
+  )?.trim();
+  const directProject = /^db\.([a-z\d]+)\.supabase\.co$/i.exec(
+    endpoint.host,
+  )?.[1];
   // Verified project-specific route: this direct endpoint has no IPv4 DNS record.
   // Other database hosts are unaffected; a future migration uses its own env host.
-  const productionPooler = process.env.VERCEL && endpoint.host === "db.tqzqtcmlhmkwhhjrexjk.supabase.co"
-    ? "aws-1-sa-east-1.pooler.supabase.com"
-    : undefined;
+  const productionPooler =
+    process.env.VERCEL &&
+    endpoint.host === "db.tqzqtcmlhmkwhhjrexjk.supabase.co"
+      ? "aws-1-sa-east-1.pooler.supabase.com"
+      : undefined;
   // The project suffix routes shared Supavisor connections, not the dedicated pooler.
-  const directUser = directProject && configuredUser?.endsWith(`.${directProject}`)
-    ? configuredUser.slice(0, -(directProject.length + 1))
-    : configuredUser;
-  const user = productionPooler && directUser ? `${directUser}.${directProject}` : directUser;
+  const directUser =
+    directProject && configuredUser?.endsWith(`.${directProject}`)
+      ? configuredUser.slice(0, -(directProject.length + 1))
+      : configuredUser;
+  const user =
+    productionPooler && directUser
+      ? `${directUser}.${directProject}`
+      : directUser;
   return {
     host: productionPooler || endpoint.host,
-    port: productionPooler ? 6543 : Number(uri?.port || endpoint.port || process.env.DRIVEVISION_DB_PORT || 5432),
+    port: productionPooler
+      ? 6543
+      : Number(
+          uri?.port || endpoint.port || process.env.DRIVEVISION_DB_PORT || 5432,
+        ),
     database: uri
       ? decodeURIComponent(uri.pathname.slice(1))
       : process.env.DRIVEVISION_DB_DATABASE || "postgres",
@@ -46,7 +63,7 @@ export function connectionOptions(admin = false) {
       ca: [
         ...getCACertificates("default"),
         process.env.DRIVEVISION_DB_CA?.replace(/\\n/g, "\n") ||
-        readFileSync(resolve("server/certs/supabase-ca.crt"), "utf8"),
+          readFileSync(resolve("server/certs/supabase-ca.crt"), "utf8"),
       ],
     },
     max: 3,
@@ -80,6 +97,18 @@ export async function transaction<T>(
     await client.query("select set_config('drivevision.user_id', $1, true)", [
       userId,
     ]);
+    if (userId) {
+      // Serialize suspension against in-flight customer writes without blocking new registrations.
+      const account = await client.query(
+        "select disabled_at from drivevision.accounts where id=$1 for share",
+        [userId],
+      );
+      if (account.rows[0]?.disabled_at)
+        throw new ConnectorError(
+          401,
+          "Esta conta está suspensa. Entre em contato com a administração.",
+        );
+    }
     const result = await fn(client);
     await client.query("commit");
     return result;

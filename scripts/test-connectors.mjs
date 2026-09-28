@@ -164,14 +164,14 @@ pool.query = function (query, ...args) {
   if (
     typeof query === "string" &&
     query.startsWith(
-      "select binding_id,owner_id from drivevision.cloud_schedule",
+      "select s.binding_id,s.owner_id from drivevision.cloud_schedule s",
     )
   ) {
     return originalQuery.call(
       this,
       query.replace(
-        "where due_at",
-        "where owner_id=any($1::uuid[]) and due_at",
+        "where a.disabled_at",
+        "where s.owner_id=any($1::uuid[]) and a.disabled_at",
       ),
       [owners],
     );
@@ -732,6 +732,45 @@ try {
           .last_error,
         null,
       );
+    },
+  );
+  await check(
+    "suspended customers are skipped by cron and cannot refresh manually",
+    async () => {
+      const before = (await req("workspace", a)).data;
+      process.env.CRON_SECRET = randomBytes(32).toString("base64url");
+      await admin.query(
+        "update drivevision.accounts set disabled_at=now() where id=$1",
+        [a.id],
+      );
+      try {
+        await admin.query(
+          "update drivevision.cloud_schedule set due_at=now()-interval '1 minute' where owner_id=$1",
+          [a.id],
+        );
+        assert.equal(
+          (await req("connectors/sync", a, { id: binding })).status,
+          401,
+        );
+        const cron = await realFetch(base + "/api/cron/sources", {
+          headers: { Authorization: "Bearer " + process.env.CRON_SECRET },
+        });
+        assert.equal(cron.status, 200);
+        const jobs = (
+          await admin.query(
+            "select count(*)::int n from drivevision.cloud_schedule where owner_id=$1 and due_at<=now() and lease_token is null",
+            [a.id],
+          )
+        ).rows[0].n;
+        assert.ok(jobs > 0, "suspended schedules remain unclaimed");
+      } finally {
+        delete process.env.CRON_SECRET;
+        await admin.query(
+          "update drivevision.accounts set disabled_at=null where id=$1",
+          [a.id],
+        );
+      }
+      assert.deepEqual((await req("workspace", a)).data, before);
     },
   );
   await check(

@@ -21,6 +21,7 @@ import {
   X,
   Cloud,
   UserRound,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -72,9 +73,10 @@ import { duplicateDashboard } from "@/lib/dashboard-library";
 import { makeVisual } from "@/lib/visual-builder";
 import { CloudConnections } from "./cloud-connections";
 import { refreshDerived } from "@/lib/source-lifecycle";
+import { AdminPanel } from "./admin-panel";
 import { SourceHistory } from "./source-history";
 
-type View = "studio" | "library" | "sources" | "connections";
+type View = "studio" | "library" | "sources" | "connections" | "admin";
 const initial: LocalWorkspace = { version: 1, sources: [], dashboards: [] };
 function Nav({
   view,
@@ -113,6 +115,9 @@ function Nav({
           { icon: Layers, label: "Área de trabalho", id: "library" },
           { icon: Database, label: "Dados", id: "sources" },
           { icon: Cloud, label: "Conexões", id: "connections" },
+          ...(account?.superAdmin
+            ? [{ icon: ShieldCheck, label: "Administração", id: "admin" }]
+            : []),
         ].map(({ icon: Icon, label, id }) => (
           <button
             key={id}
@@ -160,7 +165,11 @@ export default function Workspace({
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("view") === "connections"
         ? "connections"
-        : "library",
+        : account?.superAdmin &&
+            typeof window !== "undefined" &&
+            new URLSearchParams(window.location.search).get("view") === "admin"
+          ? "admin"
+          : "library",
     ),
     [workspace, setWorkspace] = useState<LocalWorkspace>(initial);
   const [source, setSource] = useState<Source>(DEMO),
@@ -421,8 +430,9 @@ export default function Workspace({
         },
         annotations: { readOnlyHint: true },
         execute: async () => {
-          const { boardRows, initialVisuals } =
-            await import("@/lib/visual-builder");
+          const { boardRows, initialVisuals } = await import(
+            "@/lib/visual-builder"
+          );
           const { prepareSource } = await import("@/lib/data-model");
           const { chartData } = await import("@/lib/chart-model");
           const prepared = prepareSource(source, config.dataSteps);
@@ -511,13 +521,15 @@ export default function Workspace({
   }, [source, config, changed]);
 
   const heading =
-    view === "studio"
-      ? config.title
-      : view === "library"
-        ? "Sua área de trabalho"
-        : view === "connections"
-          ? "Conexões"
-          : "Fontes de dados";
+    view === "admin"
+      ? "Gestão de clientes"
+      : view === "studio"
+        ? config.title
+        : view === "library"
+          ? "Sua área de trabalho"
+          : view === "connections"
+            ? "Conexões"
+            : "Fontes de dados";
   return (
     <div className="product-shell">
       <Nav
@@ -548,13 +560,15 @@ export default function Workspace({
               </div>
               <h1>{heading}</h1>
               <p>
-                {view === "studio"
-                  ? "Modele seus dados. Crie seus gráficos. Encontre suas respostas."
-                  : view === "library"
-                    ? "Suas análises organizadas. Prontas para o próximo passo."
-                    : view === "connections"
-                      ? "Conecte suas origens. Escolha o conteúdo. Mantenha suas análises atualizadas."
-                      : "Traga sua planilha como ela está. Organize e conecte os dados aqui."}
+                {view === "admin"
+                  ? "Cadastre clientes, libere acessos e acompanhe seus ambientes."
+                  : view === "studio"
+                    ? "Modele seus dados. Crie seus gráficos. Encontre suas respostas."
+                    : view === "library"
+                      ? "Suas análises organizadas. Prontas para o próximo passo."
+                      : view === "connections"
+                        ? "Conecte suas origens. Escolha o conteúdo. Mantenha suas análises atualizadas."
+                        : "Traga sua planilha como ela está. Organize e conecte os dados aqui."}
               </p>
             </div>
             <div className="heading-actions">
@@ -577,7 +591,7 @@ export default function Workspace({
                   <Save size={16} /> Salvar
                 </button>
               )}
-              {view !== "connections" && (
+              {view !== "connections" && view !== "admin" && (
                 <button
                   className="primary-button"
                   disabled={!loaded || busy}
@@ -612,6 +626,7 @@ export default function Workspace({
               </button>
             </div>
           )}
+          {view === "admin" && account?.superAdmin && <AdminPanel />}
           {view === "connections" && (
             <CloudConnections
               cloud={storage.cloud}

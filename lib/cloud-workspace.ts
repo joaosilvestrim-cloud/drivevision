@@ -3,7 +3,12 @@ import {
   saveWorkspace,
   type Workspace,
 } from "./local-workspace";
-export type Account = { id: string; name: string; email: string };
+export type Account = {
+  id: string;
+  name: string;
+  email: string;
+  superAdmin?: boolean;
+};
 export type Persistence = {
   cloud: boolean;
   load: () => Promise<Workspace>;

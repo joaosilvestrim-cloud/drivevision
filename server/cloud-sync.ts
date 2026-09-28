@@ -445,32 +445,32 @@ export async function syncDue() {
   const started = Date.now();
   let processed = 0;
   const rows = await database().query(
-    "select binding_id,owner_id from drivevision.cloud_schedule where due_at<=now() and (lease_until is null or lease_until<now()) order by due_at limit 3",
+    "select s.binding_id,s.owner_id from drivevision.cloud_schedule s join drivevision.accounts a on a.id=s.owner_id where a.disabled_at is null and s.due_at<=now() and (s.lease_until is null or s.lease_until<now()) order by s.due_at limit 3",
   );
   for (const row of rows.rows) {
     if (Date.now() - started > 15000) break;
     processed++;
-    const active = await transaction(
-      row.owner_id,
-      async (c) =>
-        (
-          await c.query(
-            "select id from drivevision.cloud_bindings where id=$1 and not paused",
-            [row.binding_id],
-          )
-        ).rowCount,
-    );
-    if (!active) {
-      await database().query(
-        "update drivevision.cloud_schedule set due_at=now()+interval '1 day' where binding_id=$1",
-        [row.binding_id],
-      );
-      continue;
-    }
     try {
+      const active = await transaction(
+        row.owner_id,
+        async (c) =>
+          (
+            await c.query(
+              "select id from drivevision.cloud_bindings where id=$1 and not paused",
+              [row.binding_id],
+            )
+          ).rowCount,
+      );
+      if (!active) {
+        await database().query(
+          "update drivevision.cloud_schedule set due_at=now()+interval '1 day' where binding_id=$1",
+          [row.binding_id],
+        );
+        continue;
+      }
       await syncBinding(row.owner_id, row.binding_id, true);
     } catch {
-      /* Each run records a safe actionable error. */
+      /* A customer may be suspended after selection; continue with other tenants. */
     }
   }
   return { processed };

@@ -1,3 +1,4 @@
+import { adminRoute, isSuperAdmin } from "./admin.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
@@ -46,9 +47,9 @@ function assertOrigin(req: IncomingMessage) {
   try {
     valid = Boolean(
       origin &&
-      (allowed
-        ? origin === new URL(allowed).origin
-        : new URL(origin).host === host),
+        (allowed
+          ? origin === new URL(allowed).origin
+          : new URL(origin).host === host),
     );
   } catch {}
   if (!valid) throw new HttpError(403, "Origem da requisição não permitida.");
@@ -111,7 +112,8 @@ async function userFor(req: IncomingMessage) {
     "select u.id,u.email,u.name from drivevision.sessions s join drivevision.accounts u on u.id=s.user_id where s.token_hash=$1 and s.expires_at>now() and u.disabled_at is null",
     [tokenHash(token)],
   );
-  return result.rows[0] || null;
+  const user = result.rows[0];
+  return user ? { ...user, superAdmin: await isSuperAdmin(user.id) } : null;
 }
 async function rateLimit(key: string, limit: number, windowSeconds: number) {
   const bucket = tokenHash(
@@ -207,7 +209,9 @@ export default async function handler(
         return { id: account.id, email: account.email, name: account.name };
       });
       res.setHeader("Set-Cookie", sessionCookie(req, session));
-      json(res, 200, { user });
+      json(res, 200, {
+        user: { ...user, superAdmin: await isSuperAdmin(user.id) },
+      });
       return;
     }
     if (
@@ -278,7 +282,9 @@ export default async function handler(
         "delete from drivevision.rate_limits where bucket in (select bucket from drivevision.rate_limits where expires_at<now() limit 100)",
       );
       res.setHeader("Set-Cookie", sessionCookie(req, token));
-      json(res, 200, { user });
+      json(res, 200, {
+        user: { ...user, superAdmin: await isSuperAdmin(user.id) },
+      });
       return;
     }
     if (path === "/api/logout" && req.method === "POST") {
@@ -296,6 +302,22 @@ export default async function handler(
         401,
         "Sua sessão expirou. Entre novamente para salvar na nuvem.",
       );
+    if (path.startsWith("/api/admin/")) {
+      if (req.method === "POST") await rateLimit(`admin:${user.id}`, 120, 300);
+      const origin =
+        process.env.DRIVEVISION_APP_ORIGIN ||
+        `${process.env.VERCEL ? "https" : "http"}://${req.headers.host}`;
+      const result = await adminRoute(
+        user.id,
+        path,
+        req.method || "GET",
+        new URL(req.url || "/", origin),
+        req.method === "POST" ? await body(req) : undefined,
+        origin,
+      );
+      json(res, 200, result);
+      return;
+    }
     if (path === "/api/connectors" || path.startsWith("/api/connectors/")) {
       if (req.method === "POST")
         await rateLimit(`connectors:${user.id}`, 60, 300);
