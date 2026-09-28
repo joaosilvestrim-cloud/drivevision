@@ -3,6 +3,8 @@ import type { Visual, BoardAppearance } from "./visual-builder";
 import type { DataStep, FilterSet } from "./data-model";
 export type DataRow = Record<string, string>;
 export type Source = {
+  recipe?: import("./source-lifecycle").SourceRecipe;
+  lastLoad?: import("./source-lifecycle").LoadOptions & { at: string; file: string; summary: import("./source-lifecycle").LoadSummary };
   importNotes?: {
     file: string;
     sheet: string;

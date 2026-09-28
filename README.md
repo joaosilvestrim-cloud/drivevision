@@ -73,6 +73,8 @@ As fontes locais são Barlow Condensed Bold (títulos), Inter (interface) e IBM 
 
 ## Importação e exploração avançadas
 
+Consulte [Cargas recorrentes e histórico](CARGAS-E-HISTORICO.md) para atualização por identificador, substituição de período, combinações que acompanham as origens, versões recuperáveis e limites de retenção.
+
 Veja [Pesquisa e evolução](PESQUISA-E-EVOLUCAO.md) para importação de planilhas desestruturadas, combinação de bases, tabelas dinâmicas, investigação de registros, recortes salvos, qualidade, colunas condicionais e extração de períodos. A interpretação usa regras locais, sem IA generativa ou API externa.
 
 

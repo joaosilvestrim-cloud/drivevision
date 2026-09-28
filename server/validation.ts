@@ -11,6 +11,43 @@ const source = z
     rows: z.array(z.record(z.string().max(100000))).max(20000),
     demo: z.literal(false),
     createdAt: z.string().max(100),
+    recipe: z
+      .object({
+        leftId: id,
+        rightId: id,
+        rightName: z.string().min(1).max(300),
+        options: z
+          .object({
+            mode: z.enum(["append", "left", "inner"]),
+            leftKey: z.string().max(500),
+            rightKey: z.string().max(500),
+            trim: z.boolean(),
+          })
+          .strict(),
+      })
+      .strict()
+      .optional(),
+    lastLoad: z
+      .object({
+        mode: z.enum(["append", "upsert", "replace-period"]),
+        keys: z.array(column).min(1).max(60),
+        dateField: z.string().max(500).optional(),
+        start: z.string().max(20).optional(),
+        end: z.string().max(20).optional(),
+        at: z.string().max(100),
+        file: z.string().max(300),
+        summary: z
+          .object({
+            added: z.number().int().nonnegative(),
+            updated: z.number().int().nonnegative(),
+            unchanged: z.number().int().nonnegative(),
+            removed: z.number().int().nonnegative(),
+            duplicates: z.number().int().nonnegative(),
+          })
+          .strict(),
+      })
+      .strict()
+      .optional(),
     importNotes: z
       .object({
         file: z.string().max(300),

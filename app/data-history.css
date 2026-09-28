@@ -1,0 +1,120 @@
+.load-review {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+  grid-auto-rows: max-content;
+  overflow: auto;
+}
+.load-review h3 {
+  font-weight: 650;
+}
+.load-review fieldset {
+  min-width: 0;
+}
+.load-review fieldset p,
+.history-policy {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.load-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.load-keys label,
+.load-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.load-keys label {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.load-impact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+}
+.load-impact > div {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+}
+.load-impact strong {
+  font-size: 22px;
+  color: var(--primary);
+}
+.load-impact span {
+  font-size: 12px;
+}
+.load-review input[type="date"] {
+  display: block;
+  max-width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 6px;
+}
+.history-body {
+  display: grid;
+  gap: 14px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 4px;
+}
+.app-dialog.history-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.history-dialog [data-slot="dialog-header"] {
+  flex-shrink: 0;
+}
+.source-connect-button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+.source-connect-button svg {
+  flex-shrink: 0;
+}
+.history-entry {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+}
+.history-entry p {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.history-entry time {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+@media (max-width: 600px) {
+  .load-review {
+    padding: 14px;
+  }
+  .source-actions {
+    flex-wrap: wrap;
+  }
+}

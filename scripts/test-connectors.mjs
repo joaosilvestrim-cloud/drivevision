@@ -18,6 +18,7 @@ import {
   browse,
 } from "../server/cloud-providers.ts";
 import * as XLSX from "xlsx";
+import { combineSources } from "../lib/exploration.ts";
 process.loadEnvFile(".env.local");
 process.env.DRIVEVISION_CONNECTOR_KEY = randomBytes(32).toString("base64");
 process.env.DRIVEVISION_GOOGLE_CLIENT_ID = "qa-client";
@@ -516,6 +517,80 @@ try {
       );
       assert.equal(after.revision, before.revision + 1);
       delete process.env.CRON_SECRET;
+    },
+  );
+  await check(
+    "remote refresh records versions, rebuilds descendants and aborts invalid joins",
+    async () => {
+      await req("connectors/update", a, {
+        id: binding,
+        paused: false,
+        interval: 1440,
+      });
+      const current = (await req("workspace", a)).data;
+      const source = current.workspace.sources.find(
+        (s) => s.id === "remote-" + binding,
+      );
+      const join = {
+        mode: "left",
+        leftKey: "Grupo",
+        rightKey: "Grupo",
+        trim: true,
+      };
+      const combined = {
+        ...combineSources(source, source, join).source,
+        id: "qa-derived",
+        recipe: {
+          leftId: source.id,
+          rightId: source.id,
+          rightName: source.name,
+          options: join,
+        },
+      };
+      current.workspace.sources.push(combined);
+      assert.equal((await req("workspace", a, current, "PUT")).status, 200);
+      assert.equal(
+        (await req("connectors/sync", a, { id: binding })).status,
+        200,
+      );
+      const after = (await req("workspace", a)).data;
+      assert.equal(
+        after.workspace.sources.find((s) => s.id === "qa-derived").rows.length,
+        4,
+      );
+      const history = (await req("history?source=" + source.id, a)).data;
+      assert.equal(history.versions[0].metadata.reason, "remote-sync");
+      const valid = csv;
+      csv += "\nNorte,999";
+      version++;
+      assert.equal(
+        (await req("connectors/sync", a, { id: binding })).status,
+        422,
+      );
+      assert.deepEqual((await req("workspace", a)).data, after);
+      csv = valid;
+      version++;
+      const oldest = history.versions.at(-1).id;
+      assert.equal(
+        (
+          await req("history", a, {
+            action: "restore",
+            versionId: oldest,
+            revision: after.revision,
+          })
+        ).status,
+        200,
+      );
+      assert.equal(
+        (await req("connectors", a)).data.bindings.find((x) => x.id === binding)
+          .paused,
+        true,
+      );
+      const restored = (await req("workspace", a)).data.workspace;
+      assert.equal(
+        restored.sources.find((s) => s.id === "qa-derived").rows.length,
+        2,
+      );
     },
   );
   await check(

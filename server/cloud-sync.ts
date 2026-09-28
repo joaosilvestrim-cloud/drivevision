@@ -311,9 +311,11 @@ async function syncBindingWithinDeadline(owner: string, id: string) {
       ).rows.map((r) => r.payload);
       const workspace = {
         version: 1,
-        sources: old
-          ? rows.map((s) => (s.id === binding.source_id ? nextSource : s))
-          : [...rows, nextSource],
+        sources: rebuildSources(
+          old
+            ? rows.map((s) => (s.id === binding.source_id ? nextSource : s))
+            : [...rows, nextSource],
+        ),
         dashboards,
       };
       if (
@@ -335,6 +337,18 @@ async function syncBindingWithinDeadline(owner: string, id: string) {
         await c.query(
           "insert into drivevision.sources(workspace_id,id,position,payload) values($1,$2,$3,$4) on conflict(workspace_id,id) do update set payload=excluded.payload,updated_at=now()",
           [w.id, binding.source_id, rows.length, JSON.stringify(nextSource)],
+        );
+        for (const derived of workspace.sources.filter((s) => s.recipe))
+          await c.query(
+            "update drivevision.sources set payload=$3,updated_at=now() where workspace_id=$1 and id=$2",
+            [w.id, derived.id, JSON.stringify(derived)],
+          );
+        await recordSourceHistory(
+          c,
+          w.id,
+          rows,
+          workspace.sources,
+          "remote-sync",
         );
         await c.query(
           "update drivevision.workspaces set revision=revision+1,updated_at=now() where id=$1",
@@ -426,3 +440,4 @@ export async function syncDue() {
   }
   return { processed };
 }
+import { recordSourceHistory, rebuildSources } from "./source-history.ts";

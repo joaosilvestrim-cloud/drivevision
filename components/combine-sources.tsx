@@ -57,6 +57,12 @@ export function CombineSources({
           ...preview.result.source,
           id: crypto.randomUUID(),
           name: name.trim(),
+          recipe: {
+            leftId: left.id,
+            rightId: right.id,
+            rightName: right.name,
+            options,
+          },
         })
       )
         onClose();
@@ -82,7 +88,8 @@ export function CombineSources({
           <DialogTitle>Conecte as peças.</DialogTitle>
           <DialogDescription>
             Junte vendas ao cadastro de clientes ou acrescente novos meses. Uma
-            nova base será criada; as originais ficam preservadas.
+            nova base será criada e acompanhará as atualizações das origens. As
+            originais ficam preservadas.
           </DialogDescription>
         </DialogHeader>
         <div className="hub-content">

@@ -71,6 +71,8 @@ import { DashboardLibrary } from "./dashboard-library";
 import { duplicateDashboard } from "@/lib/dashboard-library";
 import { makeVisual } from "@/lib/visual-builder";
 import { CloudConnections } from "./cloud-connections";
+import { refreshDerived } from "@/lib/source-lifecycle";
+import { SourceHistory } from "./source-history";
 
 type View = "studio" | "library" | "sources" | "connections";
 const initial: LocalWorkspace = { version: 1, sources: [], dashboards: [] };
@@ -185,6 +187,7 @@ export default function Workspace({
   const [discard, setDiscard] = useState(false),
     pending = useRef<(() => void) | null>(null);
   const [combineOpen, setCombineOpen] = useState(false);
+  const [historySource, setHistorySource] = useState<Source | null>(null);
   const [template, setTemplate] = useState("overview");
 
   const sources = [DEMO, ...workspace.sources];
@@ -259,8 +262,11 @@ export default function Workspace({
         throw new Error(
           "Recarregue o workspace antes de salvar para preservar seus dados.",
         );
+      next = { ...next, sources: refreshDerived(next.sources) };
       await storage.save(next);
       setWorkspace(next);
+      const currentSource = next.sources.find((s) => s.id === source.id);
+      if (currentSource) setSource(currentSource);
       return true;
     } catch (error) {
       toast.error(
@@ -699,7 +705,7 @@ export default function Workspace({
           {view === "sources" && (
             <>
               <button
-                className="secondary-button"
+                className="secondary-button source-connect-button"
                 onClick={() => setView("connections")}
               >
                 <Cloud size={16} /> Conectar SharePoint, OneDrive ou Google
@@ -756,6 +762,14 @@ export default function Workspace({
                       </p>
                     </div>
                     <div className="source-actions">
+                      {storage.cloud && !s.demo && (
+                        <button
+                          className="text-button"
+                          onClick={() => guard(() => setHistorySource(s))}
+                        >
+                          Histórico
+                        </button>
+                      )}
                       <button
                         className="text-button"
                         onClick={() => {
@@ -809,6 +823,20 @@ export default function Workspace({
         </div>
       </main>
       <Toaster position="bottom-right" richColors closeButton />
+      {historySource && (
+        <SourceHistory
+          source={historySource}
+          onClose={() => setHistorySource(null)}
+          onChanged={async () => {
+            const next = await storage.load();
+            setWorkspace(next);
+            const updated = next.sources.find((s) => s.id === source.id);
+            if (updated) setSource(updated);
+            setRemoteChanged(false);
+            toast.success("Workspace e histórico atualizados.");
+          }}
+        />
+      )}
       {combineOpen && (
         <CombineSources
           sources={sources}
@@ -1014,20 +1042,26 @@ export default function Workspace({
       </Dialog>
       {modal === "import" && (
         <SmartImport
+          sources={workspace.sources}
           cloud={storage.cloud}
           onClose={() => setModal(null)}
           onImport={async (imported) => {
             if (
               await persist({
                 ...workspace,
-                sources: [...workspace.sources, imported],
+                sources: workspace.sources.some((s) => s.id === imported.id)
+                  ? workspace.sources.map((s) =>
+                      s.id === imported.id ? imported : s,
+                    )
+                  : [...workspace.sources, imported],
               })
             ) {
               toast.success(
                 `${imported.rows.length} registros prontos para analisar.`,
               );
               setModal(null);
-              guard(() => switchDraft(imported, defaultConfig(imported)));
+              if (!workspace.sources.some((s) => s.id === imported.id))
+                guard(() => switchDraft(imported, defaultConfig(imported)));
               return true;
             }
             return false;

@@ -25,16 +25,26 @@ import {
   type ImportPlan,
 } from "@/lib/smart-import";
 import type { Source } from "@/lib/analytics";
+import { planLoad, type LoadOptions } from "@/lib/source-lifecycle";
 
 export function SmartImport({
   onClose,
   onImport,
   cloud = false,
+  sources = [],
 }: {
   onClose: () => void;
   onImport: (source: Source) => Promise<boolean>;
   cloud?: boolean;
+  sources?: Source[];
 }) {
+  const [targetId, setTargetId] = useState("");
+  const [stage, setStage] = useState<"structure" | "publish">("structure");
+  const [loadOptions, setLoadOptions] = useState<LoadOptions>({
+    mode: "append",
+    keys: [],
+  });
+  const [replaceConfirmed, setReplaceConfirmed] = useState(false);
   const [workbook, setWorkbook] = useState<WorkbookData | null>(null),
     [sheetIndex, setSheetIndex] = useState(0),
     [plan, setPlan] = useState<ImportPlan | null>(null),
@@ -68,10 +78,48 @@ export function SmartImport({
     }
   }, [sheet, plan, workbook]);
   const columns = sheet && plan ? headerNames(sheet, plan) : [];
+  const publication = useMemo(() => {
+    if (!preview.result) return { source: null, summary: null, error: "" };
+    const target = sources.find((s) => s.id === targetId);
+    try {
+      if (target)
+        return {
+          ...planLoad(target, preview.result.source, loadOptions),
+          error: "",
+        };
+      const incoming = preview.result.source;
+      const duplicate = sources.find(
+        (s) =>
+          !s.recipe &&
+          s.columns.length === incoming.columns.length &&
+          s.columns.every((c) => incoming.columns.includes(c)) &&
+          s.rows.length === incoming.rows.length &&
+          JSON.stringify(
+            s.rows.map((r) => s.columns.map((c) => r[c] ?? "")).sort(),
+          ) ===
+            JSON.stringify(
+              incoming.rows.map((r) => s.columns.map((c) => r[c] ?? "")).sort(),
+            ),
+      );
+      if (duplicate)
+        throw new Error(
+          `Este conteúdo já está na base “${duplicate.name}”. Selecione essa base como destino para revisar a carga sem duplicar.`,
+        );
+      return { source: incoming, summary: null, error: "" };
+    } catch (e) {
+      return {
+        source: null,
+        summary: null,
+        error: e instanceof Error ? e.message : "Confira a carga.",
+      };
+    }
+  }, [preview, sources, targetId, loadOptions]);
   function update(p: Partial<ImportPlan>) {
+    setReplaceConfirmed(false);
     if (plan) setPlan({ ...plan, ...p });
   }
   function selectSheet(index: number, book = workbook) {
+    setReplaceConfirmed(false);
     if (!book) return;
     const next = book.sheets[index];
     setSheetIndex(index);
@@ -81,6 +129,8 @@ export function SmartImport({
   }
   async function read(file?: File) {
     if (!file) return;
+    setStage("structure");
+    setReplaceConfirmed(false);
     generation.current++;
     const token = generation.current;
     worker.current?.terminate();
@@ -159,15 +209,21 @@ export function SmartImport({
     }
   }
   async function accept() {
-    if (!preview.result || !name.trim() || saving) return;
+    if (
+      !publication.source ||
+      !name.trim() ||
+      saving ||
+      (targetId && loadOptions.mode === "replace-period" && !replaceConfirmed)
+    )
+      return;
     setSaving(true);
     setError("");
     try {
       if (
         await onImport({
-          ...preview.result.source,
-          id: crypto.randomUUID(),
-          name: name.trim(),
+          ...publication.source,
+          id: targetId || crypto.randomUUID(),
+          name: targetId ? publication.source.name : name.trim(),
         })
       )
         onClose();
@@ -175,8 +231,12 @@ export function SmartImport({
         setError(
           "Não foi possível salvar a base. Confira o armazenamento do navegador.",
         );
-    } catch {
-      setError("Não foi possível importar. Sua prévia continua disponível.");
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Não foi possível importar. Sua prévia continua disponível.",
+      );
     } finally {
       setSaving(false);
     }
@@ -192,10 +252,15 @@ export function SmartImport({
           <div className="model-eyebrow">
             <ShieldCheck size={16} /> LEITURA LOCAL · SEM API EXTERNA
           </div>
-          <DialogTitle>Da sua planilha aos gráficos.</DialogTitle>
+          <DialogTitle>
+            {stage === "structure"
+              ? "Da sua planilha aos gráficos."
+              : "Revise antes de publicar."}
+          </DialogTitle>
           <DialogDescription>
-            Encontramos possíveis tabelas e sugerimos uma estrutura. Confira o
-            que foi entendido antes de importar.
+            {stage === "structure"
+              ? "1 de 2 · Confira a tabela e os campos encontrados no arquivo."
+              : "2 de 2 · Escolha o destino e confira o impacto sobre seus dados."}
           </DialogDescription>
         </DialogHeader>
         <input
@@ -270,7 +335,10 @@ export function SmartImport({
                   Processado no seu dispositivo
                 </span>
               </div>
-              <div className="smart-import-body">
+              <div
+                className="smart-import-body"
+                style={stage === "publish" ? { display: "none" } : undefined}
+              >
                 <aside className="import-settings">
                   <Field
                     label="Aba da planilha"
@@ -630,6 +698,164 @@ export function SmartImport({
             </>
           )
         )}
+        {preview.result && stage === "publish" && (
+          <section className="load-review" aria-label="Revisão da publicação">
+            <h3>Como estes dados entram na sua base?</h3>
+            <Field
+              label="Destino da carga"
+              value={targetId}
+              onChange={(id) => {
+                setTargetId(id);
+                setReplaceConfirmed(false);
+                setLoadOptions({
+                  mode: "append",
+                  keys: sources.find((s) => s.id === id)?.lastLoad?.keys || [],
+                });
+              }}
+              options={[
+                { value: "", label: "Criar uma nova base" },
+                ...sources
+                  .filter((s) => !s.recipe)
+                  .map((s) => ({ value: s.id, label: s.name })),
+              ]}
+            />
+            {targetId && (
+              <>
+                <Field
+                  label="Modo de atualização"
+                  value={loadOptions.mode}
+                  onChange={(mode) => {
+                    setLoadOptions({
+                      ...loadOptions,
+                      mode: mode as LoadOptions["mode"],
+                    });
+                    setReplaceConfirmed(false);
+                  }}
+                  options={[
+                    {
+                      value: "append",
+                      label: "Acrescentar apenas operações novas",
+                    },
+                    { value: "upsert", label: "Atualizar por identificador" },
+                    { value: "replace-period", label: "Substituir um período" },
+                  ]}
+                />
+                <fieldset>
+                  <legend>Colunas que identificam uma operação</legend>
+                  <p>
+                    Exemplo: ID da venda + ID do item. Valores são comparados
+                    exatamente; não usamos valor ou data para adivinhar
+                    duplicidades.
+                  </p>
+                  <div className="load-keys">
+                    {preview.result.source.columns.map((c) => (
+                      <label key={c}>
+                        <input
+                          type="checkbox"
+                          checked={loadOptions.keys.includes(c)}
+                          onChange={(e) => {
+                            setReplaceConfirmed(false);
+                            setLoadOptions({
+                              ...loadOptions,
+                              keys: e.target.checked
+                                ? [...loadOptions.keys, c]
+                                : loadOptions.keys.filter((k) => k !== c),
+                            });
+                          }}
+                        />
+                        {c}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                {loadOptions.mode === "replace-period" && (
+                  <>
+                    <Field
+                      label="Data da operação"
+                      value={loadOptions.dateField || ""}
+                      onChange={(dateField) => {
+                        setReplaceConfirmed(false);
+                        setLoadOptions({ ...loadOptions, dateField });
+                      }}
+                      options={[
+                        { value: "", label: "Selecione a data" },
+                        ...preview.result.source.dates.map((c) => ({
+                          value: c,
+                          label: c,
+                        })),
+                      ]}
+                    />
+                    <div className="model-two">
+                      <label>
+                        Início
+                        <input
+                          type="date"
+                          value={loadOptions.start || ""}
+                          onChange={(e) => {
+                            setReplaceConfirmed(false);
+                            setLoadOptions({
+                              ...loadOptions,
+                              start: e.target.value,
+                            });
+                          }}
+                        />
+                      </label>
+                      <label>
+                        Fim
+                        <input
+                          type="date"
+                          value={loadOptions.end || ""}
+                          onChange={(e) => {
+                            setReplaceConfirmed(false);
+                            setLoadOptions({
+                              ...loadOptions,
+                              end: e.target.value,
+                            });
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <label className="load-confirm">
+                      <input
+                        type="checkbox"
+                        checked={replaceConfirmed}
+                        onChange={(e) => setReplaceConfirmed(e.target.checked)}
+                      />
+                      Confirmo a substituição deste período, incluindo a remoção
+                      das operações que não estão no novo arquivo.
+                    </label>
+                  </>
+                )}
+              </>
+            )}
+            {publication.error && (
+              <p className="model-error" role="alert">
+                {publication.error}
+              </p>
+            )}
+            {publication.summary && (
+              <div className="load-impact" aria-live="polite">
+                {Object.entries({
+                  Novos: publication.summary.added,
+                  Alterados: publication.summary.updated,
+                  "Já existentes": publication.summary.unchanged,
+                  Removidos: publication.summary.removed,
+                  "Repetidos no arquivo": publication.summary.duplicates,
+                }).map(([label, count]) => (
+                  <div key={label}>
+                    <strong>{count}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="model-note">
+              {targetId
+                ? "Os dashboards mantêm o vínculo. As combinações dependentes serão recalculadas antes de salvar."
+                : "Para enviar novos meses da mesma operação, selecione uma base existente nas próximas cargas."}
+            </p>
+          </section>
+        )}
         {error && (
           <p className="model-error import-error" role="alert">
             {error}
@@ -638,7 +864,9 @@ export function SmartImport({
         <footer className="model-footer">
           <span>
             {workbook
-              ? "Confira a prévia. Uma aba/tabela será importada por vez."
+              ? stage === "structure"
+                ? "Confira a prévia. Uma aba/tabela será importada por vez."
+                : "A publicação só acontece após sua confirmação."
               : cloud
                 ? "A interpretação é local. Ao confirmar, os dados organizados serão salvos na sua conta."
                 : "O arquivo permanece neste dispositivo."}
@@ -650,18 +878,43 @@ export function SmartImport({
           >
             Cancelar
           </button>
+          {stage === "publish" && (
+            <button
+              className="secondary-button"
+              disabled={saving}
+              onClick={() => setStage("structure")}
+            >
+              Voltar à estrutura
+            </button>
+          )}
           {workbook && (
             <button
               className="primary-button"
-              disabled={saving || !preview.result || !name.trim()}
-              onClick={accept}
+              disabled={
+                saving ||
+                (stage === "publish" ? !publication.source : !preview.result) ||
+                !name.trim() ||
+                Boolean(
+                  stage === "publish" &&
+                  targetId &&
+                  loadOptions.mode === "replace-period" &&
+                  !replaceConfirmed,
+                )
+              }
+              onClick={() =>
+                stage === "structure" ? setStage("publish") : void accept()
+              }
             >
               {saving ? (
                 <Loader2 size={16} className="spin" />
               ) : (
                 <ArrowRight size={16} />
               )}
-              Confirmar estrutura e gerar painel
+              {stage === "structure"
+                ? "Revisar publicação"
+                : targetId
+                  ? "Publicar atualização"
+                  : "Confirmar estrutura e gerar painel"}
             </button>
           )}
         </footer>

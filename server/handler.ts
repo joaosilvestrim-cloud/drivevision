@@ -7,6 +7,11 @@ import { ConnectorError, secretMatches } from "./connector-security.ts";
 import { connectorsRoute } from "./connectors.ts";
 import { syncDue } from "./cloud-sync.ts";
 import {
+  historyRoute,
+  recordSourceHistory,
+  rebuildSources,
+} from "./source-history.ts";
+import {
   credentialsSchema,
   saveSchema,
   activationSchema,
@@ -322,6 +327,29 @@ export default async function handler(
       }
       return;
     }
+    if (path === "/api/history" && ["GET", "POST"].includes(req.method || "")) {
+      const result = await historyRoute(
+        user.id,
+        req.method!,
+        new URL(req.url || "/", "http://localhost"),
+        req.method === "POST" ? await body(req) : undefined,
+      );
+      if ("source" in result) {
+        const compressed = gzipSync(JSON.stringify(result));
+        if (compressed.length > MAX_WIRE)
+          throw new HttpError(
+            413,
+            "A versão ultrapassa o limite de transferência.",
+          );
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.setHeader("Content-Encoding", "gzip");
+        res.end(compressed);
+        return;
+      }
+      json(res, 200, result);
+      return;
+    }
     if (path === "/api/workspace/revision" && req.method === "GET") {
       const revision = await transaction(user.id, async (c) => {
         const row = (
@@ -382,6 +410,9 @@ export default async function handler(
           "O workspace contém campos inválidos ou ultrapassa o limite de 50 bases, 24 visuais por painel ou 60 etapas de preparação.",
         );
       const { workspace, revision } = parsed.data;
+      workspace.sources = rebuildSources(
+        workspace.sources,
+      ) as typeof workspace.sources;
       const wire = gzipSync(
         JSON.stringify({ workspace, revision: revision + 1 }),
       );
@@ -404,6 +435,12 @@ export default async function handler(
             "Outra aba ou dispositivo atualizou este workspace. Exporte seu rascunho e recarregue antes de salvar.",
           );
         const id = current.id;
+        const before = (
+          await c.query(
+            "select payload from drivevision.sources where workspace_id=$1",
+            [id],
+          )
+        ).rows.map((r) => r.payload);
         // Removing a source stops its refresh and retains the last saved dashboards policy.
         await c.query(
           "delete from drivevision.cloud_bindings where owner_id=$1 and source_id in (select id from drivevision.sources where workspace_id=$2) and not (source_id=any($3::text[]))",
@@ -424,6 +461,13 @@ export default async function handler(
               [id, JSON.stringify(items)],
             );
         }
+        await recordSourceHistory(
+          c,
+          id,
+          before,
+          workspace.sources,
+          "publication",
+        );
         await c.query(
           "update drivevision.workspaces set revision=revision+1,updated_at=now() where id=$1",
           [id],
