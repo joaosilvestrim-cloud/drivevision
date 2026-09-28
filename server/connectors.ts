@@ -13,6 +13,7 @@ import {
   metadata,
 } from "./cloud-providers.ts";
 import { connectionAccess, previewRemote, syncBinding } from "./cloud-sync.ts";
+import { nextRefreshAt, validTimeZone } from "../lib/refresh-schedule.ts";
 
 const uuid = z.string().uuid();
 const provider = z.enum(["onedrive", "sharepoint", "google"]);
@@ -36,6 +37,13 @@ const options = z
     end: z.number().int().min(2).max(20050).nullable(),
     skipTotals: z.boolean(),
     nameContains: z.string().max(100),
+    daily: z
+      .object({
+        time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+        timeZone: z.string().min(1).max(100).refine(validTimeZone),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .refine(
@@ -72,7 +80,7 @@ export async function connectorsRoute(
       ).rows,
       bindings: (
         await c.query(
-          "select id,connection_id,source_id,name,target,options,interval_minutes,paused,last_success_at,last_checked_at,last_error from drivevision.cloud_bindings where owner_id=$1 order by created_at desc",
+          "select b.id,b.connection_id,b.source_id,b.name,b.target,b.options,b.interval_minutes,b.paused,b.last_success_at,b.last_checked_at,b.last_error,case when b.paused or s.due_at='infinity' then null else s.due_at end as next_due_at from drivevision.cloud_bindings b left join drivevision.cloud_schedule s on s.binding_id=b.id and s.owner_id=b.owner_id where b.owner_id=$1 order by b.created_at desc",
           [owner],
         )
       ).rows,
@@ -289,8 +297,14 @@ export async function connectorsRoute(
         ],
       );
       await db.query(
-        "insert into drivevision.cloud_schedule(binding_id,owner_id) values($1,$2)",
-        [id, owner],
+        "insert into drivevision.cloud_schedule(binding_id,owner_id,due_at) values($1,$2,$3)",
+        [
+          id,
+          owner,
+          r.interval === 1440 && r.options.daily
+            ? nextRefreshAt(r.interval, r.options.daily)
+            : new Date(),
+        ],
       );
     });
     // First refresh is separate: failures stay visible and can be retried without losing setup.
@@ -319,14 +333,22 @@ export async function connectorsRoute(
     );
     await transaction(owner, async (c) => {
       const found = await c.query(
-        "update drivevision.cloud_bindings set options=$2,name=$3,interval_minutes=$4,fingerprint=null where id=$1 returning id",
+        "update drivevision.cloud_bindings set options=$2,name=$3,interval_minutes=$4,fingerprint=null where id=$1 returning id,paused",
         [r.id, JSON.stringify(r.options), r.name, r.interval],
       );
       if (!found.rowCount)
         throw new ConnectorError(404, "Acompanhamento não encontrado.");
       await c.query(
-        "update drivevision.cloud_schedule set due_at=now(),lease_token=null,lease_until=null where binding_id=$1 and owner_id=$2",
-        [r.id, owner],
+        "update drivevision.cloud_schedule set due_at=$3,lease_token=null,lease_until=null where binding_id=$1 and owner_id=$2",
+        [
+          r.id,
+          owner,
+          found.rows[0].paused
+            ? "infinity"
+            : r.interval === 1440 && r.options.daily
+              ? nextRefreshAt(r.interval, r.options.daily)
+              : new Date(),
+        ],
       );
     });
     return { data: { id: r.id } };
@@ -349,14 +371,22 @@ export async function connectorsRoute(
     );
     await transaction(owner, async (c) => {
       const row = await c.query(
-        "update drivevision.cloud_bindings set paused=$2,interval_minutes=$3 where id=$1 returning id",
+        "update drivevision.cloud_bindings set paused=$2,interval_minutes=$3 where id=$1 returning id,options",
         [r.id, r.paused, r.interval],
       );
       if (!row.rowCount)
         throw new ConnectorError(404, "Acompanhamento não encontrado.");
       await c.query(
-        "update drivevision.cloud_schedule set due_at=case when $3 then now()+interval '100 years' else now() end,lease_token=null,lease_until=null where binding_id=$1 and owner_id=$2",
-        [r.id, owner, r.paused],
+        "update drivevision.cloud_schedule set due_at=$3,lease_token=null,lease_until=null where binding_id=$1 and owner_id=$2",
+        [
+          r.id,
+          owner,
+          r.paused
+            ? "infinity"
+            : r.interval === 1440 && row.rows[0].options.daily
+              ? nextRefreshAt(r.interval, row.rows[0].options.daily)
+              : new Date(),
+        ],
       );
     });
     return { data: { ok: true } };

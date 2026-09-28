@@ -211,15 +211,25 @@ async function selectedFiles(
     );
   return files.sort((a, b) => a.id.localeCompare(b.id));
 }
-export async function syncBinding(owner: string, id: string) {
-  return withProviderDeadline(() => syncBindingWithinDeadline(owner, id));
+export async function syncBinding(
+  owner: string,
+  id: string,
+  scheduled = false,
+) {
+  return withProviderDeadline(() =>
+    syncBindingWithinDeadline(owner, id, scheduled),
+  );
 }
-async function syncBindingWithinDeadline(owner: string, id: string) {
+async function syncBindingWithinDeadline(
+  owner: string,
+  id: string,
+  scheduled: boolean,
+) {
   const deadline = Date.now() + 65000;
   const lease = randomUUID();
   const claim = await database().query(
-    "update drivevision.cloud_schedule set lease_token=$3,lease_until=now()+interval '5 minutes' where binding_id=$1 and owner_id=$2 and (lease_until is null or lease_until<now()) returning binding_id",
-    [id, owner, lease],
+    "update drivevision.cloud_schedule set lease_token=$3,lease_until=now()+interval '5 minutes' where binding_id=$1 and owner_id=$2 and (lease_until is null or lease_until<now()) and (not $4::boolean or due_at<=now()) returning binding_id",
+    [id, owner, lease, scheduled],
   );
   if (!claim.rowCount)
     throw new ConnectorError(
@@ -227,6 +237,8 @@ async function syncBindingWithinDeadline(owner: string, id: string) {
       "Esta fonte já está sendo atualizada. Aguarde a conclusão.",
     );
   let interval = 60;
+  let daily: import("../lib/refresh-schedule.ts").DailySchedule | undefined;
+  let failed = false;
   try {
     const binding = await transaction(
       owner,
@@ -241,6 +253,7 @@ async function syncBindingWithinDeadline(owner: string, id: string) {
     if (!binding)
       throw new ConnectorError(404, "Acompanhamento não encontrado.");
     interval = binding.interval_minutes;
+    daily = binding.options.daily;
     const { provider, access } = await connectionAccess(
       owner,
       binding.connection_id,
@@ -375,6 +388,7 @@ async function syncBindingWithinDeadline(owner: string, id: string) {
     });
     return { ok: true, rows: nextSource.rows.length };
   } catch (error) {
+    failed = true;
     const message =
       error instanceof ConnectorError
         ? error.message
@@ -394,11 +408,32 @@ async function syncBindingWithinDeadline(owner: string, id: string) {
       ? error
       : new ConnectorError(422, message);
   } finally {
-    await database().query(
-      "update drivevision.cloud_schedule set due_at=now()+$4*interval '1 minute',lease_until=null,lease_token=null where binding_id=$1 and owner_id=$2 and lease_token=$3",
-      [id, owner, lease, interval],
-    );
     await transaction(owner, async (c) => {
+      let due = nextRefreshAt(interval, daily);
+      if (failed) {
+        const recent = (
+          await c.query(
+            "select status from drivevision.cloud_runs where binding_id=$1 order by created_at desc limit 3",
+            [id],
+          )
+        ).rows;
+        let failures = 0;
+        for (const run of recent) {
+          if (run.status !== "error") break;
+          failures++;
+        }
+        if (failures > 0 && failures < 3)
+          due = new Date(
+            Math.min(
+              due.getTime(),
+              Date.now() + (failures === 1 ? 5 : 15) * 60000,
+            ),
+          );
+      }
+      await c.query(
+        "update drivevision.cloud_schedule set due_at=case when exists(select 1 from drivevision.cloud_bindings where id=$1 and paused) then 'infinity'::timestamptz else $4 end,lease_until=null,lease_token=null where binding_id=$1 and owner_id=$2 and lease_token=$3",
+        [id, owner, lease, due],
+      );
       await c.query(
         "delete from drivevision.cloud_runs where id in (select id from drivevision.cloud_runs where binding_id=$1 order by created_at desc offset 30)",
         [id],
@@ -433,7 +468,7 @@ export async function syncDue() {
       continue;
     }
     try {
-      await syncBinding(row.owner_id, row.binding_id);
+      await syncBinding(row.owner_id, row.binding_id, true);
     } catch {
       /* Each run records a safe actionable error. */
     }
@@ -441,3 +476,4 @@ export async function syncDue() {
   return { processed };
 }
 import { recordSourceHistory, rebuildSources } from "./source-history.ts";
+import { nextRefreshAt } from "../lib/refresh-schedule.ts";

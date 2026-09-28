@@ -9,6 +9,7 @@ export type RemoteItem = {
   mime?: string;
 };
 export type RemoteOptions = {
+  daily?: import("./refresh-schedule").DailySchedule;
   sheet: string;
   header: number;
   left: number;
@@ -30,6 +31,7 @@ export type CloudBinding = {
   last_success_at: string | null;
   last_checked_at: string | null;
   last_error: string | null;
+  next_due_at: string | null;
 };
 export type CloudRun = {
   id: string;

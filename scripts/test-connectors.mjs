@@ -19,6 +19,8 @@ import {
 } from "../server/cloud-providers.ts";
 import * as XLSX from "xlsx";
 import { combineSources } from "../lib/exploration.ts";
+import { nextRefreshAt } from "../lib/refresh-schedule.ts";
+import { syncBinding } from "../server/cloud-sync.ts";
 process.loadEnvFile(".env.local");
 process.env.DRIVEVISION_CONNECTOR_KEY = randomBytes(32).toString("base64");
 process.env.DRIVEVISION_GOOGLE_CLIENT_ID = "qa-client";
@@ -590,6 +592,145 @@ try {
       assert.equal(
         restored.sources.find((s) => s.id === "qa-derived").rows.length,
         2,
+      );
+    },
+  );
+  await check(
+    "daily clock persists through selection, manual refresh and pause",
+    async () => {
+      const daily = { time: "07:00", timeZone: "America/Sao_Paulo" };
+      const selection = {
+        id: binding,
+        options: { ...options, daily },
+        name: "Vendas conectadas",
+        interval: 1440,
+      };
+      const getBinding = async () =>
+        (await req("connectors", a)).data.bindings.find(
+          (x) => x.id === binding,
+        );
+      assert.equal(
+        (await req("connectors/selection", a, selection)).status,
+        200,
+      );
+      assert.equal((await getBinding()).next_due_at, null);
+      assert.equal(
+        (
+          await req("connectors/update", a, {
+            id: binding,
+            paused: false,
+            interval: 1440,
+          })
+        ).status,
+        200,
+      );
+      assert.deepEqual((await getBinding()).options.daily, daily);
+      assert.equal(
+        (await getBinding()).next_due_at,
+        nextRefreshAt(1440, daily).toISOString(),
+      );
+      const before = (await req("workspace", a)).data;
+      await assert.rejects(
+        () => syncBinding(a.id, binding, true),
+        (e) => e.status === 409,
+      );
+      assert.deepEqual((await req("workspace", a)).data, before);
+      for (const invalid of [
+        { time: "25:00", timeZone: "UTC" },
+        { time: "07:00", timeZone: "Invalid/Zone" },
+      ]) {
+        assert.equal(
+          (
+            await req("connectors/selection", a, {
+              ...selection,
+              options: { ...options, daily: invalid },
+            })
+          ).status,
+          400,
+        );
+      }
+      assert.equal(
+        (await req("connectors/sync", a, { id: binding })).status,
+        200,
+      );
+      assert.equal(
+        (await getBinding()).next_due_at,
+        nextRefreshAt(1440, daily).toISOString(),
+      );
+      await req("connectors/update", a, {
+        id: binding,
+        paused: true,
+        interval: 1440,
+      });
+      assert.equal(
+        (await req("connectors/sync", a, { id: binding })).status,
+        200,
+      );
+      assert.equal((await getBinding()).next_due_at, null);
+      assert.equal(
+        (
+          await admin.query(
+            "select due_at::text as due from drivevision.cloud_schedule where binding_id=$1",
+            [binding],
+          )
+        ).rows[0].due,
+        "infinity",
+      );
+      await req("connectors/update", a, {
+        id: binding,
+        paused: false,
+        interval: 1440,
+      });
+    },
+  );
+  await check(
+    "errors retry after five and fifteen minutes then return to daily schedule",
+    async () => {
+      // Choose a clock safely beyond the retry window, independent of test execution time.
+      const future = new Date(Date.now() + 6 * 3600000)
+        .toISOString()
+        .slice(11, 16);
+      const daily = { time: future, timeZone: "UTC" };
+      await req("connectors/selection", a, {
+        id: binding,
+        options: { ...options, daily },
+        name: "Vendas conectadas",
+        interval: 1440,
+      });
+      const before = (await req("workspace", a)).data;
+      const saved = csv;
+      csv = "Grupo,Outro\nSul,999";
+      version++;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const start = Date.now();
+        assert.equal(
+          (await req("connectors/sync", a, { id: binding })).status,
+          422,
+        );
+        const row = (await req("connectors", a)).data.bindings.find(
+          (x) => x.id === binding,
+        );
+        const due = new Date(row.next_due_at).getTime();
+        if (attempt < 3) {
+          const delay = (attempt === 1 ? 5 : 15) * 60000;
+          assert.ok(due >= start + delay && due <= Date.now() + delay);
+        } else
+          assert.equal(
+            row.next_due_at,
+            nextRefreshAt(1440, daily).toISOString(),
+          );
+        assert.deepEqual((await req("workspace", a)).data, before);
+      }
+      csv = saved;
+      version++;
+      assert.equal(
+        (await req("connectors/sync", a, { id: binding })).status,
+        200,
+      );
+      assert.equal(
+        (await req("connectors", a)).data.bindings.find((x) => x.id === binding)
+          .last_error,
+        null,
       );
     },
   );

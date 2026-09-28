@@ -34,7 +34,7 @@ O script `scripts/setup-source-history.mjs` usa a CLI Supabase indicada em `SUPA
 
 Limites existentes continuam: 10 MB por arquivo local, 20 mil registros por base, 50 bases por workspace e 3,5 MB compactados por transferência do workspace. São limites desta implementação, não franquias comerciais aprovadas.
 
-Conectores de arquivos mantêm as credenciais OAuth e `CRON_SECRET` como requisitos de ativação. Não foi adicionado conector ERP nem credencial fictícia de produção. Atualização diária existente usa intervalo de 1.440 minutos; agendamento por horário/fuso ainda não faz parte deste fluxo.
+Conectores de arquivos mantêm as credenciais OAuth e `CRON_SECRET` como requisitos de ativação. Não foi adicionado conector ERP nem credencial fictícia de produção. O agendamento diário permite escolher horário/fuso, mostra a próxima execução e limita as tentativas antecipadas após falhas; consulte [Fontes conectadas](CONNECTED-SOURCES.md).
 
 ## Verificação
 

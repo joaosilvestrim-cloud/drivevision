@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { apiJson } from "@/lib/cloud-workspace";
+import { validTimeZone } from "@/lib/refresh-schedule";
 import type {
   Provider,
   RemoteItem,
@@ -57,6 +58,10 @@ type Preview = {
 };
 const when = (value: string | null) =>
   value ? new Date(value).toLocaleString("pt-BR") : "Ainda não atualizado";
+const overdue = (b: CloudBinding) =>
+  !b.paused &&
+  !!b.next_due_at &&
+  Date.parse(b.next_due_at) < Date.now() - 5 * 60000;
 function callbackMessage() {
   if (typeof location === "undefined") return "";
   const value = new URLSearchParams(location.search).get("connection");
@@ -344,9 +349,11 @@ export function CloudConnections({
                       ? "Pausado"
                       : b.last_error
                         ? "Precisa de atenção"
-                        : b.last_success_at
-                          ? "Atualizado"
-                          : "Primeira atualização pendente"}
+                        : state.scheduled && overdue(b)
+                          ? "Atualização atrasada"
+                          : b.last_success_at
+                            ? "Atualizado"
+                            : "Primeira atualização pendente"}
                   </span>
                 </div>
                 <h3>{b.name}</h3>
@@ -367,17 +374,45 @@ export function CloudConnections({
                   <div>
                     <dt>Frequência</dt>
                     <dd>
-                      {
-                        intervals.find((i) => i.value === b.interval_minutes)
-                          ?.label
-                      }
+                      {b.interval_minutes === 1440 && b.options.daily
+                        ? `Todos os dias às ${b.options.daily.time} · ${b.options.daily.timeZone}`
+                        : b.interval_minutes === 1440
+                          ? "A cada 24 horas"
+                          : intervals.find(
+                              (i) => i.value === b.interval_minutes,
+                            )?.label}
                     </dd>
                   </div>
                   <div>
                     <dt>Última atualização</dt>
                     <dd>{when(b.last_success_at)}</dd>
                   </div>
+                  <div>
+                    <dt>Última verificação</dt>
+                    <dd>{when(b.last_checked_at)}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      {b.last_error ? "Próxima tentativa" : "Próxima execução"}
+                    </dt>
+                    <dd>
+                      {b.paused
+                        ? "Pausada"
+                        : !state.scheduled
+                          ? "Agendamento não ativado"
+                          : b.next_due_at
+                            ? `${when(b.next_due_at)} (horário deste dispositivo)`
+                            : "Aguardando programação"}
+                    </dd>
+                  </div>
                 </dl>
+                {state.scheduled && overdue(b) && (
+                  <p className="connection-alert" role="status">
+                    A execução prevista está atrasada. Os gráficos mantêm os
+                    dados da última carga concluída. Você pode usar Atualizar
+                    agora.
+                  </p>
+                )}
                 {b.last_error && (
                   <p className="connection-alert" role="status">
                     {b.last_error}
@@ -583,7 +618,13 @@ function RemoteBrowser({
       binding?.options || null,
     ),
     [name, setName] = useState(binding?.name || ""),
-    [interval, setInterval] = useState(binding?.interval_minutes || 60);
+    [interval, setInterval] = useState(binding?.interval_minutes || 1440);
+  const [dailyTime, setDailyTime] = useState(
+    binding?.options.daily?.time || "07:00",
+  );
+  const [timeZone, setTimeZone] = useState(
+    binding?.options.daily?.timeZone || "America/Sao_Paulo",
+  );
   const [busy, setBusy] = useState(true),
     [error, setError] = useState(""),
     [reviewed, setReviewed] = useState(false);
@@ -882,6 +923,45 @@ function RemoteBrowser({
                     ))}
                   </select>
                 </label>
+                {interval === 1440 && (
+                  <>
+                    <label>
+                      Horário diário
+                      <input
+                        aria-label="Horário diário"
+                        type="time"
+                        value={dailyTime}
+                        onChange={(e) => setDailyTime(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Fuso horário
+                      <select
+                        aria-label="Fuso horário"
+                        value={timeZone}
+                        onChange={(e) => setTimeZone(e.target.value)}
+                      >
+                        {[
+                          ...new Set([
+                            timeZone,
+                            "America/Sao_Paulo",
+                            "America/Manaus",
+                            "America/Rio_Branco",
+                            "America/Noronha",
+                            "Europe/Lisbon",
+                            "UTC",
+                          ]),
+                        ].map((zone) => (
+                          <option key={zone} value={zone}>
+                            {zone === "America/Sao_Paulo"
+                              ? "Brasília · São Paulo"
+                              : zone}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
                 {selection.kind === "folder" && (
                   <label>
                     Nome dos arquivos contém
@@ -950,21 +1030,44 @@ function RemoteBrowser({
                 </div>
               )}
               <div className="remote-footer">
-                <span>Os dashboards usarão esta fonte a cada atualização.</span>
+                <span>
+                  {interval === 1440
+                    ? `Atualização diária às ${dailyTime} (${timeZone}). A primeira carga é imediata; as seguintes dependem da ativação do agendamento. O horário é previsto e pode variar conforme a fila.`
+                    : "Os dashboards usarão esta fonte a cada atualização."}
+                </span>
                 <button
                   className="primary-button"
-                  disabled={busy || !reviewed || !name.trim()}
+                  disabled={
+                    busy ||
+                    !reviewed ||
+                    !name.trim() ||
+                    (interval === 1440 &&
+                      (!/^([01]\d|2[0-3]):[0-5]\d$/.test(dailyTime) ||
+                        !validTimeZone(timeZone)))
+                  }
                   onClick={() =>
                     run(async () => {
+                      const scheduledOptions = {
+                        ...options,
+                        daily:
+                          interval === 1440
+                            ? { time: dailyTime, timeZone }
+                            : undefined,
+                      };
                       const r = await apiJson<{ id: string }>(
                         binding ? "connectors/selection" : "connectors/watch",
                         binding
-                          ? { id: binding.id, name, options, interval }
+                          ? {
+                              id: binding.id,
+                              name,
+                              options: scheduledOptions,
+                              interval,
+                            }
                           : {
                               connectionId: connection.id,
                               target: selection,
                               name,
-                              options,
+                              options: scheduledOptions,
                               interval,
                             },
                       );

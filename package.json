@@ -21,7 +21,7 @@
     "account:create": "node scripts/create-account.mjs",
     "account:create-ready": "node scripts/create-ready-account.mjs",
     "db:connectors": "node scripts/setup-connectors.mjs",
-    "test:connectors": "node scripts/test-connectors.mjs",
+    "test:connectors": "node scripts/test-refresh-schedule.mjs && node scripts/test-connectors.mjs",
     "test:lifecycle": "node scripts/test-source-lifecycle.mjs && node scripts/test-source-history.mjs"
   },
   "dependencies": {

@@ -65,7 +65,13 @@ A migração `supabase/migrations/20260926133929_drivevision_remote_sources.sql`
 
 `vercel.json` agenda `GET /api/cron/sources` a cada minuto. Essa frequência requer plano Vercel que a suporte (Pro/Enterprise); não é compatível com a frequência diária do Hobby. A Vercel envia `Authorization: Bearer CRON_SECRET`. Sem esse segredo o endpoint recusa chamadas e a tela informa que só a atualização manual está disponível. O indicador de configuração não comprova uma execução real: verificar os logs Cron após ativar.
 
-A fila processa até três fontes por invocação, respeitando o orçamento de execução e os intervalos de cada fonte. Os horários são aproximados: fila, limites e indisponibilidade dos provedores podem atrasar a atualização. Há exclusão de execuções simultâneas, timeout e nova tentativa na próxima janela. Não há webhook nem promessa de tempo real.
+A fila processa até três fontes por invocação, respeitando o orçamento de execução e os intervalos de cada fonte. Os horários são aproximados: fila, limites e indisponibilidade dos provedores podem atrasar a atualização. Há exclusão de execuções simultâneas e timeout. Não há webhook nem promessa de tempo real.
+
+Novas seleções oferecem atualização diária com horário e fuso (padrão: 07:00, America/Sao_Paulo), além dos intervalos de 15 minutos, uma hora ou seis horas. A primeira carga é solicitada imediatamente pela interface. Atualizar manualmente não desloca o horário diário. A tela mostra última verificação, próxima execução/tentativa e atraso superior a cinco minutos. As datas da próxima execução são exibidas no fuso do navegador; a regra diária mostra explicitamente seu próprio fuso.
+
+Após erros consecutivos, são antecipadas até duas tentativas, em cinco e quinze minutos (ou no horário regular, se vier antes). A partir da terceira falha, usa-se o calendário normal até um sucesso. Os últimos dados válidos permanecem disponíveis. Pausar mantém a fila desativada mesmo após atualização manual ou edição da seleção; retomar respeita o horário escolhido. Um trabalho já retirado da fila precisa revalidar seu vencimento antes de executar.
+
+Agendamentos antigos de 1.440 minutos preservam seu intervalo até serem editados e salvos com horário/fuso. Em transições de horário de verão, um horário inexistente pula aquele dia; um horário repetido executa uma vez. Nenhuma destas opções dispensa a ativação do Cron e dos provedores em produção.
 
 ## Limites e proteção dos dashboards
 
