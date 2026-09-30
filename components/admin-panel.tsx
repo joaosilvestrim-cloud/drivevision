@@ -39,6 +39,8 @@ type Client = {
   revision: number;
   status: "active" | "suspended";
   pending: boolean;
+  access: boolean;
+  confirmed: boolean;
   createdAt: string;
 };
 type Listing = {
@@ -64,7 +66,7 @@ const date = (value: string) =>
     timeStyle: "short",
   });
 const statusName = (value: string) =>
-  value === "suspended" ? "Suspenso" : "Liberado";
+  value === "suspended" ? "Suspensa" : "Ativa";
 const emptyForm = {
   name: "",
   contact: "",
@@ -239,7 +241,7 @@ export function AdminPanel() {
       >
         {[
           ["Clientes", listing?.counts.total, Users],
-          ["Acessos liberados", listing?.counts.active, Check],
+          ["Contas ativas", listing?.counts.active, Check],
           ["Suspensos", listing?.counts.suspended, ShieldCheck],
           ["Aguardando ativação", listing?.counts.pending, Building2],
         ].map(([label, value, Icon]) => {
@@ -291,9 +293,9 @@ export function AdminPanel() {
             Buscar
           </button>
           <label className="admin-filter-status">
-            <span>Acesso</span>
+            <span>Situação da conta</span>
             <select
-              aria-label="Filtrar por acesso"
+              aria-label="Filtrar por situação da conta"
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
@@ -301,7 +303,7 @@ export function AdminPanel() {
               }}
             >
               <option value="all">Todos</option>
-              <option value="active">Liberados</option>
+              <option value="active">Contas ativas</option>
               <option value="suspended">Suspensos</option>
               <option value="pending">Aguardando ativação</option>
             </select>
@@ -361,9 +363,16 @@ export function AdminPanel() {
                     </td>
                     <td>
                       <span className={`admin-status ${client.status}`}>
-                        {statusName(client.status)}
+                        {client.status === "suspended"
+                          ? "Suspenso"
+                          : client.pending
+                            ? "Aguardando ativação"
+                            : !client.confirmed
+                              ? "Confirmar e-mail"
+                              : client.access
+                                ? "Liberado"
+                                : "Pagamento pendente"}
                       </span>
-                      {client.pending && <small>Aguardando ativação</small>}
                     </td>
                     <td>{date(client.createdAt)}</td>
                     <td>
@@ -500,7 +509,7 @@ export function AdminPanel() {
                     })
                   }
                 >
-                  <option value="active">Liberado</option>
+                  <option value="active">Conta ativa</option>
                   <option value="suspended">Suspenso</option>
                 </select>
               </label>
