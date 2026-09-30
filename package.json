@@ -27,7 +27,9 @@
     "account:superadmin": "node scripts/grant-superadmin.mjs",
     "test:admin": "node scripts/test-admin.mjs",
     "db:billing": "node scripts/setup-billing.mjs",
-    "test:billing": "node scripts/test-billing.mjs"
+    "test:billing": "node scripts/test-billing.mjs",
+    "db:email": "node scripts/setup-email.mjs",
+    "test:email": "node scripts/test-email.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

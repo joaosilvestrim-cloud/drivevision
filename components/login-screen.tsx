@@ -364,14 +364,9 @@ export function LoginScreen({
             <span>Sessão protegida · workspace privado</span>
           </div>
           {!creating && (
-            <details className="login-recovery">
-              <summary>Precisa de ajuda para entrar?</summary>
-              <p>
-                Confira o e-mail e a senha usados no cadastro. A recuperação
-                automática por e-mail ainda não está disponível; entre em
-                contato com suporte@drivedata.com.br.
-              </p>
-            </details>
+            <a className="login-recovery" href="/?view=recover">
+              Esqueci minha senha
+            </a>
           )}
           {activate && !hasSession && (
             <button

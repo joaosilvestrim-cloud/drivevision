@@ -12,6 +12,7 @@ import {
 } from "../server/database.ts";
 import { hashPassword, verifyPassword } from "../server/security.ts";
 process.loadEnvFile(".env.local");
+process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString("base64");
 const http = createServer(handler);
 await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${http.address().port}`;

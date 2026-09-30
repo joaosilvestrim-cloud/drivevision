@@ -1,4 +1,6 @@
 "use client";
+import { EmailAccess } from "./email-access";
+("use client");
 import {
   useCallback,
   useEffect,
@@ -40,6 +42,17 @@ export default function App() {
       ? null
       : new URLSearchParams(window.location.hash.slice(1)).get("activate"),
   );
+  const [emailToken] = useState(() =>
+    new URLSearchParams(window.location.hash.slice(1)).get("token"),
+  );
+  useEffect(() => {
+    if (emailToken)
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+  }, [emailToken]);
   const finishEntrance = useCallback(() => setEntrance(null), []);
   useEffect(() => {
     if (activationToken)
@@ -82,6 +95,19 @@ export default function App() {
   const view = new URLSearchParams(window.location.search).get("view");
   if (view === "terms" || view === "privacy")
     return <LegalPage privacy={view === "privacy"} />;
+  if (
+    ["verify", "reset", "recover"].includes(view || "") ||
+    (!activationToken && user?.emailVerified === false)
+  )
+    return (
+      <EmailAccess
+        mode={
+          view === "reset" ? "reset" : view === "recover" ? "recover" : "verify"
+        }
+        token={emailToken}
+        account={user}
+      />
+    );
   if (
     !activationToken &&
     !user &&

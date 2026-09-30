@@ -11,6 +11,7 @@ import {
 } from "../server/database.ts";
 import { billingCron, periodEnd, safeAsaasUrl } from "../server/billing.ts";
 process.loadEnvFile(".env.local");
+process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString("base64");
 process.env.DRIVEVISION_ASAAS_API_KEY = "test-only-not-a-provider-credential";
 process.env.DRIVEVISION_ASAAS_WEBHOOK_TOKEN = randomBytes(32).toString("hex");
 process.env.DRIVEVISION_ASAAS_ENV = "sandbox";
@@ -140,6 +141,11 @@ async function account() {
   });
   assert.equal(r.status, 200, JSON.stringify(r.data));
   owners.push(r.data.user.id);
+  assert.equal((await req("/api/billing/checkout", {}, r.cookie)).status, 403);
+  await admin.query(
+    "update drivevision.accounts set email_verified_at=now() where id=$1",
+    [r.data.user.id],
+  );
   return { ...r, id: r.data.user.id };
 }
 async function event(kind, entity) {

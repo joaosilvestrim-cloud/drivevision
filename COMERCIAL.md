@@ -3,7 +3,7 @@
 ## Jornada publicada
 
 1. Página pública em `/`, com demonstração local, funcionalidades, preço, limites, termos e privacidade.
-2. Cadastro em `/?view=signup`: conta privada, aceite registrado dos termos e acesso ao pagamento. Criar conta não concede uso do workspace.
+2. Cadastro em `/?view=signup`: conta privada, aceite registrado dos termos e confirmação do e-mail antes do pagamento. Criar conta não concede uso do workspace.
 3. Checkout hospedado no Asaas: **R$ 59,90**, cartão, recorrência mensal. O servidor define o preço; não aceita preço, cliente ou assinatura enviados pelo navegador.
 4. Confirmação: webhook autenticado alimenta uma fila idempotente. O worker consulta o estado vigente no Asaas e libera o período confirmado. O retorno do navegador não comprova pagamento.
 5. `/?view=billing`: situação, vencimento do acesso, cobranças, atualização manual e cancelamento da renovação. O período pago continua válido após cancelar; estorno/contestação retiram a elegibilidade da cobrança.
@@ -28,7 +28,7 @@
 - Cancelar utiliza `DELETE /subscriptions/{id}`. Segundo o Asaas, isso remove futuras cobranças e cobranças pendentes/vencidas, mantendo as pagas. Checkouts ainda abertos também são cancelados.
 - RLS e autorização do servidor bloqueiam o workspace fora do período pago. O login e a área de assinatura continuam acessíveis. A suspensão administrativa nunca é desfeita pelo webhook. Atualizações de fontes de contas sem período pago são ignoradas.
 - O banco guarda somente identificadores e metadados financeiros necessários; não guarda número completo de cartão/CVV nem payload financeiro integral dos eventos.
-- Reembolso, recuperação de senha e exclusão de conta são atendidos pelo suporte informado na interface; não existe automação de e-mail, estorno ou emissão fiscal nesta entrega. Não confundir recibo da cobrança com nota fiscal.
+- Recuperação de senha e confirmação de e-mail são automáticas pelo Resend. Reembolso e exclusão de conta são atendidos pelo suporte; não há estorno automático nem emissão fiscal. Não confundir recibo da cobrança com nota fiscal.
 - A página descreve um responsável por conta. Não oferece equipes multiusuário, Google Drive ativo, IA universal ou processamento ilimitado.
 
 ## Validação
@@ -36,3 +36,13 @@
 `npm run test:billing` usa respostas controladas do Asaas e contas QA no schema privado para testar preço fixo, aceite, bloqueio, isolamento, duplicidade, perda de resposta, webhook, estorno, cancelamento e expiração. O checkout real pode ser criado e cancelado sem inserir cartão; isso não substitui uma transação paga de ponta a ponta.
 
 Referências: [Checkout recorrente](https://docs.asaas.com/docs/checkout-com-assinatura-recorrente), [redirecionamento](https://docs.asaas.com/docs/link-do-checkout-e-redirecionamento-do-cliente), [remoção de assinatura](https://docs.asaas.com/reference/remover-assinatura).
+
+## E-mails transacionais
+
+- Execute `npm run db:email` após a migração comercial. Contas existentes continuam confirmadas; novos cadastros públicos precisam confirmar o e-mail.
+- Configure **POST `/api/admin/email`** com sessão superadmin, origem válida e `{apiKey}`. O segredo fica criptografado no banco privado, usando a mesma chave protegida dos conectores. Alternativa: `DRIVEVISION_RESEND_API_KEY` no servidor. Remetente e resposta: `DriveVision <suporte@drivedata.com.br>`, domínio verificado no Resend.
+- Confirmação vale 24 horas; recuperação vale 30 minutos. Links carregam o token no fragmento, removido da barra de endereço. A confirmação exige ação explícita; leitores automáticos de e-mail não consomem o link. O banco guarda somente o hash do token; o conteúdo pendente fica criptografado e é eliminado após envio/falha definitiva.
+- A troca de senha encerra todas as sessões anteriores. Recuperação não informa se o endereço tem conta. Há limites por IP/endereço e reenvio de confirmação com intervalo mínimo.
+- Fila persistente com tentativas limitadas e chave idempotente estável no Resend. O cron existente processa os e-mails a cada minuto. Confirmação inicial/reenvio também tentam entrega imediata. Falhas permanecem visíveis na administração.
+- Pagamento confirmado, pendência vencida e cancelamento solicitado pelo cliente geram avisos sem duplicação por período/evento. Não são mensagens de marketing.
+- O painel distingue aceitação pelo serviço de entrega efetiva. `npm run test:email` valida confirmação, expiração, repetição, recuperação, revogação de sessões, fila e isolamento administrativo usando respostas controladas, sem envios reais.

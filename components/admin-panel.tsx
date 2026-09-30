@@ -1,4 +1,6 @@
 "use client";
+import { EmailAdmin } from "./email-access";
+("use client");
 import { BillingAdmin } from "./billing-page";
 import {
   useCallback,
@@ -230,6 +232,7 @@ export function AdminPanel() {
         </button>
       </div>
       <BillingAdmin />
+      <EmailAdmin />
       <div
         className="admin-metrics"
         aria-label="Resumo dos resultados filtrados"

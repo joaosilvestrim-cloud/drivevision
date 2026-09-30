@@ -9,6 +9,7 @@ export type Account = {
   email: string;
   superAdmin?: boolean;
   access?: boolean;
+  emailVerified?: boolean;
 };
 export type Persistence = {
   cloud: boolean;

@@ -24,7 +24,7 @@ O botão de novo convite aparece apenas para contas ainda não ativadas e invali
 
 ## Assinaturas online
 
-A página pública oferece DriveVision por **R$ 59,90/mês**, com checkout recorrente de cartão no Asaas. Novos cadastros públicos precisam aceitar os termos e confirmar o pagamento. Contas existentes e as provisionadas pelo administrador continuam com acesso manual. Alterar o rótulo do plano ou reativar uma conta não substitui o pagamento de uma assinatura online.
+A página pública oferece DriveVision por **R$ 59,90/mês**, com checkout recorrente de cartão no Asaas. Novos cadastros públicos precisam aceitar os termos, confirmar o e-mail e concluir o pagamento. Contas existentes e as provisionadas pelo administrador continuam com acesso manual. Alterar o rótulo do plano ou reativar uma conta não substitui o pagamento de uma assinatura online.
 
 O painel apresenta a situação financeira dos cadastros online, períodos pagos, renovações canceladas e confirmações que precisam de atenção. A suspensão administrativa prevalece sobre qualquer pagamento. O operador não visualiza as bases dos clientes.
 
@@ -33,3 +33,5 @@ Consulte [COMERCIAL.md](COMERCIAL.md) para configuração, operação e limites 
 ## Validação
 
 `npm run test:admin` cobre autorização, isolamento entre clientes, provisionamento atômico, duplicidade, convites, suspensão, reativação, conflitos de revisão, auditoria e paginação. Utiliza contas QA identificadas e remove apenas os registros criados pelo próprio teste.
+
+O painel **E-mails automáticos** mostra os últimos 20 envios, filas e falhas de cadastro, recuperação e assinatura. O próprio cliente pode solicitar um novo link de confirmação ou recuperar a senha pela tela de entrada.

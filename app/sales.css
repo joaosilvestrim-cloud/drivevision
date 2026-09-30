@@ -1297,3 +1297,138 @@
     scroll-behavior: auto !important;
   }
 }
+.email-world {
+  min-height: 100vh;
+  background: #e5e5e5;
+  padding: 32px 24px;
+  color: #111;
+}
+.email-world > .drive-brand {
+  width: fit-content;
+  margin: 0 auto 32px;
+}
+.email-card {
+  max-width: 500px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 28px;
+  padding: 36px;
+}
+.email-icon {
+  display: inline-flex;
+  background: #d1ffca;
+  padding: 14px;
+  border-radius: 18px;
+}
+.email-eyebrow {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-top: 24px;
+}
+.email-card h1 {
+  font-family: "Barlow Condensed", sans-serif;
+  text-transform: uppercase;
+  font-size: 42px;
+  line-height: 1.05;
+  margin: 14px 0;
+}
+.email-card p {
+  line-height: 1.6;
+}
+.email-card label {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+  font-size: 14px;
+}
+.email-card input {
+  width: 100%;
+  min-height: 48px;
+  background: #f3f3f3;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+}
+.email-card .login-submit {
+  margin: 24px 0 16px;
+  text-decoration: none;
+  justify-content: center;
+}
+.email-card footer {
+  border-top: 1px solid #eee;
+  margin-top: 28px;
+  padding-top: 20px;
+  font-size: 12px;
+}
+.email-link {
+  display: block;
+  text-align: center;
+  width: 100%;
+  padding: 12px;
+  font-size: 13px;
+}
+.email-notice {
+  padding: 12px;
+  background: #d1ffca;
+  border-radius: 10px;
+}
+.email-admin {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  margin: 24px 0;
+}
+.email-admin header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.email-admin h2 {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 28px;
+  text-transform: uppercase;
+}
+.email-admin p {
+  margin: 12px 0;
+}
+.email-admin header button {
+  padding: 12px;
+}
+.email-table {
+  overflow: auto;
+  margin: 20px 0;
+}
+.email-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+.email-table th,
+.email-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+.email-table small {
+  display: block;
+  color: #8b2929;
+}
+.email-admin > small {
+  color: #666;
+}
+@media (max-width: 480px) {
+  .email-world {
+    padding: 24px 12px;
+  }
+  .email-card {
+    padding: 24px 20px;
+  }
+  .email-card h1 {
+    font-size: 34px;
+  }
+  .email-admin {
+    padding: 16px;
+  }
+}

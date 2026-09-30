@@ -1,3 +1,4 @@
+import { emailVerified, queueEmail } from "./email.ts";
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { z } from "zod";
@@ -311,6 +312,38 @@ export async function reconcileBilling(owner: string) {
       "update drivevision.billing_accounts set paid_until=$2,canceled=$3,state=$4,customer_id=coalesce($5,customer_id),last_reconciled_at=now(),next_reconcile_at=now()+interval '6 hours',last_error=null where owner_id=$1",
       [owner, until, canceled, state, sub?.customer || null],
     );
+    if (
+      state === "active" &&
+      until &&
+      (!account.paid_until ||
+        new Date(until).getTime() > new Date(account.paid_until).getTime())
+    ) {
+      await queueEmail(
+        c,
+        owner,
+        `paid:${owner}:${new Date(until).toISOString()}`,
+        "subscription",
+        "Sua assinatura está ativa",
+        `O pagamento foi confirmado. Seu workspace está disponível até ${new Date(until).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}. A mensalidade é de R$ 59,90.`,
+        `${process.env.DRIVEVISION_APP_ORIGIN || "https://vision.drivedata.com.br"}/?view=billing`,
+        "Acessar minha assinatura",
+      );
+    } else if (state === "overdue" && account.state !== "overdue") {
+      await queueEmail(
+        c,
+        owner,
+        `overdue:${owner}:${payments
+          .filter((p) => p.status === "OVERDUE")
+          .map((p) => p.id)
+          .sort()
+          .join(",")}`,
+        "subscription",
+        "Sua assinatura precisa de atenção",
+        "Há uma pendência de pagamento. Acesse sua assinatura para conferir a cobrança e regularizar seu acesso.",
+        `${process.env.DRIVEVISION_APP_ORIGIN || "https://vision.drivedata.com.br"}/?view=billing`,
+        "Conferir assinatura",
+      );
+    }
   });
 }
 export async function billingStatus(owner: string) {
@@ -539,6 +572,17 @@ async function cancelSubscription(owner: string) {
         "update drivevision.billing_accounts set canceled=true,state=case when paid_until>now() then 'active' else 'canceled' end,next_reconcile_at=now()+interval '6 hours' where owner_id=$1",
         [owner],
       );
+      if (row.subscription_id && !row.canceled)
+        await queueEmail(
+          c,
+          owner,
+          `cancel:${owner}:${row.subscription_id}`,
+          "subscription",
+          "Renovação cancelada",
+          "Sua assinatura não será renovada. Se houver um período já pago, seu acesso permanece disponível até o fim desse período.",
+          `${process.env.DRIVEVISION_APP_ORIGIN || "https://vision.drivedata.com.br"}/?view=billing`,
+          "Ver minha assinatura",
+        );
       return { ok: true };
     },
     { allowUnpaid: true },
@@ -551,8 +595,14 @@ export async function billingRoute(
   origin: string,
 ) {
   if (path === "/api/billing" && method === "GET") return billingStatus(owner);
-  if (path === "/api/billing/checkout" && method === "POST")
+  if (path === "/api/billing/checkout" && method === "POST") {
+    if (!(await emailVerified(owner)))
+      throw new ConnectorError(
+        403,
+        "Confirme seu e-mail antes de continuar com a assinatura.",
+      );
     return createCheckout(owner, origin);
+  }
   if (path === "/api/billing/sync" && method === "POST") {
     await reconcileBilling(owner);
     return billingStatus(owner);

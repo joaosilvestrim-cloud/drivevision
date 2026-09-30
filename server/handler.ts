@@ -1,3 +1,12 @@
+import {
+  adminEmail,
+  consumeEmailToken,
+  emailVerified,
+  flushEmails,
+  issueEmailToken,
+  requestRecovery,
+  resendVerification,
+} from "./email.ts";
 import { adminRoute, isSuperAdmin } from "./admin.ts";
 import {
   billingRoute,
@@ -127,6 +136,7 @@ async function userFor(req: IncomingMessage) {
         ...user,
         superAdmin: await isSuperAdmin(user.id),
         access: await workspaceAccess(user.id),
+        emailVerified: await emailVerified(user.id),
       }
     : null;
 }
@@ -171,8 +181,12 @@ export default async function handler(
         )
       )
         throw new HttpError(401, "Não autorizado.");
+      const email = await flushEmails(3).catch(() => ({
+        configured: false,
+        sent: 0,
+      }));
       const billing = await billingCron();
-      json(res, 200, { ...(await syncDue()), billing });
+      json(res, 200, { ...(await syncDue()), billing, email });
       return;
     }
     if (path === "/api/webhooks/asaas" && req.method === "POST") {
@@ -183,6 +197,41 @@ export default async function handler(
     if (!["GET", "HEAD"].includes(req.method || "")) assertOrigin(req);
     if (path === "/api/session" && req.method === "GET") {
       json(res, 200, { user: await userFor(req) });
+      return;
+    }
+    if (
+      ["/api/email/recover", "/api/email/reset", "/api/email/verify"].includes(
+        path,
+      ) &&
+      req.method === "POST"
+    ) {
+      const ip = (
+        req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+        req.socket.remoteAddress ||
+        "unknown"
+      ).trim();
+      await rateLimit(`email-action:${ip}`, 20, 900);
+      const input = await body(req);
+      if (path === "/api/email/recover") {
+        const email =
+          typeof input.email === "string"
+            ? input.email.trim().toLowerCase()
+            : "";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+          throw new HttpError(400, "Informe um e-mail válido.");
+        await rateLimit(`recovery:${email}`, 3, 900);
+        await requestRecovery(email);
+        // Delivery runs in the durable worker; response timing does not expose account existence.
+        json(res, 200, { ok: true });
+      } else
+        json(
+          res,
+          200,
+          await consumeEmailToken(
+            input,
+            path.endsWith("/reset") ? "reset" : "verify",
+          ),
+        );
       return;
     }
     if (path === "/api/activate" && req.method === "POST") {
@@ -235,6 +284,7 @@ export default async function handler(
           ...user,
           superAdmin: await isSuperAdmin(user.id),
           access: await workspaceAccess(user.id),
+          emailVerified: await emailVerified(user.id),
         },
       });
       return;
@@ -274,7 +324,7 @@ export default async function handler(
         try {
           user = await transaction(id, async (c) => {
             const account = await c.query(
-              "insert into drivevision.accounts (id,email,name,password_hash) values ($1,$2,$3,$4) returning id,email,name",
+              "insert into drivevision.accounts (id,email,name,password_hash,email_verified_at) values ($1,$2,$3,$4,null) returning id,email,name",
               [id, email, name, hash],
             );
             await c.query(
@@ -285,6 +335,7 @@ export default async function handler(
               "insert into drivevision.billing_accounts(owner_id,terms_version,next_reconcile_at) values($1,$2,'infinity')",
               [id, TERMS_VERSION],
             );
+            await issueEmailToken(c, id, "verify");
             return account.rows[0];
           });
         } catch (e) {
@@ -308,6 +359,8 @@ export default async function handler(
         const { password_hash, ...safe } = account.rows[0];
         user = safe;
       }
+      if (path === "/api/register")
+        await flushEmails(1, user.id).catch(() => {});
       const token = newToken();
       await database().query(
         "insert into drivevision.sessions (token_hash,user_id,expires_at) values ($1,$2,now()+interval '7 days')",
@@ -322,6 +375,7 @@ export default async function handler(
           ...user,
           superAdmin: await isSuperAdmin(user.id),
           access: await workspaceAccess(user.id),
+          emailVerified: await emailVerified(user.id),
         },
       });
       return;
@@ -341,6 +395,28 @@ export default async function handler(
         401,
         "Sua sessão expirou. Entre novamente para salvar na nuvem.",
       );
+    if (path === "/api/email/resend" && req.method === "POST") {
+      await rateLimit(`verify-resend:${user.id}`, 1, 60);
+      await rateLimit(`verify-resend-day:${user.id}`, 10, 86400);
+      await resendVerification(user.id);
+      await flushEmails(1, user.id).catch(() => {});
+      json(res, 200, { ok: true });
+      return;
+    }
+    if (
+      path === "/api/admin/email" &&
+      ["GET", "POST"].includes(req.method || "")
+    ) {
+      json(
+        res,
+        200,
+        await adminEmail(
+          user.id,
+          req.method === "POST" ? await body(req) : undefined,
+        ),
+      );
+      return;
+    }
     if (path === "/api/billing" || path.startsWith("/api/billing/")) {
       if (req.method === "POST") await rateLimit(`billing:${user.id}`, 12, 300);
       const origin = new URL(
