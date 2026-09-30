@@ -1,4 +1,5 @@
 "use client";
+import { BillingAdmin } from "./billing-page";
 import {
   useCallback,
   useEffect,
@@ -228,6 +229,7 @@ export function AdminPanel() {
           <Plus size={18} /> Novo cliente
         </button>
       </div>
+      <BillingAdmin />
       <div
         className="admin-metrics"
         aria-label="Resumo dos resultados filtrados"
@@ -421,8 +423,8 @@ export function AdminPanel() {
         )}
       </div>
       <p className="admin-footnote">
-        A liberação de acesso é manual nesta etapa. A cobrança automática será
-        integrada posteriormente.
+        Contas criadas aqui têm acesso manual. Compras pela página pública são
+        liberadas automaticamente pelo Asaas após o pagamento.
       </p>
       <Dialog
         open={editor !== null}

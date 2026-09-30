@@ -22,11 +22,13 @@ O botão de novo convite aparece apenas para contas ainda não ativadas e invali
 - Alterações usam revisão para evitar sobrescritas entre operadores. Logs administrativos não contêm senhas nem tokens de convite.
 - Contas de operadores não aparecem na listagem comercial nem podem ser suspensas pelo painel.
 
-## Cobrança futura
+## Assinaturas online
 
-O controle de acesso é **manual**. Os campos privados `billing_provider`, `billing_customer_id` e `billing_subscription_id` permitem vincular o cliente ao Asaas posteriormente. A aplicação ainda não cria cobranças nem interpreta o nome do plano como preço, limites ou assinatura.
+A página pública oferece DriveVision por **R$ 59,90/mês**, com checkout recorrente de cartão no Asaas. Novos cadastros públicos precisam aceitar os termos e confirmar o pagamento. Contas existentes e as provisionadas pelo administrador continuam com acesso manual. Alterar o rótulo do plano ou reativar uma conta não substitui o pagamento de uma assinatura online.
 
-Antes de automatizar a liberação, implementar webhooks autenticados, eventos idempotentes e ordenação por estado vigente, política de vencimento/carência e conciliação. Não liberar contas com base em um redirecionamento do navegador. Credenciais do Asaas permanecem no servidor.
+O painel apresenta a situação financeira dos cadastros online, períodos pagos, renovações canceladas e confirmações que precisam de atenção. A suspensão administrativa prevalece sobre qualquer pagamento. O operador não visualiza as bases dos clientes.
+
+Consulte [COMERCIAL.md](COMERCIAL.md) para configuração, operação e limites da integração.
 
 ## Validação
 

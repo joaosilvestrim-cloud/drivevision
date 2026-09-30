@@ -25,7 +25,9 @@
     "test:lifecycle": "node scripts/test-source-lifecycle.mjs && node scripts/test-source-history.mjs",
     "db:admin": "node scripts/setup-admin.mjs",
     "account:superadmin": "node scripts/grant-superadmin.mjs",
-    "test:admin": "node scripts/test-admin.mjs"
+    "test:admin": "node scripts/test-admin.mjs",
+    "db:billing": "node scripts/setup-billing.mjs",
+    "test:billing": "node scripts/test-billing.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

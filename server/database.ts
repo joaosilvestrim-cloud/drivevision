@@ -9,7 +9,7 @@ let pool: Pool | undefined;
 export function databaseConfigured() {
   return Boolean(
     process.env.DRIVEVISION_DATABASE_URL ||
-      (process.env.DRIVEVISION_DB_USER && process.env.DRIVEVISION_DB_PASSWORD),
+    (process.env.DRIVEVISION_DB_USER && process.env.DRIVEVISION_DB_PASSWORD),
   );
 }
 export function connectionOptions(admin = false) {
@@ -89,6 +89,7 @@ export function database() {
 export async function transaction<T>(
   userId: string,
   fn: (client: PoolClient) => Promise<T>,
+  options: { allowUnpaid?: boolean } = {},
 ): Promise<T> {
   const client = await database().connect();
   try {
@@ -107,6 +108,19 @@ export async function transaction<T>(
         throw new ConnectorError(
           401,
           "Esta conta está suspensa. Entre em contato com a administração.",
+        );
+      if (
+        !options.allowUnpaid &&
+        (
+          await client.query(
+            "select 1 from drivevision.billing_accounts where owner_id=$1 and (paid_until is null or paid_until<=now())",
+            [userId],
+          )
+        ).rowCount
+      )
+        throw new ConnectorError(
+          402,
+          "Ative ou regularize sua assinatura em Minha assinatura para acessar o workspace.",
         );
     }
     const result = await fn(client);

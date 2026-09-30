@@ -33,15 +33,18 @@ const err = (status: number, message: string): never => {
   throw new ConnectorError(status, message);
 };
 export async function isSuperAdmin(userId: string) {
-  return transaction(userId, async (c) =>
-    Boolean(
-      (
-        await c.query(
-          "select 1 from drivevision.platform_admins where account_id=$1",
-          [userId],
-        )
-      ).rowCount,
-    ),
+  return transaction(
+    userId,
+    async (c) =>
+      Boolean(
+        (
+          await c.query(
+            "select 1 from drivevision.platform_admins where account_id=$1",
+            [userId],
+          )
+        ).rowCount,
+      ),
+    { allowUnpaid: true },
   );
 }
 async function audit(
@@ -116,7 +119,7 @@ export async function adminRoute(
           page = Math.min(requested, pages);
         const clients = (
           await c.query(
-            `select t.id,t.name,t.plan,t.revision,t.created_at as "createdAt",a.name contact,a.email,case when a.disabled_at is null then 'active' else 'suspended' end status,(a.password_hash like 'setup:%') as pending ${filter} order by t.created_at desc,t.id limit 25 offset $3`,
+            `select t.id,t.name,case when exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id) then 'DriveVision mensal · Asaas' else t.plan end plan,t.revision,t.created_at as "createdAt",a.name contact,a.email,case when a.disabled_at is null then 'active' else 'suspended' end status,(a.password_hash like 'setup:%') as pending ${filter} order by t.created_at desc,t.id limit 25 offset $3`,
             [q, status, (page - 1) * 25],
           )
         ).rows;

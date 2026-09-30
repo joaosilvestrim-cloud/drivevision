@@ -23,6 +23,7 @@ export function LoginScreen({
   activationToken,
   onClearActivation,
   hasSession = false,
+  initialRegister = false,
 }: {
   onLogin: (user: Account) => void;
   onLocal: () => void;
@@ -30,12 +31,14 @@ export function LoginScreen({
   activationToken: string | null;
   onClearActivation: () => void;
   hasSession?: boolean;
+  initialRegister?: boolean;
 }) {
-  const [register, setRegister] = useState(false),
+  const [register, setRegister] = useState(initialRegister),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [confirmation, setConfirmation] = useState(""),
     [name, setName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [visible, setVisible] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -55,7 +58,7 @@ export function LoginScreen({
         activate ? "activate" : register ? "register" : "login",
         activate
           ? { token: activationToken, password }
-          : { email, password, ...(register ? { name } : {}) },
+          : { email, password, ...(register ? { name, acceptedTerms } : {}) },
       );
       setPassword("");
       setConfirmation("");
@@ -74,7 +77,7 @@ export function LoginScreen({
     <main className="login-world">
       <div className="login-noise" aria-hidden="true" />
       <header className="login-header">
-        <a className="drive-brand" href="#" aria-label="DriveData DriveVision">
+        <a className="drive-brand" href="/" aria-label="DriveData DriveVision">
           <img src="/drivedata-logo.png" alt="" width={40} height={40} />
           <span>
             drive<span>data</span>
@@ -164,7 +167,7 @@ export function LoginScreen({
             {activate
               ? "Defina sua senha para ativar seu workspace."
               : register
-                ? "Crie sua conta e dê forma às suas análises."
+                ? "Crie sua conta para assinar por R$ 59,90/mês."
                 : "Entre para continuar de onde parou."}
           </p>
           {!activate && (
@@ -293,6 +296,34 @@ export function LoginScreen({
                 </label>
               </>
             )}
+            {register && !activate && (
+              <>
+                <p className="login-price-note">
+                  <strong>R$ 59,90/mês · sem fidelidade</strong>Renovação mensal
+                  no cartão. Pagamento na próxima etapa.
+                </p>
+                <label className="login-terms">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    required
+                    disabled={busy}
+                  />
+                  <span>
+                    Li e aceito os{" "}
+                    <a href="/?view=terms" target="_blank" rel="noreferrer">
+                      termos de uso
+                    </a>{" "}
+                    e a{" "}
+                    <a href="/?view=privacy" target="_blank" rel="noreferrer">
+                      política de privacidade
+                    </a>
+                    .
+                  </span>
+                </label>
+              </>
+            )}
             {error && (
               <p className="login-error" role="alert">
                 {error}
@@ -321,7 +352,7 @@ export function LoginScreen({
                   {activate
                     ? "Ativar e entrar"
                     : register
-                      ? "Criar meu workspace"
+                      ? "Criar conta e continuar"
                       : "Acessar meu workspace"}
                   <ArrowRight size={19} />
                 </>
@@ -338,7 +369,7 @@ export function LoginScreen({
               <p>
                 Confira o e-mail e a senha usados no cadastro. A recuperação
                 automática por e-mail ainda não está disponível; entre em
-                contato com o administrador da sua conta.
+                contato com suporte@drivedata.com.br.
               </p>
             </details>
           )}
@@ -376,7 +407,8 @@ export function LoginScreen({
         <span>DriveData © {new Date().getFullYear()}</span>
         <span>Transforme dados em próximos passos.</span>
         <span>
-          DRIVEVISION <i>·</i> PRÉVIA
+          <a href="/?view=terms">Termos</a> <i>·</i>{" "}
+          <a href="/?view=privacy">Privacidade</a>
         </span>
       </footer>
     </main>

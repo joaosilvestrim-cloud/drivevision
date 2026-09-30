@@ -1,4 +1,13 @@
 import { adminRoute, isSuperAdmin } from "./admin.ts";
+import {
+  billingRoute,
+  workspaceAccess,
+  billingCron,
+  authorizeWebhook,
+  receiveBillingEvent,
+  adminBilling,
+  TERMS_VERSION,
+} from "./billing.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
@@ -47,9 +56,9 @@ function assertOrigin(req: IncomingMessage) {
   try {
     valid = Boolean(
       origin &&
-        (allowed
-          ? origin === new URL(allowed).origin
-          : new URL(origin).host === host),
+      (allowed
+        ? origin === new URL(allowed).origin
+        : new URL(origin).host === host),
     );
   } catch {}
   if (!valid) throw new HttpError(403, "Origem da requisição não permitida.");
@@ -113,7 +122,13 @@ async function userFor(req: IncomingMessage) {
     [tokenHash(token)],
   );
   const user = result.rows[0];
-  return user ? { ...user, superAdmin: await isSuperAdmin(user.id) } : null;
+  return user
+    ? {
+        ...user,
+        superAdmin: await isSuperAdmin(user.id),
+        access: await workspaceAccess(user.id),
+      }
+    : null;
 }
 async function rateLimit(key: string, limit: number, windowSeconds: number) {
   const bucket = tokenHash(
@@ -156,7 +171,13 @@ export default async function handler(
         )
       )
         throw new HttpError(401, "Não autorizado.");
-      json(res, 200, await syncDue());
+      const billing = await billingCron();
+      json(res, 200, { ...(await syncDue()), billing });
+      return;
+    }
+    if (path === "/api/webhooks/asaas" && req.method === "POST") {
+      await authorizeWebhook(req.headers["asaas-access-token"]?.toString());
+      json(res, 200, await receiveBillingEvent(await body(req)));
       return;
     }
     if (!["GET", "HEAD"].includes(req.method || "")) assertOrigin(req);
@@ -210,7 +231,11 @@ export default async function handler(
       });
       res.setHeader("Set-Cookie", sessionCookie(req, session));
       json(res, 200, {
-        user: { ...user, superAdmin: await isSuperAdmin(user.id) },
+        user: {
+          ...user,
+          superAdmin: await isSuperAdmin(user.id),
+          access: await workspaceAccess(user.id),
+        },
       });
       return;
     }
@@ -224,7 +249,8 @@ export default async function handler(
         "unknown"
       ).trim();
       await rateLimit(`ip:${ip}`, 40, 900);
-      const parsed = credentialsSchema.safeParse(await body(req));
+      const input = await body(req);
+      const parsed = credentialsSchema.safeParse(input);
       if (!parsed.success)
         throw new HttpError(
           400,
@@ -234,6 +260,11 @@ export default async function handler(
       await rateLimit(`email:${email}`, 10, 900);
       let user;
       if (path === "/api/register") {
+        if (input.acceptedTerms !== true)
+          throw new HttpError(
+            400,
+            "Aceite os termos de uso e a política de privacidade para continuar.",
+          );
         if (process.env.DRIVEVISION_ALLOW_REGISTRATION === "false")
           throw new HttpError(403, "Novos cadastros estão desativados.");
         if (!name) throw new HttpError(400, "Informe seu nome.");
@@ -249,6 +280,10 @@ export default async function handler(
             await c.query(
               "insert into drivevision.workspaces (id,owner_id,name) values ($1,$2,$3)",
               [randomUUID(), id, "Meu workspace"],
+            );
+            await c.query(
+              "insert into drivevision.billing_accounts(owner_id,terms_version,next_reconcile_at) values($1,$2,'infinity')",
+              [id, TERMS_VERSION],
             );
             return account.rows[0];
           });
@@ -283,7 +318,11 @@ export default async function handler(
       );
       res.setHeader("Set-Cookie", sessionCookie(req, token));
       json(res, 200, {
-        user: { ...user, superAdmin: await isSuperAdmin(user.id) },
+        user: {
+          ...user,
+          superAdmin: await isSuperAdmin(user.id),
+          access: await workspaceAccess(user.id),
+        },
       });
       return;
     }
@@ -302,6 +341,32 @@ export default async function handler(
         401,
         "Sua sessão expirou. Entre novamente para salvar na nuvem.",
       );
+    if (path === "/api/billing" || path.startsWith("/api/billing/")) {
+      if (req.method === "POST") await rateLimit(`billing:${user.id}`, 12, 300);
+      const origin = new URL(
+        process.env.DRIVEVISION_APP_ORIGIN || `http://${req.headers.host}`,
+      ).origin;
+      json(
+        res,
+        200,
+        await billingRoute(user.id, path, req.method || "GET", origin),
+      );
+      return;
+    }
+    if (
+      path === "/api/admin/billing" &&
+      ["GET", "POST"].includes(req.method || "")
+    ) {
+      json(
+        res,
+        200,
+        await adminBilling(
+          user.id,
+          req.method === "POST" ? await body(req) : undefined,
+        ),
+      );
+      return;
+    }
     if (path.startsWith("/api/admin/")) {
       if (req.method === "POST") await rateLimit(`admin:${user.id}`, 120, 300);
       const origin =
@@ -318,6 +383,11 @@ export default async function handler(
       json(res, 200, result);
       return;
     }
+    if (!user.access)
+      throw new HttpError(
+        402,
+        "Ative ou regularize sua assinatura em Minha assinatura para acessar o workspace.",
+      );
     if (path === "/api/connectors" || path.startsWith("/api/connectors/")) {
       if (req.method === "POST")
         await rateLimit(`connectors:${user.id}`, 60, 300);

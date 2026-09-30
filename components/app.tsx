@@ -9,6 +9,8 @@ import {
 } from "react";
 import { Cloud, Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { LoginScreen, WorkspaceEntrance } from "./login-screen";
+import { LandingPage, LegalPage } from "./landing-page";
+import { BillingPage } from "./billing-page";
 const Workspace = lazy(() => import("./workspace"));
 import {
   Dialog,
@@ -77,9 +79,30 @@ export default function App() {
         Abrindo seu workspace…
       </div>
     );
+  const view = new URLSearchParams(window.location.search).get("view");
+  if (view === "terms" || view === "privacy")
+    return <LegalPage privacy={view === "privacy"} />;
+  if (
+    !activationToken &&
+    !user &&
+    !localMode &&
+    !["login", "signup"].includes(view || "")
+  )
+    return <LandingPage onDemo={() => setLocalMode(true)} />;
+  if (!activationToken && user && (user.access === false || view === "billing"))
+    return (
+      <BillingPage
+        account={user}
+        onLogout={() => {
+          setUser(null);
+          window.location.assign("/?view=login");
+        }}
+      />
+    );
   if (activationToken || (!user && !localMode))
     return (
       <LoginScreen
+        initialRegister={view === "signup"}
         configured={configured}
         hasSession={!!user}
         activationToken={activationToken}
@@ -232,6 +255,9 @@ function AccountDialog({
                 Workspace privado na nuvem
               </small>
             </div>
+            <a className="primary-button" href="/?view=billing">
+              Minha assinatura
+            </a>
             <p className="model-note">
               O modo local e a sua conta têm dados separados. Você pode copiar
               as análises salvas neste navegador para a conta.

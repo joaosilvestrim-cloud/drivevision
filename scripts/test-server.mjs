@@ -68,10 +68,24 @@ async function signup() {
     password = `QA-${randomUUID()}-local`;
   const r = await request("/api/register", {
     method: "POST",
-    body: { email, password, name: "Validação automatizada" },
+    body: {
+      email,
+      password,
+      name: "Validação automatizada",
+      acceptedTerms: true,
+    },
   });
   assert.equal(r.status, 200, JSON.stringify(r.data));
   accounts.push(r.data.user.id);
+  assert.equal(r.data.user.access, false);
+  assert.equal(
+    (await request("/api/workspace", { cookie: r.cookie })).status,
+    402,
+  );
+  await admin.query(
+    "update drivevision.billing_accounts set paid_until=now()+interval '1 month' where owner_id=$1",
+    [r.data.user.id],
+  );
   return { ...r, email, password };
 }
 try {
