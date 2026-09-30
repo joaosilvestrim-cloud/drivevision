@@ -430,9 +430,8 @@ export default function Workspace({
         },
         annotations: { readOnlyHint: true },
         execute: async () => {
-          const { boardRows, initialVisuals } = await import(
-            "@/lib/visual-builder"
-          );
+          const { boardRows, initialVisuals } =
+            await import("@/lib/visual-builder");
           const { prepareSource } = await import("@/lib/data-model");
           const { chartData } = await import("@/lib/chart-model");
           const prepared = prepareSource(source, config.dataSteps);
@@ -547,7 +546,7 @@ export default function Workspace({
             <strong>{view === "studio" ? "Visão geral" : heading}</strong>
           </div>
           <button className="version-badge" onClick={() => setModal("help")}>
-            PRÉVIA DO PRODUTO
+            GUIA DO DRIVEVISION
           </button>
         </header>
         <div className="page-content">
@@ -1147,7 +1146,8 @@ export default function Workspace({
           <DialogHeader>
             <DialogTitle>Seu workspace de análises</DialogTitle>
             <DialogDescription>
-              Uma primeira versão para experimentar o produto.
+              Transforme suas fontes de dados em análises que acompanham seu
+              negócio.
             </DialogDescription>
           </DialogHeader>
           <ol className="help-steps">
@@ -1183,7 +1183,7 @@ export default function Workspace({
             </li>
           </ol>
           <div className="help-limit">
-            <strong>O que esta prévia inclui</strong>
+            <strong>O que você pode fazer</strong>
             <p>
               Área de trabalho com pastas, favoritos e múltiplos dashboards.
               Importação de planilhas, preparação de dados, filtros, exploração
@@ -1194,8 +1194,9 @@ export default function Workspace({
               {storage.cloud
                 ? "Sua conta mantém fontes e painéis disponíveis em outros dispositivos."
                 : "No modo local, os dados ficam neste navegador. Entre em uma conta para salvar na nuvem."}{" "}
-              Ainda não há atualização automática de fontes, coedição ou
-              publicação de painéis para terceiros.
+              Conecte OneDrive e SharePoint para agendar atualizações das fontes
+              selecionadas. Coedição e publicação de painéis para terceiros
+              ainda não estão disponíveis.
             </p>
           </div>
         </DialogContent>
