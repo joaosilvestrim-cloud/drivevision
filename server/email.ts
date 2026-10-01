@@ -99,7 +99,7 @@ export async function queueSupportNotification(
     "joaosilvestrim@drivedata.com.br",
   ]) {
     const id = randomUUID();
-    const link = `${origin()}/?view=admin&ticket=${ticket}`;
+    const link = `${origin()}/admin?ticket=${ticket}`;
     const text = `Novo atendimento no DriveVision.\nProtocolo: ${ticket}\nAssunto: ${subject}\n\nConsulte os detalhes e gerencie o atendimento no painel administrativo: ${link}\n\nOs dados do solicitante estão disponíveis apenas para administradores.`;
     const message: Message = {
       from: sender,

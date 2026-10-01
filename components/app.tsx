@@ -105,7 +105,9 @@ export default function App() {
         {translate(" Abrindo seu workspace… ")}
       </div>
     );
-  const view = new URLSearchParams(window.location.search).get("view");
+  const view = /^\/admin\/?$/.test(window.location.pathname)
+    ? "admin"
+    : new URLSearchParams(window.location.search).get("view");
   const verifiedLogin =
     view === "login" &&
     new URLSearchParams(window.location.search).get("verified") === "1";

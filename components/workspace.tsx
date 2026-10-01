@@ -178,7 +178,8 @@ export default function Workspace({
         ? "connections"
         : account?.superAdmin &&
             typeof window !== "undefined" &&
-            new URLSearchParams(window.location.search).get("view") === "admin"
+            (/^\/admin\/?$/.test(window.location.pathname) ||
+              new URLSearchParams(window.location.search).get("view") === "admin")
           ? "admin"
           : "library",
     ),
@@ -209,6 +210,23 @@ export default function Workspace({
   const [combineOpen, setCombineOpen] = useState(false);
   const [historySource, setHistorySource] = useState<Source | null>(null);
   const [template, setTemplate] = useState("overview");
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (view === "admin") {
+      url.pathname = "/admin";
+      url.searchParams.delete("view");
+    } else if (
+      /^\/admin\/?$/.test(url.pathname) ||
+      url.searchParams.get("view") === "admin"
+    ) {
+      url.pathname = "/";
+      url.searchParams.delete("ticket");
+      url.searchParams.delete("view");
+      if (view === "connections") url.searchParams.set("view", view);
+    } else return;
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, [view]);
 
   const sources = [DEMO, ...workspace.sources];
   const changed = useCallback((next: Config) => {

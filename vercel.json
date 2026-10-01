@@ -4,7 +4,10 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist-preview",
-  "rewrites": [{ "source": "/api/:path*", "destination": "/api" }],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/admin", "destination": "/index.html" }
+  ],
   "crons": [{ "path": "/api/cron/sources", "schedule": "* * * * *" }],
   "functions": {
     "api/**/*.ts": { "includeFiles": "server/certs/**", "maxDuration": 120 }

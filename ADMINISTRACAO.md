@@ -1,6 +1,6 @@
 # Administração de clientes
 
-Acesse **Administração** em `https://vision.drivedata.com.br/?view=admin` com uma conta de superadministrador. Se não houver sessão, o link abre o login e mantém o destino administrativo. O painel cadastra empresas, busca e pagina clientes, altera a identificação comercial do plano, suspende/reativa o acesso e exibe as últimas 50 ações administrativas de cada cliente.
+Acesse **Administração** em `https://vision.drivedata.com.br/admin` com uma conta de superadministrador. Se não houver sessão, o link abre o login e mantém o destino administrativo. O endereço anterior `/?view=admin` continua compatível. O painel cadastra empresas, busca e pagina clientes, altera a identificação comercial do plano, suspende/reativa o acesso e exibe as últimas 50 ações administrativas de cada cliente.
 
 ## Jornada do cliente
 
