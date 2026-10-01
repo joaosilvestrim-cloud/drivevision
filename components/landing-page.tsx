@@ -545,12 +545,14 @@ export function LegalPage({ privacy }: { privacy: boolean }) {
               via Asaas. Novas contas elegíveis têm um teste de 7 dias,
               concedido uma única vez por conta após a confirmação do cadastro
               do cartão no checkout. A primeira cobrança ocorre na data exibida
-              no checkout e em Minha assinatura, sete dias de calendário após a
-              abertura do checkout (horário de Brasília). Criar a conta ou abrir
-              o checkout não libera o teste. Após o teste, o acesso depende da
-              confirmação do pagamento. O período disponível e a situação são
-              exibidos em Minha assinatura. Alterações futuras de preço ou
-              condições serão comunicadas antes de sua aplicação.
+              no checkout e em Minha assinatura, após pelo menos sete dias
+              completos de teste. Como a cobrança ocorre por data, o prazo é
+              arredondado para o próximo dia em Brasília para não antecipar a
+              cobrança. Criar a conta ou abrir o checkout não libera o teste.
+              Após o teste, o acesso depende da confirmação do pagamento. O
+              período disponível e a situação são exibidos em Minha assinatura.
+              Alterações futuras de preço ou condições serão comunicadas antes
+              de sua aplicação.
             </p>
             <h2>Cancelamento e reembolso</h2>
             <p>

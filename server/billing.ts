@@ -13,12 +13,19 @@ import {
 export const PRICE_CENTS = 5990;
 export const TERMS_VERSION = "2026-09-30-trial-v1";
 export function trialDueDate(now = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
+  const format = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(now.getTime() + 7 * 86400000));
+  });
+  // Asaas charges by date. Round UP and include the checkout's one-hour validity,
+  // so even a late enrollment receives at least seven full days before charging.
+  const earliest = new Date(now.getTime() + 7 * 86400000 + 3600000);
+  const midnight = new Date(`${format.format(earliest)}T00:00:00-03:00`);
+  return format.format(
+    new Date(midnight.getTime() + (midnight < earliest ? 86400000 : 0)),
+  );
 }
 type ProviderPayment = {
   id: string;

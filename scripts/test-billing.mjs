@@ -9,7 +9,12 @@ import {
   closeDatabase,
   transaction,
 } from "../server/database.ts";
-import { billingCron, periodEnd, safeAsaasUrl } from "../server/billing.ts";
+import {
+  billingCron,
+  periodEnd,
+  safeAsaasUrl,
+  trialDueDate,
+} from "../server/billing.ts";
 process.loadEnvFile(".env.local");
 process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString(
   "base64",
@@ -176,6 +181,16 @@ function pass(name) {
   console.log("PASS", name);
 }
 try {
+  for (const start of [
+    "2026-09-30T21:00:00-03:00",
+    "2026-12-31T23:45:00-03:00",
+    "2028-02-28T00:01:00-03:00",
+  ]) {
+    const now = new Date(start),
+      due = new Date(trialDueDate(now) + "T00:00:00-03:00");
+    assert.ok(due.getTime() - now.getTime() >= 7 * 86400000 + 3600000);
+    assert.ok(due.getTime() - now.getTime() < 8 * 86400000 + 3600000);
+  }
   assert.equal(
     periodEnd("2027-01-31").toISOString(),
     "2027-02-28T03:00:00.000Z",

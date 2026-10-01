@@ -50,7 +50,7 @@ Referências: [Checkout recorrente](https://docs.asaas.com/docs/checkout-com-ass
 
 ## Teste gratuito e atendimento (30/09/2026)
 
-- Novas contas desta versão recebem elegibilidade para um teste único de 7 dias de calendário, com primeira cobrança em data fixa de Brasília. Contas antigas e planos manuais são preservados.
+- Novas contas desta versão recebem elegibilidade para um teste único de pelo menos 7 dias completos, com primeira cobrança arredondada para a próxima data de Brasília após 7 dias mais a validade de 60 minutos do checkout. Contas antigas e planos manuais são preservados.
 - O checkout exige aceite explícito de renovação por R$ 59,90/mês e guarda a data da primeira cobrança. O Asaas hospeda o cadastro do cartão; não coletamos cartão/CVV.
 - A liberação do teste exige consulta autenticada da assinatura Asaas ativa, tipo CREDIT_CARD, valor e ciclo corretos, checkoutSession correspondente e cobrança pendente na data prevista. O callback do navegador não libera acesso.
 - O prazo fica separado de paid_until. Cancelar preserva o teste já concedido, interrompe cobranças futuras e não concede outro teste. A expiração é aplicada em API, RLS e agendador.
