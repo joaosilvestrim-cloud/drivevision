@@ -1,0 +1,217 @@
+.business-profile,
+.business-review {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.business-profile h3,
+.business-review h3 {
+  font-size: 21px;
+  margin: 0;
+  line-height: 1.25;
+}
+.business-profile p,
+.business-review > p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  color: #4a5a55;
+}
+.business-segments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 10px;
+}
+.business-segments button {
+  border: 1px solid #ced8ce;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: left;
+  background: #fff;
+  display: grid;
+  gap: 6px;
+  min-height: 105px;
+  cursor: pointer;
+}
+.business-segments button[aria-pressed="true"] {
+  background: #ceffbf;
+  border: 2px solid #246735;
+  padding: 15px;
+}
+.business-segments button span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #536257;
+}
+.business-fields,
+.business-mapping {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.business-fields input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #cbd4cb;
+  border-radius: 8px;
+}
+.business-templates {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: #f3f6f1;
+  border-radius: 16px;
+}
+.business-templates p,
+.business-templates small {
+  width: 100%;
+}
+.business-review {
+  padding-top: 20px;
+  border-top: 1px solid #dce3d9;
+}
+.business-mapping small {
+  display: block;
+  color: #58665b;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+}
+.business-checks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  background: #f2f6ef;
+  border-radius: 16px;
+  padding: 16px;
+}
+.business-checks div {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.business-checks strong {
+  font-size: 18px;
+}
+.business-checks span {
+  font-size: 12px;
+  color: #546052;
+}
+.business-notes {
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5a624f;
+  list-style: disc;
+}
+.business-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.business-preview article {
+  background: #fff;
+  border: 1px solid #dce3d9;
+  border-radius: 20px;
+  padding: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+.business-preview h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.business-confirm {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 16px;
+  background: #eff8e9;
+  border-radius: 14px;
+}
+.business-confirm input {
+  min-width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: #1c6a3a;
+}
+.business-dialog {
+  width: min(1080px, 96vw) !important;
+  max-width: 1080px !important;
+}
+.business-dialog-body {
+  overflow: auto;
+  min-height: 0;
+  padding: 24px;
+  flex: 1;
+}
+.business-summary {
+  padding: 18px;
+  border: 1px solid #d7e1d3;
+  border-radius: 16px;
+  background: #f4f8f0;
+  line-height: 1.6;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.business-summary strong {
+  display: block;
+  font-size: 15px;
+}
+.business-summary p {
+  margin: 6px 0;
+}
+.business-summary dl {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.business-summary dt {
+  font-weight: 600;
+}
+.business-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.business-summary ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+@media (max-width: 600px) {
+  .business-fields,
+  .business-mapping,
+  .business-preview {
+    grid-template-columns: 1fr;
+  }
+  .business-checks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .business-segments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .business-segments button {
+    padding: 12px;
+  }
+  .business-segments button[aria-pressed="true"] {
+    padding: 11px;
+  }
+  .business-profile h3,
+  .business-review h3 {
+    font-size: 19px;
+  }
+  .business-dialog {
+    width: calc(100vw - 16px) !important;
+  }
+  .business-dialog-body {
+    padding: 16px;
+  }
+  .business-templates button {
+    width: 100%;
+  }
+}

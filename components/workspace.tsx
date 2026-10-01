@@ -77,6 +77,7 @@ import { refreshDerived } from "@/lib/source-lifecycle";
 import { AdminPanel } from "./admin-panel";
 import { SourceHistory } from "./source-history";
 import { WorkspaceTour } from "./workspace-tour";
+import { GuidedDashboard } from "./business-onboarding";
 import { Compass } from "lucide-react";
 
 type View = "studio" | "library" | "sources" | "connections" | "admin";
@@ -214,6 +215,10 @@ export default function Workspace({
   const [combineOpen, setCombineOpen] = useState(false);
   const [historySource, setHistorySource] = useState<Source | null>(null);
   const [template, setTemplate] = useState("overview");
+  const [guidedSource, setGuidedSource] = useState<Source | null>(null);
+  const lastBusinessContext = workspace.dashboards.find(
+    (d) => d.config.businessContext?.version === 1,
+  )?.config.businessContext;
   const [tourOpen, setTourOpen] = useState(false);
   const tourOrigin = useRef<View>(view);
   const tourAttempted = useRef(false);
@@ -422,7 +427,7 @@ export default function Workspace({
     setModal("save");
   }
   function openImport() {
-    setModal("import");
+    guard(() => setModal("import"));
   }
   async function saveDashboard() {
     const name = title.trim();
@@ -755,7 +760,15 @@ export default function Workspace({
               locked={dirty || busy || !loaded || storageError}
               onAnalyze={(id) => {
                 const s = workspace.sources.find((s) => s.id === id);
-                if (s) guard(() => switchDraft(s, defaultConfig(s)));
+                const saved = workspace.dashboards.find(
+                  (d) => d.sourceId === id,
+                );
+                if (s)
+                  guard(() =>
+                    saved
+                      ? switchDraft(s, saved.config, saved.id)
+                      : setGuidedSource(s),
+                  );
               }}
             />
           )}
@@ -920,11 +933,9 @@ export default function Workspace({
                       </button>
                       <button
                         className="secondary-button"
-                        onClick={() =>
-                          guard(() => switchDraft(s, defaultConfig(s)))
-                        }
+                        onClick={() => guard(() => setGuidedSource(s))}
                       >
-                        {translate(" Analisar ")}
+                        {translate("Criar painel guiado")}
                         <ArrowRight size={15} />
                       </button>
                       {!s.demo && (
@@ -1194,13 +1205,25 @@ export default function Workspace({
       </Dialog>
       {modal === "import" && (
         <SmartImport
+          previous={lastBusinessContext}
           sources={workspace.sources}
           cloud={storage.cloud}
           onClose={() => setModal(null)}
-          onImport={async (imported) => {
+          onImport={async (imported, readyConfig) => {
+            const dashboard: SavedDashboard | undefined = readyConfig
+              ? {
+                  id: crypto.randomUUID(),
+                  sourceId: imported.id,
+                  config: readyConfig,
+                  updatedAt: new Date().toISOString(),
+                }
+              : undefined;
             if (
               await persist({
                 ...workspace,
+                dashboards: dashboard
+                  ? [dashboard, ...workspace.dashboards]
+                  : workspace.dashboards,
                 sources: workspace.sources.some((s) => s.id === imported.id)
                   ? workspace.sources.map((s) =>
                       s.id === imported.id ? imported : s,
@@ -1212,8 +1235,47 @@ export default function Workspace({
                 `${imported.rows.length} registros prontos para analisar.`,
               );
               setModal(null);
-              if (!workspace.sources.some((s) => s.id === imported.id))
-                guard(() => switchDraft(imported, defaultConfig(imported)));
+              if (dashboard)
+                switchDraft(imported, dashboard.config, dashboard.id);
+              else {
+                const saved =
+                  workspace.dashboards.find(
+                    (d) => d.sourceId === imported.id && d.id === currentId,
+                  ) ||
+                  workspace.dashboards.find((d) => d.sourceId === imported.id);
+                if (saved) switchDraft(imported, saved.config, saved.id);
+                else setView("sources");
+              }
+              return true;
+            }
+            return false;
+          }}
+        />
+      )}
+      {guidedSource && (
+        <GuidedDashboard
+          source={guidedSource}
+          previous={
+            workspace.dashboards.find(
+              (d) => d.sourceId === guidedSource.id && d.config.businessContext,
+            )?.config.businessContext || lastBusinessContext
+          }
+          onClose={() => setGuidedSource(null)}
+          onCreate={async (c) => {
+            const dashboard: SavedDashboard = {
+              id: crypto.randomUUID(),
+              sourceId: guidedSource.id,
+              config: c,
+              updatedAt: new Date().toISOString(),
+            };
+            if (
+              await persist({
+                ...workspace,
+                dashboards: [dashboard, ...workspace.dashboards],
+              })
+            ) {
+              switchDraft(guidedSource, c, dashboard.id);
+              toast.success("Painel criado e salvo.");
               return true;
             }
             return false;

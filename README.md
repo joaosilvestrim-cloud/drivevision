@@ -6,10 +6,20 @@ O menu **Conexões** acompanha arquivos e pastas do SharePoint, OneDrive e Googl
 
 ## Fluxo principal
 
-1. Importe Excel, CSV ou TSV em Fontes de dados, revise a estrutura sugerida ou use a demonstração.
-2. Abra **Preparar dados**. Selecione uma coluna e a operação; confira a prévia e clique **Adicionar etapa**. Repita e conclua em **Aplicar ao dashboard**.
-3. Abra **Configurar** em um visual. As abas **Dados**, **Formato** e **Filtros** controlam a análise, com prévia e tabela dos resultados calculados.
-4. Clique **Aplicar gráfico** e depois **Salvar** no dashboard. Reabra a análise em Meus dashboards.
+1. Em **Importar planilha**, escolha a atividade da empresa e o objetivo. O modelo vazio e o exemplo preenchido explicam uma linha por item e a diferença entre item e pedido.
+2. Envie Excel, CSV ou TSV e confira a estrutura. Em **Revisar publicação**, selecione nova base ou atualização de uma base existente.
+3. Para um painel novo, confirme as correspondências de valor, data, pedido, cliente, produto/serviço, vendedor e canal. A prévia usa a fonte enviada. Colunas ambíguas ficam sem associação; dados inválidos impedem os indicadores afetados.
+4. **Salvar e abrir meu painel** salva fonte e dashboard na mesma operação e abre a leitura. O contexto e as correspondências ficam no dashboard, dentro do workspace do cliente, e podem ser reutilizados. Atualizações da mesma base preservam o vínculo e reabrem seu painel existente.
+5. Fontes já cadastradas oferecem **Criar painel guiado**. Em Conexões, analisar uma fonte abre seu painel existente ou a mesma conferência para criar o primeiro.
+6. **Editar painel**, **Preparar dados** e **Configurar** permanecem disponíveis para personalização. Alterações posteriores precisam ser salvas.
+
+### Escopo dos modelos de negócio
+
+O primeiro painel cobre vendas e clientes para Comércio, Serviços, Indústria, Alimentação e Operação mista. O objetivo ordena as análises. O valor deve ser o total de cada linha; preços unitários e totais de pedido repetidos em vários itens exigem preparação anterior. Pedidos são contados por identificador distinto preenchido. Sem campo de valor, há apenas contagens; sem data, não há evolução temporal. A soma mantém valores negativos e não aplica deduções automáticas.
+
+Esta etapa aplica a configuração, conferência e primeiro valor dos documentos de produto da Tamires, mas não implementa a visão completa: caixa, estoque, produção, lucro, margem e ticket médio não são calculados automaticamente por estes modelos. O histórico existente de versões de fontes também não equivale à retenção contratual de todos os arquivos originais descrita no plano. O mapeamento salvo é reaproveitado quando as colunas ainda existem; continua exigindo confirmação para cada painel novo.
+
+`node scripts/test-business-onboarding.mjs` verifica totais, pedidos com vários itens, ambiguidades, valores ausentes, devoluções, objetivo, persistência compatível com a API e atualização idempotente da base.
 
 ## Manipulação dos dados
 

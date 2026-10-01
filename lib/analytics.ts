@@ -23,6 +23,7 @@ export type Source = {
   createdAt: string;
 };
 export type Config = {
+  businessContext?: import('./business-onboarding').BusinessContext;
   selections?: Selection[];
   bookmarks?: Bookmark[];
   dataSteps?: DataStep[];

@@ -25,7 +25,9 @@ import {
   type WorkbookData,
   type ImportPlan,
 } from "@/lib/smart-import";
-import type { Source } from "@/lib/analytics";
+import type { Source, Config } from "@/lib/analytics";
+import { BusinessProfileFields, BusinessReview } from "./business-onboarding";
+import { EMPTY_PROFILE, type BusinessContext } from "@/lib/business-onboarding";
 import { planLoad, type LoadOptions } from "@/lib/source-lifecycle";
 
 export function SmartImport({
@@ -33,12 +35,17 @@ export function SmartImport({
   onImport,
   cloud = false,
   sources = [],
+  previous,
 }: {
   onClose: () => void;
-  onImport: (source: Source) => Promise<boolean>;
+  onImport: (source: Source, config?: Config) => Promise<boolean>;
   cloud?: boolean;
   sources?: Source[];
+  previous?: BusinessContext;
 }) {
+  const [profile, setProfile] = useState(previous?.profile || EMPTY_PROFILE);
+  const [preparedConfig, setPreparedConfig] = useState<Config | null>(null);
+  const [createPanel, setCreatePanel] = useState(true);
   const [targetId, setTargetId] = useState("");
   const [stage, setStage] = useState<"structure" | "publish">("structure");
   const [loadOptions, setLoadOptions] = useState<LoadOptions>({
@@ -130,6 +137,11 @@ export function SmartImport({
   }
   async function read(file?: File) {
     if (!file) return;
+    if (!profile.segment) {
+      setError(translate("Escolha seu segmento antes de enviar a planilha."));
+      return;
+    }
+    setPreparedConfig(null);
     setStage("structure");
     setReplaceConfirmed(false);
     generation.current++;
@@ -220,6 +232,7 @@ export function SmartImport({
       !publication.source ||
       !name.trim() ||
       saving ||
+      (!targetId && createPanel && !preparedConfig) ||
       (targetId && loadOptions.mode === "replace-period" && !replaceConfirmed)
     )
       return;
@@ -227,11 +240,14 @@ export function SmartImport({
     setError("");
     try {
       if (
-        await onImport({
-          ...publication.source,
-          id: targetId || crypto.randomUUID(),
-          name: targetId ? publication.source.name : name.trim(),
-        })
+        await onImport(
+          {
+            ...publication.source,
+            id: targetId || crypto.randomUUID(),
+            name: targetId ? publication.source.name : name.trim(),
+          },
+          !targetId && createPanel ? preparedConfig || undefined : undefined,
+        )
       )
         onClose();
       else
@@ -284,9 +300,14 @@ export function SmartImport({
         />
         {!workbook ? (
           <div className="import-welcome">
+            <BusinessProfileFields
+              value={profile}
+              onChange={setProfile}
+              templates
+            />
             <button
               className="smart-drop"
-              disabled={reading}
+              disabled={reading || !profile.segment}
               onClick={() => input.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -917,6 +938,32 @@ export function SmartImport({
                     "Para enviar novos meses da mesma operação, selecione uma base existente nas próximas cargas.",
                   )}
             </p>
+            {!targetId && (
+              <>
+                <label className="business-confirm">
+                  <input
+                    type="checkbox"
+                    checked={createPanel}
+                    onChange={(e) => setCreatePanel(e.target.checked)}
+                  />
+                  <span>
+                    {translate(
+                      "Criar e salvar um painel pronto com esta fonte",
+                    )}
+                  </span>
+                </label>
+                {createPanel && publication.source && (
+                  <BusinessReview
+                    key={`${sheetIndex}:${publication.source.columns.join("|")}`}
+                    source={publication.source}
+                    profile={profile}
+                    onProfile={setProfile}
+                    previous={previous}
+                    onReady={setPreparedConfig}
+                  />
+                )}
+              </>
+            )}
           </section>
         )}
         {error && (
@@ -961,6 +1008,10 @@ export function SmartImport({
                 saving ||
                 (stage === "publish" ? !publication.source : !preview.result) ||
                 !name.trim() ||
+                (stage === "publish" &&
+                  !targetId &&
+                  createPanel &&
+                  !preparedConfig) ||
                 Boolean(
                   stage === "publish" &&
                   targetId &&
@@ -981,7 +1032,9 @@ export function SmartImport({
                 ? translate("Revisar publicação")
                 : targetId
                   ? translate("Publicar atualização")
-                  : translate("Confirmar estrutura e gerar painel")}
+                  : createPanel
+                    ? translate("Salvar e abrir meu painel")
+                    : translate("Salvar somente a base")}
             </button>
           )}
         </footer>

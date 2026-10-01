@@ -10,7 +10,7 @@
     "dev": "node scripts/run-preview.mjs",
     "build": "tsc --noEmit && vite build --config vite.preview.config.ts",
     "start": "vite preview --config vite.preview.config.ts --host 127.0.0.1",
-    "test": "node scripts/test-analytics.mjs && node scripts/test-data-model.mjs && node scripts/test-visual-builder.mjs && node scripts/test-exploration.mjs && node scripts/test-smart-import.mjs && node scripts/test-desktop.mjs",
+    "test": "node scripts/test-analytics.mjs && node scripts/test-data-model.mjs && node scripts/test-visual-builder.mjs && node scripts/test-exploration.mjs && node scripts/test-smart-import.mjs && node scripts/test-desktop.mjs && node scripts/test-business-onboarding.mjs",
     "test:server": "node scripts/test-database-endpoint.mjs && node scripts/test-server-build.mjs && node scripts/test-server.mjs && node scripts/test-activation.mjs",
     "db:inspect": "node scripts/inspect-database.mjs",
     "db:setup": "node scripts/setup-database.mjs",

@@ -1,6 +1,7 @@
 "use client";
 import { t as translate, locale } from "@/lib/i18n";
 import { useVisualDrag } from "@/hooks/use-visual-drag";
+import { BusinessSummary } from './business-onboarding';
 import { useVisualResize } from "@/hooks/use-visual-resize";
 import {
   MoveDiagonal2,
@@ -144,7 +145,7 @@ export function VisualEditor({
   const appearance = { ...DEFAULT_APPEARANCE, ...config.appearance };
   const rows = useMemo(() => boardRows(source, config), [source, config]);
   const [selectedId, setSelectedId] = useState<string | null>(null),
-    [editing, setEditing] = useState(true);
+    [editing, setEditing] = useState(!config.businessContext);
   const [gallery, setGallery] = useState(false),
     [templates, setTemplates] = useState(false),
     [table, setTable] = useState(false);
@@ -876,6 +877,7 @@ export function VisualEditor({
           </button>
         </div>
       )}
+      {config.businessContext&&<BusinessSummary source={source} context={config.businessContext}/>}
       <div
         className={`editor-workspace ${editing && !small ? "with-inspector" : ""}`}
       >
