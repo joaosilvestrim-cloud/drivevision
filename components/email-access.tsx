@@ -295,7 +295,7 @@ export function EmailAdmin() {
             <table>
               <thead>
                 <tr>
-                  <th>Cliente</th>
+                  <th>Destinatário</th>
                   <th>Mensagem</th>
                   <th>Situação</th>
                   <th>Solicitada em</th>
@@ -310,6 +310,7 @@ export function EmailAdmin() {
                         verify: "Confirmação",
                         reset: "Recuperação",
                         subscription: "Assinatura",
+                        support: "Atendimento",
                       }[r.kind] || r.kind}
                     </td>
                     <td>

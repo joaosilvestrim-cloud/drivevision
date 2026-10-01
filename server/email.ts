@@ -353,7 +353,7 @@ export async function adminEmail(owner: string, input?: unknown) {
   ).rows;
   const recent = (
     await database().query(
-      'select e.id,e.kind,e.state,e.last_error as error,e.created_at as "createdAt",e.sent_at as "sentAt",a.email from drivevision.email_outbox e join drivevision.accounts a on a.id=e.owner_id order by e.created_at desc limit 20',
+      `select e.id,e.kind,e.state,e.last_error as error,e.created_at as "createdAt",e.sent_at as "sentAt",case when e.kind='support' then split_part(e.dedupe_key,':',4) else a.email end email from drivevision.email_outbox e left join drivevision.accounts a on a.id=e.owner_id order by e.created_at desc limit 20`,
     )
   ).rows;
   return { configured: !!(await config()), sender, counts, recent };
