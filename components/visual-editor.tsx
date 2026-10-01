@@ -1,6 +1,6 @@
 "use client";
 import { t as translate, locale } from "@/lib/i18n";
-import { useBoardPointer } from "@/hooks/use-board-pointer";
+import { useVisualDrag } from "@/hooks/use-visual-drag";
 import { useVisualResize } from "@/hooks/use-visual-resize";
 import {
   MoveDiagonal2,
@@ -153,9 +153,16 @@ export function VisualEditor({
   const [small, setSmall] = useState(false),
     [panelOpen, setPanelOpen] = useState(false),
     [panelTab, setPanelTab] = useState("visual");
-  const drag = useBoardPointer((from, to) => {
-    if (from !== to) changeVisuals(reorderVisuals(visuals, from, to));
-  }, "[data-visual-drop]");
+  const drag = useVisualDrag(
+    visuals.map((v) => v.id),
+    (ids) => {
+      const byId = new Map(visuals.map((v) => [v.id, v]));
+      changeVisuals(ids.map((id) => byId.get(id)!));
+    },
+  );
+  const orderedVisuals = drag.order
+    .map((id) => visuals.find((v) => v.id === id)!)
+    .filter(Boolean);
   const resize = useVisualResize((id, patch) =>
     changeVisuals(visuals.map((v) => (v.id === id ? { ...v, ...patch } : v))),
   );
@@ -677,7 +684,7 @@ export function VisualEditor({
       className="editor-shell"
       aria-label={translate("Editor de dashboards")}
     >
-      <div className="editor-topbar">
+      <div className="editor-topbar" data-tour="editor-tools">
         <div className="editor-state">
           <span className="editor-mode">
             {editing ? <Pencil size={13} /> : <Eye size={13} />}{" "}
@@ -687,7 +694,7 @@ export function VisualEditor({
             {visuals.length} {translate(" visuais")}
           </span>
         </div>
-        <div className="editor-top-actions">
+        <div className="editor-top-actions" data-tour="chart-tools">
           {editing && (
             <>
               <button
@@ -817,7 +824,11 @@ export function VisualEditor({
               }
               items={[
                 { value: "all", label: "Todos" },
-                ...filterValues.map((v) => ({ raw: true, value: `value:${v}`, label: v })),
+                ...filterValues.map((v) => ({
+                  raw: true,
+                  value: `value:${v}`,
+                  label: v,
+                })),
               ]}
             />
           </>
@@ -886,7 +897,7 @@ export function VisualEditor({
             <div className="layout-feedback">
               <span>
                 {translate(
-                  " Arraste pela alça para reorganizar. Use o canto para redimensionar. ",
+                  "Clique e arraste o gráfico para trocar de posição. No celular, segure antes de arrastar. Use o canto para redimensionar.",
                 )}
               </span>
               <b role="status">
@@ -895,19 +906,20 @@ export function VisualEditor({
                       v0: resize.preview.span,
                       v1: resize.preview.height,
                     })
-                  : drag.state
+                  : drag.active
                     ? translate("Solte sobre outro gráfico · Esc cancela")
                     : translate("Teclado: setas nos controles")}
               </b>
             </div>
           )}
-          <div className="visual-grid">
-            {visuals.map((v, index) => (
+          <div className="visual-grid" ref={drag.grid}>
+            {orderedVisuals.map((v, index) => (
               <article
                 key={v.id}
                 data-visual-drop
                 data-drop-id={v.id}
-                className={`visual-card span-${resize.preview?.id === v.id ? resize.preview.span : v.span} ${editing && selectedId === v.id ? "is-selected" : ""} ${drag.state?.target === v.id ? "drop-target" : ""} ${drag.state?.id === v.id ? "pointer-dragging" : ""} ${resize.preview?.id === v.id ? "resize-active" : ""}`}
+                {...(editing ? drag.bind(v.id) : {})}
+                className={`visual-card span-${resize.preview?.id === v.id ? resize.preview.span : v.span} ${editing && selectedId === v.id ? "is-selected" : ""} ${drag.active === v.id ? "pointer-dragging" : ""} ${resize.preview?.id === v.id ? "resize-active" : ""}`}
                 style={{
                   minHeight:
                     resize.preview?.id === v.id
@@ -930,7 +942,6 @@ export function VisualEditor({
                         title={translate(
                           "Arraste ou use as setas para reorganizar",
                         )}
-                        {...drag.handle(v.id)}
                         onKeyDown={(e) => {
                           if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
                             e.preventDefault();
@@ -941,7 +952,7 @@ export function VisualEditor({
                           ) {
                             e.preventDefault();
                             move(v.id, 1);
-                          } else drag.handle(v.id).onKeyDown(e);
+                          }
                         }}
                       >
                         <GripVertical size={16} />
@@ -980,7 +991,7 @@ export function VisualEditor({
                 <div
                   className="visual-content"
                   onClick={editing ? () => select(v.id) : undefined}
-                  style={{ cursor: editing ? "pointer" : undefined }}
+                  style={{ cursor: editing ? "grab" : undefined }}
                 >
                   <VisualChart
                     visual={v}

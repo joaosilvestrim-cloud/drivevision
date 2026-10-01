@@ -1,0 +1,46 @@
+.dashboard-canvas.editing .visual-card {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.dashboard-canvas.editing .visual-card button,
+.dashboard-canvas.editing .visual-card input {
+  cursor: pointer;
+}
+.dashboard-canvas .visual-card.pointer-dragging {
+  opacity: 0.18;
+  border: 2px dashed var(--board-accent);
+  box-shadow: none;
+}
+.visual-drag-layer.dashboard-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  pointer-events: none;
+  padding: 0 !important;
+  margin: 0;
+  background: none !important;
+  min-width: 0;
+  will-change: transform;
+  overflow: visible;
+  box-shadow: none;
+}
+.visual-drag-layer .visual-card {
+  box-shadow:
+    0 20px 65px #082a3338,
+    0 0 0 2px var(--board-accent);
+  overflow: hidden;
+  cursor: grabbing;
+  transition: none !important;
+}
+.visual-drag-in-progress,
+.visual-drag-in-progress * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .visual-drag-layer .visual-card {
+    box-shadow: 0 0 0 2px var(--board-accent);
+  }
+}

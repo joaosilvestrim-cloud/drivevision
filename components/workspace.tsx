@@ -76,6 +76,8 @@ import { CloudConnections } from "./cloud-connections";
 import { refreshDerived } from "@/lib/source-lifecycle";
 import { AdminPanel } from "./admin-panel";
 import { SourceHistory } from "./source-history";
+import { WorkspaceTour } from "./workspace-tour";
+import { Compass } from "lucide-react";
 
 type View = "studio" | "library" | "sources" | "connections" | "admin";
 const initial: LocalWorkspace = { version: 1, sources: [], dashboards: [] };
@@ -128,6 +130,7 @@ function Nav({
         ].map(({ icon: Icon, label, id }) => (
           <button
             key={id}
+            data-tour={`nav-${id}`}
             aria-current={view === id ? "page" : undefined}
             onClick={() => onNavigate(id as View)}
           >
@@ -179,7 +182,8 @@ export default function Workspace({
         : account?.superAdmin &&
             typeof window !== "undefined" &&
             (/^\/admin\/?$/.test(window.location.pathname) ||
-              new URLSearchParams(window.location.search).get("view") === "admin")
+              new URLSearchParams(window.location.search).get("view") ===
+                "admin")
           ? "admin"
           : "library",
     ),
@@ -210,6 +214,65 @@ export default function Workspace({
   const [combineOpen, setCombineOpen] = useState(false);
   const [historySource, setHistorySource] = useState<Source | null>(null);
   const [template, setTemplate] = useState("overview");
+  const [tourOpen, setTourOpen] = useState(false);
+  const tourOrigin = useRef<View>(view);
+  const tourAttempted = useRef(false);
+  const tourKey = `drivevision.tour.v1:${account?.id || "local"}`;
+  function startTour() {
+    tourAttempted.current = true;
+    tourOrigin.current = view;
+    setModal(null);
+    setTourOpen(true);
+    try {
+      localStorage.setItem(tourKey, "started");
+    } catch {}
+  }
+  function finishTour(completed: boolean) {
+    setTourOpen(false);
+    setView(tourOrigin.current);
+    try {
+      localStorage.setItem(tourKey, completed ? "completed" : "skipped");
+    } catch {}
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLButtonElement>(".tour-launch")
+        ?.focus({ preventScroll: true }),
+    );
+  }
+  useEffect(() => {
+    if (
+      !loaded ||
+      storageError ||
+      !account ||
+      account.superAdmin ||
+      modal ||
+      tourAttempted.current ||
+      workspace.sources.length ||
+      workspace.dashboards.length
+    )
+      return;
+    try {
+      if (localStorage.getItem(tourKey)) return;
+    } catch {}
+    const timer = window.setTimeout(() => {
+      tourAttempted.current = true;
+      tourOrigin.current = view;
+      setTourOpen(true);
+      try {
+        localStorage.setItem(tourKey, "started");
+      } catch {}
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [
+    loaded,
+    storageError,
+    account,
+    modal,
+    workspace.sources.length,
+    workspace.dashboards.length,
+    tourKey,
+    view,
+  ]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -575,12 +638,24 @@ export default function Workspace({
             <span>{translate("Workspace")}</span>
             <ChevronRight size={14} />
             <strong>
-              {view === "studio" ? translate("Visão geral") : translate(heading)}
+              {view === "studio"
+                ? translate("Visão geral")
+                : translate(heading)}
             </strong>
           </div>
-          <button className="version-badge" onClick={() => setModal("help")}>
-            {translate(" GUIA DO DRIVEVISION ")}
-          </button>
+          <div className="tour-shortcuts">
+            <button
+              className="tour-launch"
+              onClick={startTour}
+              disabled={!loaded || busy}
+            >
+              <Compass size={16} />
+              {translate("Tour guiado")}
+            </button>
+            <button className="version-badge" onClick={() => setModal("help")}>
+              {translate(" GUIA DO DRIVEVISION ")}
+            </button>
+          </div>
         </header>
         <div className="page-content">
           <div className="page-heading">
@@ -621,6 +696,7 @@ export default function Workspace({
               )}
               {view === "studio" && (
                 <button
+                  data-tour="save"
                   className="secondary-button"
                   onClick={openSave}
                   disabled={!loaded || busy || storageError}
@@ -630,6 +706,7 @@ export default function Workspace({
               )}
               {view !== "connections" && view !== "admin" && (
                 <button
+                  data-tour={view === "sources" ? "import" : "new-dashboard"}
                   className="primary-button"
                   disabled={!loaded || busy}
                   onClick={view === "sources" ? openImport : openNew}
@@ -1217,6 +1294,10 @@ export default function Workspace({
               )}
             </DialogDescription>
           </DialogHeader>
+          <button className="tour-launch" onClick={startTour}>
+            <Compass size={18} />
+            {translate("Começar o tour")}
+          </button>
           <ol className="help-steps">
             <li>
               <span>1</span>
@@ -1274,6 +1355,7 @@ export default function Workspace({
           </div>
         </DialogContent>
       </Dialog>
+      {tourOpen && <WorkspaceTour onNavigate={setView} onFinish={finishTour} />}
       <AlertDialog
         open={!!remove}
         onOpenChange={(v) => {
