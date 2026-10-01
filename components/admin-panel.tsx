@@ -1,4 +1,5 @@
 "use client";
+import { SupportInbox } from "./help-center";
 import { EmailAdmin } from "./email-access";
 ("use client");
 import { BillingAdmin } from "./billing-page";
@@ -233,6 +234,7 @@ export function AdminPanel() {
           <Plus size={18} /> Novo cliente
         </button>
       </div>
+      <SupportInbox admin />
       <BillingAdmin />
       <EmailAdmin />
       <div

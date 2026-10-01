@@ -90,7 +90,7 @@ export async function connectorsRoute(
         ...state,
         providers: providers.map((id) => ({
           id,
-          configured: providerReady(id),
+          configured: id !== "google" && providerReady(id),
         })),
         scheduled: !!process.env.CRON_SECRET,
       },
@@ -98,6 +98,8 @@ export async function connectorsRoute(
   }
   if (path === "/api/connectors/start" && method === "POST") {
     const p = parse(z.object({ provider }).strict(), input).provider;
+    if (p === "google")
+      throw new ConnectorError(409, "Google Drive estará disponível em breve.");
     if (!providerReady(p))
       throw new ConnectorError(
         503,
@@ -126,9 +128,8 @@ export async function connectorsRoute(
       state,
       code_challenge: createHash("sha256").update(verifier).digest("base64url"),
       code_challenge_method: "S256",
-      ...(p === "google"
-        ? { access_type: "offline", prompt: "consent" }
-        : { prompt: "select_account", response_mode: "query" }),
+      prompt: "select_account",
+      response_mode: "query",
     }).toString();
     return { data: { url: target.href } };
   }

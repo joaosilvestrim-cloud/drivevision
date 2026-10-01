@@ -1,4 +1,5 @@
 "use client";
+import { HelpWidget } from "./help-center";
 import { EmailAccess } from "./email-access";
 ("use client");
 import {
@@ -93,101 +94,119 @@ export default function App() {
       </div>
     );
   const view = new URLSearchParams(window.location.search).get("view");
-  if (view === "terms" || view === "privacy")
-    return <LegalPage privacy={view === "privacy"} />;
-  if (
-    ["verify", "reset", "recover"].includes(view || "") ||
-    (!activationToken && user?.emailVerified === false)
-  )
-    return (
-      <EmailAccess
-        mode={
-          view === "reset" ? "reset" : view === "recover" ? "recover" : "verify"
-        }
-        token={emailToken}
-        account={user}
-      />
-    );
-  if (
-    !activationToken &&
-    !user &&
-    !localMode &&
-    !["login", "signup"].includes(view || "")
-  )
-    return <LandingPage onDemo={() => setLocalMode(true)} />;
-  if (!activationToken && user && (user.access === false || view === "billing"))
-    return (
-      <BillingPage
-        account={user}
-        onLogout={() => {
-          setUser(null);
-          window.location.assign("/?view=login");
-        }}
-      />
-    );
-  if (activationToken || (!user && !localMode))
-    return (
-      <LoginScreen
-        initialRegister={view === "signup"}
-        configured={configured}
-        hasSession={!!user}
-        activationToken={activationToken}
-        onClearActivation={() => setActivationToken(null)}
-        onLocal={() => {
-          setActivationToken(null);
-          if (!user) {
-            setLocalMode(true);
-            setEntrance("Explorador");
+  function screen() {
+    if (view === "terms" || view === "privacy")
+      return <LegalPage privacy={view === "privacy"} />;
+    if (
+      ["verify", "reset", "recover"].includes(view || "") ||
+      (!activationToken && user?.emailVerified === false)
+    )
+      return (
+        <EmailAccess
+          mode={
+            view === "reset"
+              ? "reset"
+              : view === "recover"
+                ? "recover"
+                : "verify"
           }
-        }}
-        onLogin={(account) => {
-          setActivationToken(null);
-          setUser(account);
-          setLocalMode(false);
-          setEntrance(account.name);
-        }}
-      />
+          token={emailToken}
+          account={user}
+        />
+      );
+    if (
+      !activationToken &&
+      !user &&
+      !localMode &&
+      !["login", "signup"].includes(view || "")
+    )
+      return <LandingPage onDemo={() => setLocalMode(true)} />;
+    if (
+      !activationToken &&
+      user &&
+      (user.access === false || view === "billing")
+    )
+      return (
+        <BillingPage
+          account={user}
+          onLogout={() => {
+            setUser(null);
+            window.location.assign("/?view=login");
+          }}
+        />
+      );
+    if (activationToken || (!user && !localMode))
+      return (
+        <LoginScreen
+          initialRegister={view === "signup"}
+          configured={configured}
+          hasSession={!!user}
+          activationToken={activationToken}
+          onClearActivation={() => setActivationToken(null)}
+          onLocal={() => {
+            setActivationToken(null);
+            if (!user) {
+              setLocalMode(true);
+              setEntrance("Explorador");
+            }
+          }}
+          onLogin={(account) => {
+            setActivationToken(null);
+            setUser(account);
+            setLocalMode(false);
+            setEntrance(account.name);
+          }}
+        />
+      );
+    return (
+      <>
+        {entrance && (
+          <WorkspaceEntrance name={entrance} onDone={finishEntrance} />
+        )}
+        <Suspense
+          fallback={
+            <div className="workspace-loading">
+              <img
+                src="/drivedata-logo.png"
+                width={64}
+                height={64}
+                alt="DriveData"
+              />
+              <span>Abrindo sua área de trabalho…</span>
+            </div>
+          }
+        >
+          <Workspace
+            key={`${user?.id || "local"}:${generation}`}
+            storage={storage}
+            account={user}
+            onAccount={() =>
+              user ? setAccountOpen(true) : setLocalMode(false)
+            }
+          />
+        </Suspense>
+        {accountOpen && (
+          <AccountDialog
+            user={user}
+            onClose={() => setAccountOpen(false)}
+            onChange={(next) => {
+              setUser(next);
+              if (!next) setLocalMode(false);
+              setAccountOpen(false);
+            }}
+            onCopied={() => {
+              setGeneration((g) => g + 1);
+              setAccountOpen(false);
+            }}
+          />
+        )}
+      </>
     );
+  }
   return (
     <>
-      {entrance && (
-        <WorkspaceEntrance name={entrance} onDone={finishEntrance} />
-      )}
-      <Suspense
-        fallback={
-          <div className="workspace-loading">
-            <img
-              src="/drivedata-logo.png"
-              width={64}
-              height={64}
-              alt="DriveData"
-            />
-            <span>Abrindo sua área de trabalho…</span>
-          </div>
-        }
-      >
-        <Workspace
-          key={`${user?.id || "local"}:${generation}`}
-          storage={storage}
-          account={user}
-          onAccount={() => (user ? setAccountOpen(true) : setLocalMode(false))}
-        />
-      </Suspense>
-      {accountOpen && (
-        <AccountDialog
-          user={user}
-          onClose={() => setAccountOpen(false)}
-          onChange={(next) => {
-            setUser(next);
-            if (!next) setLocalMode(false);
-            setAccountOpen(false);
-          }}
-          onCopied={() => {
-            setGeneration((g) => g + 1);
-            setAccountOpen(false);
-          }}
-        />
-      )}
+      {screen()}
+      <HelpWidget account={user} />
     </>
   );
 }

@@ -161,6 +161,14 @@ const owners = [];
 const pool = database(),
   originalQuery = pool.query;
 pool.query = function (query, ...args) {
+  // This suite exercises sources only; never dispatch production billing/email jobs.
+  if (
+    typeof query === "string" &&
+    query.startsWith(
+      "select encrypted_value from drivevision.platform_settings",
+    )
+  )
+    return Promise.resolve({ rows: [], rowCount: 0 });
   if (
     typeof query === "string" &&
     query.startsWith(
@@ -249,13 +257,22 @@ try {
   );
   let connection;
   await check(
-    "OAuth state binds user/session, exchanges PKCE once and hides tokens",
+    "new Google connections are disabled; Microsoft uses PKCE; legacy OAuth remains isolated",
     async () => {
-      const start = await req("connectors/start", a, { provider: "google" });
+      assert.equal(
+        (await req("connectors/start", a, { provider: "google" })).status,
+        409,
+      );
+      const start = await req("connectors/start", a, { provider: "onedrive" });
       assert.equal(start.status, 200);
       const url = new URL(start.data.url),
         state = url.searchParams.get("state");
       assert.equal(url.searchParams.get("code_challenge_method"), "S256");
+      // Preserve coverage for previously connected Google sources, without enabling new public authorizations.
+      await admin.query(
+        "update drivevision.cloud_oauth_states set provider='google',redirect_uri=$2 where hash=$1",
+        [tokenHash(state), base + "/api/connectors/callback/google"],
+      );
       assert.ok(
         (
           await req(`connectors/callback/google?state=${state}&code=fixture`, b)

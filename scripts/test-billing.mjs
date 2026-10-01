@@ -11,7 +11,9 @@ import {
 } from "../server/database.ts";
 import { billingCron, periodEnd, safeAsaasUrl } from "../server/billing.ts";
 process.loadEnvFile(".env.local");
-process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString("base64");
+process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString(
+  "base64",
+);
 process.env.DRIVEVISION_ASAAS_API_KEY = "test-only-not-a-provider-credential";
 process.env.DRIVEVISION_ASAAS_WEBHOOK_TOKEN = randomBytes(32).toString("hex");
 process.env.DRIVEVISION_ASAAS_ENV = "sandbox";
@@ -132,7 +134,7 @@ async function req(path, body, cookie, headers = {}) {
     cookie: r.headers.get("set-cookie")?.split(";")[0],
   };
 }
-async function account() {
+async function account(trial = false) {
   const r = await req("/api/register", {
     name: "QA Billing",
     email: `qa-billing-${randomUUID()}@drivevision.invalid`,
@@ -146,6 +148,11 @@ async function account() {
     "update drivevision.accounts set email_verified_at=now() where id=$1",
     [r.data.user.id],
   );
+  if (!trial)
+    await admin.query(
+      "update drivevision.billing_accounts set trial_eligible=false where owner_id=$1",
+      [r.data.user.id],
+    );
   return { ...r, id: r.data.user.id };
 }
 async function event(kind, entity) {
@@ -390,6 +397,94 @@ try {
   );
   pass(
     "unknown checkout outcome is durable, cannot duplicate and recovers through authenticated events",
+  );
+  const t = await account(true);
+  assert.equal((await req("/api/billing/checkout", {}, t.cookie)).status, 400);
+  assert.equal(
+    (await req("/api/billing/checkout", { acceptedTrial: true }, t.cookie))
+      .status,
+    200,
+  );
+  const tc = [...checkouts.values()].at(-1),
+    ts = "sub-trial-" + run;
+  const td = tc.subscription.nextDueDate;
+  assert.ok(new Date(td + "T12:00:00Z") > new Date(Date.now() + 6 * 86400000));
+  subs.set(ts, {
+    id: ts,
+    value: 59.9,
+    cycle: "MONTHLY",
+    customer: "customer-trial-" + run,
+    status: "ACTIVE",
+    billingType: "CREDIT_CARD",
+    checkoutSession: "wrong-checkout",
+    nextDueDate: td,
+  });
+  const tp = {
+    id: "pay-trial-" + run,
+    value: 59.9,
+    status: "PENDING",
+    dueDate: td,
+    subscription: ts,
+    checkoutSession: tc.id,
+    customer: "customer-trial-" + run,
+  };
+  payments.push(tp);
+  await req("/api/billing/sync", {}, t.cookie);
+  assert.equal(
+    (await req("/api/billing", undefined, t.cookie)).data.access,
+    false,
+  );
+  subs.get(ts).checkoutSession = tc.id;
+  await req("/api/billing/sync", {}, t.cookie);
+  const activeTrial = (await req("/api/billing", undefined, t.cookie)).data;
+  assert.equal(activeTrial.state, "trialing");
+  assert.equal(activeTrial.access, true);
+  assert.equal(activeTrial.trialEligible, false);
+  assert.equal(activeTrial.paidUntil, null);
+  assert.equal((await req("/api/workspace", undefined, t.cookie)).status, 200);
+  await req("/api/billing/sync", {}, t.cookie);
+  assert.equal(
+    (await req("/api/billing", undefined, t.cookie)).data.trialEndsAt,
+    activeTrial.trialEndsAt,
+  );
+  assert.equal(
+    (await req("/api/billing/checkout", { acceptedTrial: true }, t.cookie))
+      .status,
+    409,
+  );
+  pass(
+    "trial requires recurring consent and authoritative card checkout subscription; replay cannot extend trial",
+  );
+  await req("/api/billing/cancel", {}, t.cookie);
+  const stopped = (await req("/api/billing", undefined, t.cookie)).data;
+  assert.equal(stopped.canceled, true);
+  assert.equal(stopped.access, true);
+  assert.equal(subs.has(ts), false);
+  await admin.query(
+    "update drivevision.billing_accounts set trial_ends_at=now()-interval '5 minutes' where owner_id=$1",
+    [t.id],
+  );
+  assert.equal((await req("/api/workspace", undefined, t.cookie)).status, 402);
+  await transaction(
+    t.id,
+    async (c) =>
+      assert.equal(
+        (
+          await c.query(
+            "select id from drivevision.workspaces where owner_id=$1",
+            [t.id],
+          )
+        ).rowCount,
+        0,
+      ),
+    { allowUnpaid: true },
+  );
+  assert.equal((await req("/api/support", undefined, t.cookie)).status, 200);
+  const repeat = await req("/api/billing/checkout", {}, t.cookie);
+  assert.equal(repeat.status, 200, JSON.stringify(repeat.data));
+  assert.equal([...checkouts.values()].at(-1).subscription.nextDueDate, today);
+  pass(
+    "trial cancellation preserves remaining days, expiry blocks RLS but retains support, repeat subscription has no free trial",
   );
   console.log(
     `${checks} billing checks passed; no real payment was attempted.`,

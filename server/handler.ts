@@ -1,3 +1,4 @@
+import { createTicket, supportRoute } from "./support.ts";
 import {
   adminEmail,
   consumeEmailToken,
@@ -332,7 +333,7 @@ export default async function handler(
               [randomUUID(), id, "Meu workspace"],
             );
             await c.query(
-              "insert into drivevision.billing_accounts(owner_id,terms_version,next_reconcile_at) values($1,$2,'infinity')",
+              "insert into drivevision.billing_accounts(owner_id,terms_version,trial_eligible,next_reconcile_at) values($1,$2,true,'infinity')",
               [id, TERMS_VERSION],
             );
             await issueEmailToken(c, id, "verify");
@@ -390,11 +391,50 @@ export default async function handler(
       return;
     }
     const user = await userFor(req);
+    if (path === "/api/support" && req.method === "POST") {
+      const ip = (
+        req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+        req.socket.remoteAddress ||
+        "unknown"
+      ).trim();
+      await rateLimit(`support-ip:${ip}`, 5, 3600);
+      if (user) await rateLimit(`support-user:${user.id}`, 10, 3600);
+      const result = await createTicket(user?.id || null, await body(req));
+      // The ticket and notification intent are committed together; delivery failure does not lose the request.
+      await flushEmails(2, undefined, `support:${result.id}:`).catch(() => {});
+      json(res, 201, result);
+      return;
+    }
     if (!user)
       throw new HttpError(
         401,
         "Sua sessão expirou. Entre novamente para salvar na nuvem.",
       );
+    if (
+      (path === "/api/support" && req.method === "GET") ||
+      path === "/api/support/reply" ||
+      path === "/api/admin/support"
+    ) {
+      if (req.method === "POST")
+        await rateLimit(`support-reply:${user.id}`, 30, 3600);
+      const result = await supportRoute(
+        user.id,
+        path.startsWith("/api/admin/"),
+        req.method || "GET",
+        new URL(req.url || "/", "http://localhost"),
+        req.method === "POST" ? await body(req) : undefined,
+      );
+      if (
+        req.method === "POST" &&
+        "id" in result &&
+        !path.startsWith("/api/admin/")
+      )
+        await flushEmails(2, undefined, `support:${result.id}:`).catch(
+          () => {},
+        );
+      json(res, 200, result);
+      return;
+    }
     if (path === "/api/email/resend" && req.method === "POST") {
       await rateLimit(`verify-resend:${user.id}`, 1, 60);
       await rateLimit(`verify-resend-day:${user.id}`, 10, 86400);
@@ -425,7 +465,13 @@ export default async function handler(
       json(
         res,
         200,
-        await billingRoute(user.id, path, req.method || "GET", origin),
+        await billingRoute(
+          user.id,
+          path,
+          req.method || "GET",
+          origin,
+          req.method === "POST" ? await body(req) : undefined,
+        ),
       );
       return;
     }

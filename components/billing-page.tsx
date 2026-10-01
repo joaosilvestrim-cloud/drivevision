@@ -18,6 +18,9 @@ type Billing = {
   canceled?: boolean;
   hasSubscription?: boolean;
   paidUntil?: string;
+  trialEligible?: boolean;
+  trialEndsAt?: string;
+  firstChargeDate?: string;
   error?: string;
   checkoutUrl?: string;
   payments?: {
@@ -67,6 +70,7 @@ export function BillingPage({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [confirm, setConfirm] = useState(false),
+    [acceptedTrial, setAcceptedTrial] = useState(false),
     [notice, setNotice] = useState("");
   const returned = useRef(false);
   const load = useCallback(async () => {
@@ -136,7 +140,9 @@ export function BillingPage({
           OI, {account.name.split(" ")[0]}.<br />
           <em>
             {data?.access
-              ? "SUA ASSINATURA, EM DIA."
+              ? data.state === "trialing"
+                ? "SEU TESTE ESTÁ LIBERADO."
+                : "SUA ASSINATURA, EM DIA."
               : "VAMOS ATIVAR SUA VISÃO?"}
           </em>
         </h1>
@@ -165,7 +171,9 @@ export function BillingPage({
                 ? "ACESSO ADMINISTRADO PELA DRIVEDATA"
                 : data.access
                   ? "SEU WORKSPACE ESTÁ LIBERADO."
-                  : "FALTA SÓ O PAGAMENTO."}
+                  : data.trialEligible
+                    ? "COMECE SEUS 7 DIAS GRÁTIS."
+                    : "FALTA SÓ O PAGAMENTO."}
           </h2>
           {!data && !error && <Loader2 className="spin" />}
           {data && (
@@ -174,13 +182,31 @@ export function BillingPage({
                 {!data.required
                   ? "Seu acesso foi concedido pela administração e não possui renovação automática neste plano."
                   : data.access
-                    ? `Acesso disponível até ${date(data.paidUntil!)}. ${data.canceled ? "A renovação está cancelada." : "Sua assinatura renova mensalmente."}`
-                    : "O workspace é liberado após o Asaas confirmar o pagamento. Seus dados de cartão são preenchidos no ambiente do Asaas."}
+                    ? `Acesso disponível até ${date(data.state === "trialing" ? data.trialEndsAt! : data.paidUntil!)}. ${data.canceled ? "A renovação está cancelada; não haverá nova cobrança." : data.state === "trialing" ? "Após o teste, R$ 59,90/mês no cartão cadastrado. Cancele antes dessa data para não cobrar." : "Sua assinatura renova mensalmente."}`
+                    : data.trialEligible
+                      ? `Cadastre seu cartão no ambiente seguro do Asaas. Primeira cobrança prevista para ${date(data.firstChargeDate!)}; depois, R$ 59,90/mês automaticamente. Confira a data no checkout. O acesso é liberado após a confirmação do cadastro do cartão.`
+                      : "O workspace é liberado após o Asaas confirmar o pagamento. Seus dados de cartão são preenchidos no ambiente do Asaas."}
               </p>
               {data.error && (
                 <p className="billing-notice" role="status">
                   {data.error}
                 </p>
+              )}
+              {data.trialEligible && !data.access && (
+                <label
+                  className="help-consent"
+                  style={{ display: "flex", gap: 10, margin: "18px 0" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={acceptedTrial}
+                    onChange={(e) => setAcceptedTrial(e.target.checked)}
+                  />
+                  <span>
+                    Autorizo a cobrança automática de R$ 59,90/mês após os 7
+                    dias grátis, salvo cancelamento antes da primeira cobrança.
+                  </span>
+                </label>
               )}
               {data.access ? (
                 <a className="sales-button" href="/?view=studio">
@@ -189,12 +215,12 @@ export function BillingPage({
               ) : (
                 <button
                   className="sales-button"
-                  disabled={busy}
+                  disabled={busy || (!!data.trialEligible && !acceptedTrial)}
                   onClick={() =>
                     void run(async () => {
                       const result = await apiJson<{ url: string }>(
                         "billing/checkout",
-                        {},
+                        { acceptedTrial },
                       );
                       location.assign(paymentLink(result.url));
                     })
@@ -207,7 +233,9 @@ export function BillingPage({
                   )}{" "}
                   {data.hasSubscription && !data.canceled
                     ? "Regularizar pagamento"
-                    : "Assinar por R$ 59,90/mês"}
+                    : data.trialEligible
+                      ? "Cadastrar cartão e testar grátis"
+                      : "Assinar por R$ 59,90/mês"}
                 </button>
               )}
               {data.required && (
@@ -221,7 +249,7 @@ export function BillingPage({
                       })
                     }
                   >
-                    <RefreshCw size={16} /> Já paguei / atualizar situação
+                    <RefreshCw size={16} /> Atualizar situação
                   </button>
                   {((data.hasSubscription && !data.canceled) ||
                     data.checkoutUrl) && (
@@ -239,8 +267,8 @@ export function BillingPage({
                 >
                   <strong>Cancelar a renovação?</strong>
                   <p>
-                    Você mantém o acesso até o fim do período pago. Novas
-                    cobranças da assinatura serão interrompidas.
+                    Você mantém o acesso até o fim do teste ou do período pago.
+                    Novas cobranças da assinatura serão interrompidas.
                   </p>
                   <div>
                     <button
@@ -362,7 +390,12 @@ export function BillingPage({
 export function BillingAdmin() {
   const [data, setData] = useState<{
       configured: boolean;
-      counts: { total: number; active: number; canceled: number };
+      counts: {
+        total: number;
+        active: number;
+        trialing: number;
+        canceled: number;
+      };
       pendingEvents: number;
       rows: {
         email: string;
@@ -370,6 +403,7 @@ export function BillingAdmin() {
         state: string;
         canceled: boolean;
         paidUntil: string | null;
+        trialEndsAt: string | null;
         error: string | null;
       }[];
     } | null>(null),
@@ -401,8 +435,9 @@ export function BillingAdmin() {
             {data.configured
               ? "Checkout configurado"
               : "Checkout aguardando configuração"}{" "}
-            · {data.counts.active} com período pago · {data.counts.total}{" "}
-            cadastros online · {data.counts.canceled} renovações canceladas
+            · {data.counts.active} com período pago · {data.counts.trialing} em
+            teste · {data.counts.total} cadastros online ·{" "}
+            {data.counts.canceled} renovações canceladas
           </p>
           {data.pendingEvents > 0 && (
             <p role="alert">
@@ -421,7 +456,10 @@ export function BillingAdmin() {
                   <span>
                     {row.paidUntil && new Date(row.paidUntil) > new Date()
                       ? `Pago até ${date(row.paidUntil)}`
-                      : "Aguardando pagamento"}
+                      : row.trialEndsAt &&
+                          new Date(row.trialEndsAt) > new Date()
+                        ? `Em teste até ${date(row.trialEndsAt)}`
+                        : "Aguardando pagamento"}
                     <small>
                       {row.canceled ? "Renovação cancelada" : row.error || ""}
                     </small>

@@ -173,7 +173,7 @@ const faqs = [
   ],
   [
     "Como funciona a cobrança e o cancelamento?",
-    "R$ 59,90 por mês, com renovação automática no cartão pelo Asaas. O acesso é liberado após a confirmação do pagamento. Cancele a renovação em Minha assinatura; o período já pago continua disponível até a data exibida. Para reembolso ou ajuda, fale com suporte@drivedata.com.br.",
+    "Novas assinaturas têm 7 dias grátis com cartão cadastrado no Asaas. Depois, R$ 59,90 por mês automaticamente. O teste é liberado após a confirmação do cadastro do cartão. A data da primeira cobrança aparece no checkout e em Minha assinatura. Cancele antes dessa data para não cobrar. Para ajuda ou reembolso, use Ajuda e contato.",
   ],
   [
     "Posso dar acesso para minha equipe?",
@@ -201,7 +201,7 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
         </p>
         <div className="sales-actions">
           <a className="sales-button" href="/?view=signup">
-            Começar por R$ 59,90/mês <ArrowUpRight size={20} />
+            Testar grátis por 7 dias <ArrowUpRight size={20} />
           </a>
           <button className="sales-link" onClick={onDemo}>
             Explorar a demonstração <ArrowRight size={18} />
@@ -317,7 +317,7 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
           <li>
             <span>01</span>
             <div>
-              <h3>Crie sua conta e assine</h3>
+              <h3>Crie sua conta e teste</h3>
               <p>
                 Pagamento protegido no ambiente do Asaas. Seu acesso é liberado
                 após a confirmação.
@@ -380,7 +380,10 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
             <strong>59,90</strong>
             <span>/mês</span>
           </div>
-          <p>Uma conta. Seu workspace de análises.</p>
+          <p>
+            <strong>7 dias grátis para começar.</strong> Uma conta. Seu
+            workspace de análises.
+          </p>
           <ul>
             {[
               "Criação de múltiplos dashboards",
@@ -388,7 +391,7 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
               "Importação e preparação de Excel e CSV",
               "Conexões com OneDrive e SharePoint",
               "Atualizações agendadas das fontes conectadas",
-              "Suporte por e-mail",
+              "Central de ajuda e atendimento DriveData",
             ].map((s) => (
               <li key={s}>
                 <Check size={17} />
@@ -400,7 +403,8 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
             Quero meu DriveVision <ArrowUpRight size={21} />
           </a>
           <small>
-            Renovação mensal no cartão. Cancele quando quiser.
+            Cartão necessário. Após 7 dias grátis, renovação mensal automática.
+            Cancele antes da primeira cobrança para não cobrar.
             <br />
             Confira os limites de uso nas perguntas abaixo.
           </small>
@@ -503,6 +507,18 @@ export function LegalPage({ privacy }: { privacy: boolean }) {
               principal. O histórico de fontes obedece às opções e limites
               disponíveis no produto.
             </p>
+            <h2>Atendimento e mensagens</h2>
+            <p>
+              Ao falar conosco, armazenamos nome, e-mail, empresa e telefone
+              quando informados, assunto, descrição, autorização de contato e
+              histórico do atendimento. Esses dados são utilizados pela equipe
+              DriveData para responder e acompanhar sua solicitação. As
+              notificações de novos chamados são enviadas aos responsáveis pelo
+              atendimento via Resend. O assistente de ajuda consulta guias
+              locais; as perguntas do chat não são enviadas a serviços de
+              inteligência artificial. Evite inserir dados sensíveis nos
+              formulários.
+            </p>
             <h2>Cookies e segurança</h2>
             <p>
               Utilizamos um cookie essencial para manter sua sessão e
@@ -526,20 +542,25 @@ export function LegalPage({ privacy }: { privacy: boolean }) {
             <h2>Preço, pagamento e liberação</h2>
             <p>
               O preço é de R$ 59,90 por mês, com renovação automática no cartão
-              via Asaas. A criação da conta não gera acesso pago: a liberação
-              ocorre após a confirmação financeira. Pagamentos em análise podem
-              levar mais tempo. O período disponível e a situação são exibidos
-              em Minha assinatura. Alterações futuras de preço ou condições
-              serão comunicadas antes de sua aplicação.
+              via Asaas. Novas contas elegíveis têm um teste de 7 dias,
+              concedido uma única vez por conta após a confirmação do cadastro
+              do cartão no checkout. A primeira cobrança ocorre na data exibida
+              no checkout e em Minha assinatura, sete dias de calendário após a
+              abertura do checkout (horário de Brasília). Criar a conta ou abrir
+              o checkout não libera o teste. Após o teste, o acesso depende da
+              confirmação do pagamento. O período disponível e a situação são
+              exibidos em Minha assinatura. Alterações futuras de preço ou
+              condições serão comunicadas antes de sua aplicação.
             </p>
             <h2>Cancelamento e reembolso</h2>
             <p>
               Você pode cancelar a renovação em Minha assinatura. O cancelamento
-              impede novas renovações e mantém o acesso até o fim do período já
-              pago, salvo estorno ou contestação. Solicite reembolso ou
-              atendimento sobre cobrança pelo suporte. Os direitos legais
-              aplicáveis ao consumidor, inclusive arrependimento quando cabível,
-              são preservados.
+              impede novas cobranças e mantém o acesso até o fim do teste ou do
+              período já pago, salvo estorno ou contestação. Para evitar a
+              primeira cobrança, cancele antes da data de término do teste.
+              Solicite reembolso ou atendimento sobre cobrança pelo suporte. Os
+              direitos legais aplicáveis ao consumidor, inclusive arrependimento
+              quando cabível, são preservados.
             </p>
             <h2>Uso dos dados e conexões</h2>
             <p>
@@ -551,12 +572,13 @@ export function LegalPage({ privacy }: { privacy: boolean }) {
             </p>
             <h2>Disponibilidade, suporte e encerramento</h2>
             <p>
-              O suporte é prestado pelo e-mail informado nesta página. O serviço
-              pode passar por manutenção e apresentar interrupções; mantenha
-              cópias das suas bases originais. Não há garantia de resultado de
-              negócio. Em caso de inadimplência, o acesso às análises é
-              interrompido ao fim do período pago, permanecendo disponível a
-              área de assinatura. Suspensões por segurança ou uso indevido serão
+              O suporte é prestado pela central Ajuda e contato e pelo e-mail
+              informado nesta página. O serviço pode passar por manutenção e
+              apresentar interrupções; mantenha cópias das suas bases originais.
+              Não há garantia de resultado de negócio. Em caso de inadimplência,
+              o acesso às análises é interrompido ao fim do teste ou do período
+              pago, permanecendo disponíveis a área de assinatura e a central de
+              atendimento. Suspensões por segurança ou uso indevido serão
               tratadas pelo suporte. A exclusão da conta pode ser solicitada ao
               suporte, observadas as retenções legais.
             </p>

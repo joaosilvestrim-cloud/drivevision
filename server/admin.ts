@@ -119,7 +119,7 @@ export async function adminRoute(
           page = Math.min(requested, pages);
         const clients = (
           await c.query(
-            `select t.id,t.name,case when exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id) then 'DriveVision mensal · Asaas' else t.plan end plan,t.revision,t.created_at as "createdAt",a.name contact,a.email,case when a.disabled_at is null then 'active' else 'suspended' end status,(a.password_hash like 'setup:%') as pending, (a.disabled_at is null and a.email_verified_at is not null and a.password_hash not like 'setup:%' and not exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id and (b.paid_until is null or b.paid_until<=now()))) as access, (a.email_verified_at is not null) as confirmed ${filter} order by t.created_at desc,t.id limit 25 offset $3`,
+            `select t.id,t.name,case when exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id) then 'DriveVision mensal · Asaas' else t.plan end plan,t.revision,t.created_at as "createdAt",a.name contact,a.email,case when a.disabled_at is null then 'active' else 'suspended' end status,(a.password_hash like 'setup:%') as pending, (a.disabled_at is null and a.email_verified_at is not null and a.password_hash not like 'setup:%' and not exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id and coalesce(greatest(b.paid_until,b.trial_ends_at),'-infinity'::timestamptz)<=now())) as access, (a.email_verified_at is not null) as confirmed ${filter} order by t.created_at desc,t.id limit 25 offset $3`,
             [q, status, (page - 1) * 25],
           )
         ).rows;

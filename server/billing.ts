@@ -11,7 +11,15 @@ import {
 } from "./connector-security.ts";
 
 export const PRICE_CENTS = 5990;
-export const TERMS_VERSION = "2026-09-30";
+export const TERMS_VERSION = "2026-09-30-trial-v1";
+export function trialDueDate(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(now.getTime() + 7 * 86400000));
+}
 type ProviderPayment = {
   id: string;
   subscription?: string;
@@ -24,6 +32,9 @@ type ProviderPayment = {
   refunds?: { status: string; value: number }[];
 };
 type ProviderResponse = {
+  billingType?: string;
+  checkoutSession?: string;
+  nextDueDate?: string;
   id?: string;
   link?: string;
   value?: number;
@@ -300,14 +311,60 @@ export async function reconcileBilling(owner: string) {
       )
     ).rows[0].until;
     const canceled = !sub || sub.deleted === true || sub.status === "INACTIVE";
+    let trialUntil = account.trial_ends_at;
+    // Asaas creates a hosted recurring subscription only after checkout completion.
+    // Verify its checkout identity, type, price, cycle and first due date server-side.
+    // Redirects and unverified webhook payloads cannot start or extend a trial.
+    const due = checkout?.trial_due_date;
+    const dueDay = due instanceof Date ? due.toISOString().slice(0, 10) : due;
+    if (
+      !account.trial_started_at &&
+      account.trial_eligible &&
+      !account.paid_until &&
+      dueDay &&
+      !canceled &&
+      sub?.status === "ACTIVE" &&
+      sub.billingType === "CREDIT_CARD" &&
+      sub.checkoutSession === checkout.provider_id &&
+      payments.some(
+        (p) =>
+          p.subscription === subscription &&
+          p.customer === sub.customer &&
+          p.dueDate === dueDay &&
+          p.status === "PENDING" &&
+          !p.deleted &&
+          Math.round(Number(p.value) * 100) === PRICE_CENTS,
+      )
+    ) {
+      const end = new Date(`${dueDay}T00:00:00-03:00`);
+      if (end.getTime() > Date.now()) {
+        trialUntil = end;
+        await c.query(
+          "update drivevision.billing_accounts set trial_started_at=now(),trial_ends_at=$2,trial_eligible=false where owner_id=$1",
+          [owner, end],
+        );
+        await queueEmail(
+          c,
+          owner,
+          `trial:${owner}`,
+          "subscription",
+          "Seu teste DriveVision começou",
+          `Seu cartão foi cadastrado no Asaas. Seu teste vai até ${end.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}, quando começa a cobrança automática de R$ 59,90/mês. Cancele a renovação antes dessa data se não quiser continuar.`,
+          `${process.env.DRIVEVISION_APP_ORIGIN || "https://vision.drivedata.com.br"}/?view=billing`,
+          "Gerenciar meu teste",
+        );
+      }
+    }
     const state =
       until && new Date(until).getTime() > Date.now()
         ? "active"
-        : canceled
-          ? "canceled"
-          : payments.some((p) => p.status === "OVERDUE")
-            ? "overdue"
-            : "pending";
+        : trialUntil && new Date(trialUntil).getTime() > Date.now()
+          ? "trialing"
+          : canceled
+            ? "canceled"
+            : payments.some((p) => p.status === "OVERDUE")
+              ? "overdue"
+              : "pending";
     await c.query(
       "update drivevision.billing_accounts set paid_until=$2,canceled=$3,state=$4,customer_id=coalesce($5,customer_id),last_reconciled_at=now(),next_reconcile_at=now()+interval '6 hours',last_error=null where owner_id=$1",
       [owner, until, canceled, state, sub?.customer || null],
@@ -352,7 +409,7 @@ export async function billingStatus(owner: string) {
     async (c) => {
       const row = (
         await c.query(
-          "select state,paid_until,canceled,subscription_id,last_reconciled_at,last_error from drivevision.billing_accounts where owner_id=$1",
+          "select state,paid_until,trial_eligible,trial_started_at,trial_ends_at,canceled,subscription_id,last_reconciled_at,last_error from drivevision.billing_accounts where owner_id=$1",
           [owner],
         )
       ).rows[0];
@@ -371,14 +428,29 @@ export async function billingStatus(owner: string) {
       ).rows;
       const checkout = (
         await c.query(
-          "select url,state,expires_at from drivevision.billing_checkouts where owner_id=$1 order by created_at desc limit 1",
+          "select url,state,expires_at,trial_due_date from drivevision.billing_checkouts where owner_id=$1 order by created_at desc limit 1",
           [owner],
         )
       ).rows[0];
       return {
         required: true,
         access:
-          !!row.paid_until && new Date(row.paid_until).getTime() > Date.now(),
+          Math.max(
+            new Date(row.paid_until || 0).getTime(),
+            new Date(row.trial_ends_at || 0).getTime(),
+          ) > Date.now(),
+        trialEligible:
+          row.trial_eligible && !row.trial_started_at && !row.paid_until,
+        trialEndsAt: row.trial_ends_at,
+        firstChargeDate:
+          row.trial_ends_at ||
+          (checkout?.state === "active" &&
+          new Date(checkout.expires_at).getTime() > Date.now()
+            ? checkout.trial_due_date instanceof Date
+              ? checkout.trial_due_date.toISOString().slice(0, 10)
+              : checkout.trial_due_date
+            : null) ||
+          trialDueDate(),
         state: row.state,
         canceled: row.canceled,
         hasSubscription: !!row.subscription_id,
@@ -397,7 +469,7 @@ export async function billingStatus(owner: string) {
     { allowUnpaid: true },
   );
 }
-async function createCheckout(owner: string, origin: string) {
+async function createCheckout(owner: string, origin: string, input: unknown) {
   const config = await requiredConfig();
   // Commit the creation intent BEFORE the remote request. An unknown outcome never creates a second charge path.
   const intent = await transaction(
@@ -418,6 +490,28 @@ async function createCheckout(owner: string, origin: string) {
         throw new ConnectorError(
           409,
           "Sua assinatura já possui um período pago. Acesse seu workspace.",
+        );
+      if (
+        row.trial_ends_at &&
+        new Date(row.trial_ends_at).getTime() > Date.now()
+      )
+        throw new ConnectorError(
+          409,
+          "Seu teste já está liberado. Acesse seu workspace.",
+        );
+      const trial =
+        row.trial_eligible && !row.trial_started_at && !row.paid_until;
+      if (
+        trial &&
+        !(
+          input &&
+          typeof input === "object" &&
+          (input as { acceptedTrial?: boolean }).acceptedTrial === true
+        )
+      )
+        throw new ConnectorError(
+          400,
+          "Autorize a cobrança mensal após os 7 dias grátis para cadastrar seu cartão.",
         );
       if (row.subscription_id && !row.canceled) {
         const payment = (
@@ -454,11 +548,12 @@ async function createCheckout(owner: string, origin: string) {
           "Seu checkout está sendo preparado. Aguarde a confirmação e atualize a situação em instantes.",
         );
       const id = randomUUID();
+      const due = trial ? trialDueDate() : null;
       await c.query(
-        "insert into drivevision.billing_checkouts(id,owner_id,expires_at) values($1,$2,now()+interval '60 minutes')",
-        [id, owner],
+        "insert into drivevision.billing_checkouts(id,owner_id,expires_at,trial_due_date) values($1,$2,now()+interval '60 minutes',$3)",
+        [id, owner, due],
       );
-      return { id };
+      return { id, due };
     },
     { allowUnpaid: true },
   );
@@ -486,12 +581,14 @@ async function createCheckout(owner: string, origin: string) {
       items: [
         {
           name: "DriveVision mensal",
-          description: "Workspace de análises DriveVision. R$ 59,90 por mês.",
+          description: intent.due
+            ? `7 dias grátis. Primeira cobrança em ${intent.due}; depois R$ 59,90/mês. Cancele antes dessa data para não cobrar.`
+            : "Workspace de análises DriveVision. R$ 59,90 por mês.",
           quantity: 1,
           value: PRICE_CENTS / 100,
         },
       ],
-      subscription: { cycle: "MONTHLY", nextDueDate: today },
+      subscription: { cycle: "MONTHLY", nextDueDate: intent.due || today },
     },
     config,
   );
@@ -569,7 +666,7 @@ async function cancelSubscription(owner: string) {
         [owner],
       );
       await c.query(
-        "update drivevision.billing_accounts set canceled=true,state=case when paid_until>now() then 'active' else 'canceled' end,next_reconcile_at=now()+interval '6 hours' where owner_id=$1",
+        "update drivevision.billing_accounts set canceled=true,state=case when paid_until>now() then 'active' when trial_ends_at>now() then 'trialing' else 'canceled' end,next_reconcile_at=now()+interval '6 hours' where owner_id=$1",
         [owner],
       );
       if (row.subscription_id && !row.canceled)
@@ -579,7 +676,7 @@ async function cancelSubscription(owner: string) {
           `cancel:${owner}:${row.subscription_id}`,
           "subscription",
           "Renovação cancelada",
-          "Sua assinatura não será renovada. Se houver um período já pago, seu acesso permanece disponível até o fim desse período.",
+          "Sua assinatura não será renovada. Seu acesso permanece disponível até o fim do teste já concedido ou do período pago. Nenhuma nova cobrança será feita nesta assinatura.",
           `${process.env.DRIVEVISION_APP_ORIGIN || "https://vision.drivedata.com.br"}/?view=billing`,
           "Ver minha assinatura",
         );
@@ -593,6 +690,7 @@ export async function billingRoute(
   path: string,
   method: string,
   origin: string,
+  input?: unknown,
 ) {
   if (path === "/api/billing" && method === "GET") return billingStatus(owner);
   if (path === "/api/billing/checkout" && method === "POST") {
@@ -601,7 +699,7 @@ export async function billingRoute(
         403,
         "Confirme seu e-mail antes de continuar com a assinatura.",
       );
-    return createCheckout(owner, origin);
+    return createCheckout(owner, origin, input);
   }
   if (path === "/api/billing/sync" && method === "POST") {
     await reconcileBilling(owner);
@@ -771,12 +869,12 @@ export async function adminBilling(actor: string, input?: unknown) {
       }
       const rows = (
         await c.query(
-          'select a.name,a.email,b.state,b.canceled,b.paid_until as "paidUntil",b.last_error as error,b.created_at as "createdAt" from drivevision.billing_accounts b join drivevision.accounts a on a.id=b.owner_id order by b.created_at desc limit 100',
+          'select a.name,a.email,b.state,b.canceled,b.paid_until as "paidUntil",b.trial_ends_at as "trialEndsAt",b.last_error as error,b.created_at as "createdAt" from drivevision.billing_accounts b join drivevision.accounts a on a.id=b.owner_id order by b.created_at desc limit 100',
         )
       ).rows;
       const counts = (
         await c.query(
-          "select count(*)::int total,count(*) filter(where paid_until>now())::int active,count(*) filter(where canceled)::int canceled from drivevision.billing_accounts",
+          "select count(*)::int total,count(*) filter(where paid_until>now())::int active,count(*) filter(where trial_ends_at>now() and (paid_until is null or paid_until<=now()))::int trialing,count(*) filter(where canceled)::int canceled from drivevision.billing_accounts",
         )
       ).rows[0];
       const failures = (
@@ -796,7 +894,7 @@ export async function workspaceAccess(owner: string) {
     async (c) =>
       !(
         await c.query(
-          "select 1 from drivevision.billing_accounts where owner_id=$1 and (paid_until is null or paid_until<=now())",
+          "select 1 from drivevision.billing_accounts where owner_id=$1 and coalesce(greatest(paid_until,trial_ends_at),'-infinity'::timestamptz)<=now()",
           [owner],
         )
       ).rowCount,

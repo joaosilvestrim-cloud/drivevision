@@ -113,7 +113,7 @@ export async function transaction<T>(
         !options.allowUnpaid &&
         (
           await client.query(
-            "select 1 from drivevision.billing_accounts where owner_id=$1 and (paid_until is null or paid_until<=now())",
+            "select 1 from drivevision.billing_accounts where owner_id=$1 and coalesce(greatest(paid_until,trial_ends_at),'-infinity'::timestamptz)<=now()",
             [userId],
           )
         ).rowCount

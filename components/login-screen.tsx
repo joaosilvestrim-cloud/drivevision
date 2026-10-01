@@ -167,7 +167,7 @@ export function LoginScreen({
             {activate
               ? "Defina sua senha para ativar seu workspace."
               : register
-                ? "Crie sua conta para assinar por R$ 59,90/mês."
+                ? "Comece com 7 dias grátis. Depois, R$ 59,90/mês."
                 : "Entre para continuar de onde parou."}
           </p>
           {!activate && (
@@ -299,8 +299,9 @@ export function LoginScreen({
             {register && !activate && (
               <>
                 <p className="login-price-note">
-                  <strong>R$ 59,90/mês · sem fidelidade</strong>Renovação mensal
-                  no cartão. Pagamento na próxima etapa.
+                  <strong>7 dias grátis · depois R$ 59,90/mês</strong>Cadastre o
+                  cartão na próxima etapa. Renovação automática após o teste.
+                  Cancele antes da primeira cobrança para não cobrar.
                 </p>
                 <label className="login-terms">
                   <input

@@ -46,3 +46,16 @@ Referências: [Checkout recorrente](https://docs.asaas.com/docs/checkout-com-ass
 - Fila persistente com tentativas limitadas e chave idempotente estável no Resend. O cron existente processa os e-mails a cada minuto. Confirmação inicial/reenvio também tentam entrega imediata. Falhas permanecem visíveis na administração.
 - Pagamento confirmado, pendência vencida e cancelamento solicitado pelo cliente geram avisos sem duplicação por período/evento. Não são mensagens de marketing.
 - O painel distingue aceitação pelo serviço de entrega efetiva. `npm run test:email` valida confirmação, expiração, repetição, recuperação, revogação de sessões, fila e isolamento administrativo usando respostas controladas, sem envios reais.
+
+
+## Teste gratuito e atendimento (30/09/2026)
+
+- Novas contas desta versão recebem elegibilidade para um teste único de 7 dias de calendário, com primeira cobrança em data fixa de Brasília. Contas antigas e planos manuais são preservados.
+- O checkout exige aceite explícito de renovação por R$ 59,90/mês e guarda a data da primeira cobrança. O Asaas hospeda o cadastro do cartão; não coletamos cartão/CVV.
+- A liberação do teste exige consulta autenticada da assinatura Asaas ativa, tipo CREDIT_CARD, valor e ciclo corretos, checkoutSession correspondente e cobrança pendente na data prevista. O callback do navegador não libera acesso.
+- O prazo fica separado de paid_until. Cancelar preserva o teste já concedido, interrompe cobranças futuras e não concede outro teste. A expiração é aplicada em API, RLS e agendador.
+- Migração adicional: npm run db:support-trial. Validação: npm run test:billing e npm run test:support.
+- Ajuda e contato disponível em todas as telas: assistente baseado em guias locais, guias por assunto, formulário público e histórico privado para compradores. Não é um modelo generativo e não consulta arquivos do cliente.
+- Chamados e mensagens de compradores notificam tamirescavani@drivedata.com e joaosilvestrim@drivedata.com via outbox Resend, uma entrega idempotente por destinatário. Falhas são repetidas e aparecem no detalhe administrativo. Estado enviado significa aceitação pelo provedor, não comprova leitura.
+- Administradores respondem no histórico privado do comprador. Para visitantes, o painel apresenta o e-mail de retorno; o visitante não recebe acesso ao histórico por um protocolo público. Sem anexos; não solicitar planilhas ou credenciais pelo suporte.
+- Google Drive e APIs externas aparecem Em breve. Novas autorizações Google estão bloqueadas também no servidor. Conexões Microsoft permanecem disponíveis.

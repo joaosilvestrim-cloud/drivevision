@@ -29,7 +29,9 @@
     "db:billing": "node scripts/setup-billing.mjs",
     "test:billing": "node scripts/test-billing.mjs",
     "db:email": "node scripts/setup-email.mjs",
-    "test:email": "node scripts/test-email.mjs"
+    "test:email": "node scripts/test-email.mjs",
+    "test:support": "node scripts/test-support.mjs",
+    "db:support-trial": "node scripts/setup-support-trial.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -148,8 +148,8 @@ export function CloudConnections({
         <Cloud size={36} />
         <h2>Seus dados continuam conectados.</h2>
         <p>
-          Entre na sua conta para conectar SharePoint, OneDrive ou Google Drive
-          e atualizar suas análises.
+          Entre na sua conta para conectar SharePoint ou OneDrive e atualizar
+          suas análises.
         </p>
         <button className="primary-button" onClick={onLogin}>
           Entrar para conectar <ArrowRight size={16} />
@@ -197,7 +197,9 @@ export function CloudConnections({
       )}
       <div className="provider-grid">
         {(["sharepoint", "onedrive", "google"] as Provider[]).map((p) => {
-          const ready = state?.providers.find((v) => v.id === p)?.configured;
+          const comingSoon = p === "google";
+          const ready =
+            !comingSoon && state?.providers.find((v) => v.id === p)?.configured;
           return (
             <article className="provider-card" key={p}>
               <span className={`provider-symbol ${p}`} aria-hidden="true">
@@ -211,7 +213,9 @@ export function CloudConnections({
                     ? "Planilhas e arquivos da sua conta Microsoft."
                     : "Arquivos, drives compartilhados e Google Sheets."}
               </p>
-              <span className="connection-tag">Somente leitura</span>
+              <span className="connection-tag">
+                {comingSoon ? "Em breve" : "Somente leitura"}
+              </span>
               <button
                 className="secondary-button"
                 disabled={!!busy || !state || !ready}
@@ -225,14 +229,16 @@ export function CloudConnections({
                   })
                 }
               >
-                {busy === p
-                  ? "Abrindo autorização…"
-                  : ready
-                    ? "Conectar conta"
-                    : "Aguardando configuração"}
+                {comingSoon
+                  ? "Em breve"
+                  : busy === p
+                    ? "Abrindo autorização…"
+                    : ready
+                      ? "Conectar conta"
+                      : "Aguardando configuração"}
                 <Plus size={15} />
               </button>
-              {state && !ready && (
+              {state && !ready && !comingSoon && (
                 <small>
                   A integração precisa ser habilitada pelo administrador.
                 </small>
@@ -240,6 +246,17 @@ export function CloudConnections({
             </article>
           );
         })}
+        <article className="provider-card">
+          <span className="provider-symbol" aria-hidden="true">
+            ↔
+          </span>
+          <h3>APIs externas</h3>
+          <p>Integrações diretas com outros sistemas e serviços.</p>
+          <span className="connection-tag">Em breve</span>
+          <button className="secondary-button" disabled>
+            Em breve <Plus size={15} />
+          </button>
+        </article>
       </div>
       <section className="connected-accounts">
         <div className="connections-section-title">

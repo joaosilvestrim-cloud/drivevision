@@ -445,7 +445,7 @@ export async function syncDue() {
   const started = Date.now();
   let processed = 0;
   const rows = await database().query(
-    "select s.binding_id,s.owner_id from drivevision.cloud_schedule s join drivevision.accounts a on a.id=s.owner_id where a.disabled_at is null and not exists(select 1 from drivevision.billing_queue b where b.owner_id=s.owner_id and (b.paid_until is null or b.paid_until<=now())) and s.due_at<=now() and (s.lease_until is null or s.lease_until<now()) order by s.due_at limit 3",
+    "select s.binding_id,s.owner_id from drivevision.cloud_schedule s join drivevision.accounts a on a.id=s.owner_id where a.disabled_at is null and not exists(select 1 from drivevision.billing_queue b where b.owner_id=s.owner_id and coalesce(greatest(b.paid_until,b.trial_ends_at),'-infinity'::timestamptz)<=now()) and s.due_at<=now() and (s.lease_until is null or s.lease_until<now()) order by s.due_at limit 3",
   );
   for (const row of rows.rows) {
     if (Date.now() - started > 15000) break;

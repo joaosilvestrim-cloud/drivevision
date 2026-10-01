@@ -86,6 +86,40 @@ export async function queueEmail(
     ],
   );
 }
+export async function queueSupportNotification(
+  c: PoolClient,
+  owner: string | null,
+  ticket: string,
+  event: string,
+  subject: string,
+) {
+  // Fixed recipients: a public contact form must never become an arbitrary mail relay.
+  for (const to of [
+    "tamirescavani@drivedata.com",
+    "joaosilvestrim@drivedata.com",
+  ]) {
+    const id = randomUUID();
+    const link = `${origin()}/?view=admin&ticket=${ticket}`;
+    const text = `Novo atendimento no DriveVision.\nProtocolo: ${ticket}\nAssunto: ${subject}\n\nConsulte os detalhes e gerencie o atendimento no painel administrativo: ${link}\n\nOs dados do solicitante estão disponíveis apenas para administradores.`;
+    const message: Message = {
+      from: sender,
+      to: [to],
+      subject: `DriveVision · atendimento ${ticket.slice(0, 8)}`,
+      text,
+      html: `<p>${escape(text).replace(/\n/g, "<br>")}</p>`,
+      reply_to: "suporte@drivedata.com.br",
+    };
+    await c.query(
+      "insert into drivevision.email_outbox(id,owner_id,dedupe_key,kind,encrypted_payload,expires_at) values($1,$2,$3,'support',$4,now()+interval '20 hours') on conflict(dedupe_key) do nothing",
+      [
+        id,
+        owner,
+        `support:${ticket}:${event}:${to}`,
+        seal(message, `drivevision:email:${id}`),
+      ],
+    );
+  }
+}
 export async function issueEmailToken(
   c: PoolClient,
   owner: string,
@@ -116,7 +150,7 @@ export async function issueEmailToken(
     purpose,
     purpose === "verify" ? "Confirme seu e-mail" : "Redefina sua senha",
     purpose === "verify"
-      ? "Confirme seu endereço para continuar com sua assinatura de R$ 59,90/mês. Este link vale por 24 horas."
+      ? "Confirme seu endereço para cadastrar o cartão e iniciar seus 7 dias grátis. Após o teste, R$ 59,90/mês, salvo cancelamento. Este link vale por 24 horas."
       : "Recebemos uma solicitação para redefinir sua senha. O link vale por 30 minutos e pode ser usado uma única vez.",
     `${origin()}/?view=${purpose}#token=${token}`,
     purpose === "verify" ? "Confirmar meu e-mail" : "Criar nova senha",
@@ -218,7 +252,11 @@ export async function emailVerified(owner: string) {
     )
   ).rows[0]?.email_verified_at;
 }
-export async function flushEmails(limit = 5, owner?: string) {
+export async function flushEmails(
+  limit = 5,
+  owner?: string,
+  dedupePrefix?: string,
+) {
   const credentials = await config();
   if (!credentials) return { configured: false, sent: 0 };
   let sent = 0;
@@ -231,8 +269,8 @@ export async function flushEmails(limit = 5, owner?: string) {
       async (c) =>
         (
           await c.query(
-            "update drivevision.email_outbox set state='sending',attempts=attempts+1,retry_at=now()+interval '2 minutes' where id=(select id from drivevision.email_outbox where state in ('pending','sending') and retry_at<=now() and expires_at>now() and ($1::uuid is null or owner_id=$1) order by created_at for update skip locked limit 1) returning *",
-            [owner || null],
+            "update drivevision.email_outbox set state='sending',attempts=attempts+1,retry_at=now()+interval '2 minutes' where id=(select id from drivevision.email_outbox where state in ('pending','sending') and retry_at<=now() and expires_at>now() and ($1::uuid is null or owner_id=$1) and ($2::text is null or starts_with(dedupe_key,$2)) order by created_at for update skip locked limit 1) returning *",
+            [owner || null, dedupePrefix || null],
           )
         ).rows[0],
     );
