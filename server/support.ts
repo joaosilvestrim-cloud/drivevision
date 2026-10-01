@@ -3,7 +3,7 @@ import { z } from "zod";
 import { transaction } from "./database.ts";
 import { ConnectorError } from "./connector-security.ts";
 import { isSuperAdmin } from "./admin.ts";
-import { queueSupportNotification } from "./email.ts";
+import { queueSupportNotification, supportNotifications } from "./email.ts";
 
 const ticketSchema = z
   .object({
@@ -138,12 +138,7 @@ export async function supportRoute(
             )
           ).rows;
           const notifications = admin
-            ? (
-                await c.query(
-                  "select state,count(*)::int as count from drivevision.email_outbox where starts_with(dedupe_key,$1) group by state",
-                  [`support:${id}:`],
-                )
-              ).rows
+            ? await supportNotifications(c, id)
             : undefined;
           return { ticket, messages, notifications };
         }

@@ -120,6 +120,74 @@ export async function queueSupportNotification(
     );
   }
 }
+export async function supportNotifications(c: PoolClient, ticket: string) {
+  const rows = (
+    await c.query(
+      "select id,provider_id,state,last_error,dedupe_key from drivevision.email_outbox where starts_with(dedupe_key,$1) order by created_at desc limit 4",
+      [`support:${ticket}:`],
+    )
+  ).rows;
+  const credentials = await config().catch(() => null);
+  const result = await Promise.all(
+    rows.map(async (row) => {
+      let delivery: string | null = null;
+      if (credentials && row.provider_id) {
+        try {
+          const response = await fetch(
+            `https://api.resend.com/emails/${encodeURIComponent(row.provider_id)}`,
+            {
+              headers: { Authorization: `Bearer ${credentials.apiKey}` },
+              signal: AbortSignal.timeout(4000),
+              redirect: "error",
+            },
+          );
+          if (response.ok) {
+            const value = (await response.json()) as { last_event?: string };
+            if (
+              [
+                "sent",
+                "delivered",
+                "delivery_delayed",
+                "bounced",
+                "complained",
+                "failed",
+                "opened",
+                "clicked",
+              ].includes(value.last_event || "")
+            )
+              delivery = value.last_event!;
+            if (
+              delivery === "bounced" ||
+              delivery === "failed" ||
+              delivery === "complained"
+            ) {
+              row.state = "failed";
+              row.last_error =
+                "O destinatário não recebeu a notificação. Confira o endereço de e-mail.";
+            }
+          }
+        } catch {
+          /* A provider lookup failure must not block support or imply delivery. */
+        }
+      }
+      return {
+        state: row.state,
+        count: 1,
+        recipient: row.dedupe_key.split(":").at(-1),
+        delivery,
+        error: row.last_error,
+      };
+    }),
+  );
+  for (const row of rows) {
+    if (row.state === "failed" && row.last_error)
+      await c.query(
+        "update drivevision.email_outbox set state='failed',last_error=$2 where id=$1",
+        [row.id, row.last_error],
+      );
+  }
+  return result;
+}
 export async function issueEmailToken(
   c: PoolClient,
   owner: string,

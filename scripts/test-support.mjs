@@ -23,9 +23,14 @@ const realFetch = globalThis.fetch,
   owners = [],
   tickets = [],
   sent = [];
-let fail = false;
+let fail = false,
+  delivery = "delivered";
 globalThis.fetch = async (url, init) => {
   if (String(url).startsWith(base)) return realFetch(url, init);
+  if (String(url).startsWith("https://api.resend.com/emails/"))
+    return new Response(JSON.stringify({ last_event: delivery }), {
+      status: 200,
+    });
   assert.equal(String(url), "https://api.resend.com/emails");
   sent.push({
     body: JSON.parse(init.body),
@@ -287,6 +292,20 @@ try {
       )
     ).status,
     200,
+  );
+  delivery = "bounced";
+  const bounced = await req(
+    "/api/admin/support?id=" + mine.data.id,
+    undefined,
+    operator.cookie,
+  );
+  assert.ok(
+    bounced.data.notifications.every(
+      (n) => n.state === "failed" && n.delivery === "bounced",
+    ),
+  );
+  console.log(
+    "PASS provider delivery/bounce visibility in administrator support details",
   );
   console.log("Support checks passed; no real emails sent.");
 } finally {

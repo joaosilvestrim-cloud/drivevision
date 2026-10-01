@@ -59,7 +59,13 @@ type Ticket = {
 type Detail = {
   ticket: Ticket;
   messages: { id: string; staff: boolean; body: string; createdAt: string }[];
-  notifications?: { state: string; count: number }[];
+  notifications?: {
+    state: string;
+    count: number;
+    recipient?: string;
+    delivery?: string | null;
+    error?: string | null;
+  }[];
 };
 type Listing = {
   tickets: Ticket[];
@@ -606,7 +612,7 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
                     {detail.notifications
                       ?.map(
                         (n) =>
-                          `${({ sent: "Enviada ao provedor", pending: "Na fila", sending: "Em envio", failed: "Falhou" } as Record<string, string>)[n.state]}: ${n.count}`,
+                          `${n.recipient || "Notificação"}: ${n.delivery === "delivered" || n.delivery === "opened" || n.delivery === "clicked" ? "Entrega confirmada" : n.delivery === "bounced" ? "Devolvida — confira o endereço" : n.delivery === "delivery_delayed" ? "Entrega atrasada" : ({ sent: "Enviada ao provedor", pending: "Na fila", sending: "Em envio", failed: "Falhou — confira o endereço" } as Record<string, string>)[n.state]}`,
                       )
                       .join(" · ") || "Nenhuma"}
                   </dd>
