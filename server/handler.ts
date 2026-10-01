@@ -224,15 +224,23 @@ export default async function handler(
         await requestRecovery(email);
         // Delivery runs in the durable worker; response timing does not expose account existence.
         json(res, 200, { ok: true });
-      } else
-        json(
-          res,
-          200,
-          await consumeEmailToken(
-            input,
-            path.endsWith("/reset") ? "reset" : "verify",
-          ),
-        );
+      } else {
+        const purpose = path.endsWith("/reset") ? "reset" : "verify";
+        const confirmed = await consumeEmailToken(input, purpose);
+        const session = purpose === "verify" ? await userFor(req) : null;
+        const sameAccount = session?.id === confirmed.accountId;
+        json(res, 200, {
+          ok: true,
+          next:
+            purpose === "reset"
+              ? "/?view=login"
+              : sameAccount
+                ? session!.access
+                  ? "/"
+                  : "/?view=billing"
+                : "/?view=login&verified=1",
+        });
+      }
       return;
     }
     if (path === "/api/activate" && req.method === "POST") {
@@ -391,6 +399,14 @@ export default async function handler(
       return;
     }
     const user = await userFor(req);
+    // An old tab must not operate on a different account after the shared cookie changes.
+    // This is a consistency guard; authorization always uses the authenticated session.
+    const expectedAccount = req.headers["x-drivevision-account"];
+    if (expectedAccount && expectedAccount !== user?.id)
+      throw new HttpError(
+        409,
+        "A conta foi alterada em outra aba. Recarregue esta página antes de continuar.",
+      );
     if (path === "/api/support" && req.method === "POST") {
       const ip = (
         req.headers["x-forwarded-for"]?.toString().split(",")[0] ||

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -128,20 +129,20 @@ export function DataStudio({
     >
       <DialogContent className="model-dialog data-studio">
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">
-            <Database size={16} /> PREPARAÇÃO DE DADOS
-          </div>
-          <DialogTitle>Do arquivo à análise.</DialogTitle>
+          <DialogTitle>{translate("Do arquivo à análise.")}</DialogTitle>
           <DialogDescription>
-            {original.name} · Transformações deste dashboard. O arquivo original
-            permanece preservado.
+            {original.name}{" "}
+            {translate(
+              " · Transformações deste dashboard. O arquivo original permanece preservado. ",
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="data-toolbar">
           <div className="data-stats">
-            <strong>{source.rows.length.toLocaleString("pt-BR")}</strong> linhas{" "}
-            <span /> <strong>{source.columns.length}</strong> colunas <span />{" "}
-            <strong>{draft.length}</strong> etapas
+            <strong>{source.rows.length.toLocaleString(locale())}</strong>{" "}
+            {translate(" linhas")} <span />{" "}
+            <strong>{source.columns.length}</strong> {translate(" colunas ")}
+            <span /> <strong>{draft.length}</strong> {translate(" etapas ")}
           </div>
           <button
             className="secondary-button"
@@ -150,15 +151,15 @@ export function DataStudio({
               setDraft(draft.slice(0, -1));
               setError("");
             }}
-            aria-label="Desfazer etapa de preparação"
+            aria-label={translate("Desfazer etapa de preparação")}
           >
-            <Undo2 size={15} /> Desfazer etapa
+            <Undo2 size={15} /> {translate(" Desfazer etapa ")}
           </button>
           <label className="table-search">
             <Search size={15} />
             <input
-              aria-label="Buscar na prévia dos dados"
-              placeholder="Buscar na prévia…"
+              aria-label={translate("Buscar na prévia dos dados")}
+              placeholder={translate("Buscar na prévia…")}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -176,25 +177,29 @@ export function DataStudio({
               )
             }
           >
-            <Download size={15} /> Exportar resultado
+            <Download size={15} /> {translate(" Exportar resultado ")}
           </button>
         </div>
         <div className="data-studio-body">
           <aside className="steps-panel">
             <div className="model-section-label">
-              ETAPAS APLICADAS <span>{draft.length}</span>
+              {translate(" ETAPAS APLICADAS ")}
+              <span>{draft.length}</span>
             </div>
             <div className="source-step">
               <Database size={17} />
               <div>
-                <strong>Arquivo original</strong>
-                <small>{original.rows.length} linhas</small>
+                <strong>{translate("Arquivo original")}</strong>
+                <small>
+                  {original.rows.length} {translate(" linhas")}
+                </small>
               </div>
             </div>
             {!draft.length && (
               <p className="model-note">
-                Cada alteração aparece aqui. Remova a última etapa para voltar
-                ao resultado anterior.
+                {translate(
+                  " Cada alteração aparece aqui. Remova a última etapa para voltar ao resultado anterior. ",
+                )}
               </p>
             )}
             {draft.map((step, index) => (
@@ -204,22 +209,25 @@ export function DataStudio({
               >
                 <span>{index + 1}</span>
                 <div>
-                  <strong>{STEP_NAMES[step.kind]}</strong>
+                  <strong>{translate(STEP_NAMES[step.kind])}</strong>
                   <small>
                     {step.kind === "calculate"
                       ? `${step.field} = ${step.value}`
-                      : step.field || "Todas as colunas"}
+                      : step.field || translate("Todas as colunas")}
                   </small>
                   <small>
-                    {prepared.reports[index]?.after ?? "—"} linhas
+                    {prepared.reports[index]?.after ?? "—"}{" "}
+                    {translate(" linhas ")}
                     {prepared.reports[index]?.invalid
-                      ? ` · ${prepared.reports[index].invalid} vazios gerados`
+                      ? translate(" · {v0} vazios gerados", {
+                          v0: prepared.reports[index].invalid,
+                        })
                       : ""}
                   </small>
                 </div>
                 {index === draft.length - 1 && (
                   <button
-                    aria-label="Desfazer última etapa"
+                    aria-label={translate("Desfazer última etapa")}
                     onClick={() => {
                       setDraft(draft.slice(0, -1));
                       setError("");
@@ -231,13 +239,16 @@ export function DataStudio({
               </div>
             ))}
             <div className="steps-explainer">
-              As etapas são executadas em ordem e salvas junto com o dashboard.
+              {translate(
+                " As etapas são executadas em ordem e salvas junto com o dashboard. ",
+              )}
             </div>
           </aside>
           <div className="data-grid-panel">
             <div className="data-grid-help">
-              Selecione uma coluna para tratar seus valores. Clique em uma
-              célula para editá-la.
+              {translate(
+                " Selecione uma coluna para tratar seus valores. Clique em uma célula para editá-la. ",
+              )}
             </div>
             <div className="data-grid-scroll">
               <table>
@@ -254,13 +265,15 @@ export function DataStudio({
                             {source.numeric.includes(c)
                               ? "123"
                               : source.dates.includes(c)
-                                ? "DATA"
-                                : "ABC"}
+                                ? translate("DATA")
+                                : translate("ABC")}
                           </span>
                           {c}
                         </button>
                         <button
-                          aria-label={`Ordenar prévia por ${c}`}
+                          aria-label={translate("Ordenar prévia por {v0}", {
+                            v0: c,
+                          })}
                           onClick={() =>
                             setSort({
                               field: c,
@@ -288,8 +301,11 @@ export function DataStudio({
                             key={c}
                           >
                             <button
-                              title={row[c] || "Vazio"}
-                              aria-label={`Editar ${c}, linha ${activePage * 30 + index + 1}`}
+                              title={row[c] || translate("Vazio")}
+                              aria-label={translate("Editar {v0}, linha {v1}", {
+                                v0: c,
+                                v1: activePage * 30 + index + 1,
+                              })}
                               onClick={() => {
                                 setSelected(c);
                                 setKind("edit");
@@ -298,7 +314,7 @@ export function DataStudio({
                                 setError("");
                               }}
                             >
-                              {row[c] || <em>vazio</em>}
+                              {row[c] || <em>{translate("vazio")}</em>}
                             </button>
                           </td>
                         ))}
@@ -307,23 +323,25 @@ export function DataStudio({
                 </tbody>
               </table>
               {!viewed.length && (
-                <div className="model-empty">Nenhuma linha nesta prévia.</div>
+                <div className="model-empty">
+                  {translate("Nenhuma linha nesta prévia.")}
+                </div>
               )}
             </div>
             <div className="data-pagination">
               <span>
-                {viewed.length} linhas na busca · página {activePage + 1} de{" "}
-                {pages}
+                {viewed.length} {translate(" linhas na busca · página ")}
+                {activePage + 1} {translate(" de")} {pages}
               </span>
               <button
-                aria-label="Página anterior dos dados"
+                aria-label={translate("Página anterior dos dados")}
                 disabled={activePage === 0}
                 onClick={() => setPage(activePage - 1)}
               >
                 <ArrowLeft size={16} />
               </button>
               <button
-                aria-label="Próxima página dos dados"
+                aria-label={translate("Próxima página dos dados")}
                 disabled={activePage >= pages - 1}
                 onClick={() => setPage(activePage + 1)}
               >
@@ -332,26 +350,26 @@ export function DataStudio({
             </div>
             <div className="column-profile">
               <div>
-                <span>COLUNA SELECIONADA</span>
+                <span>{translate("COLUNA SELECIONADA")}</span>
                 <strong>{field}</strong>
-                <small>{type}</small>
+                <small>{translate(type)}</small>
               </div>
               <div>
                 <strong>{profile.distinct}</strong>
-                <span>valores distintos</span>
+                <span>{translate("valores distintos")}</span>
               </div>
               <div>
                 <strong>{profile.empty}</strong>
-                <span>vazios</span>
+                <span>{translate("vazios")}</span>
               </div>
               <div>
                 <strong>{profile.invalid}</strong>
-                <span>inválidos para o tipo</span>
+                <span>{translate("inválidos para o tipo")}</span>
               </div>
               <div className="profile-values">
                 {profile.top.map(([v, n]) => (
                   <span key={v} title={v}>
-                    {v || "(vazio)"} <b>{n}</b>
+                    {v || translate("(vazio)")} <b>{n}</b>
                   </span>
                 ))}
               </div>
@@ -359,10 +377,10 @@ export function DataStudio({
           </div>
           <aside className="transform-panel">
             <div className="model-section-label">
-              <FunctionSquare size={15} /> TRANSFORMAR DADOS
+              <FunctionSquare size={15} /> {translate(" TRANSFORMAR DADOS ")}
             </div>
             <Field
-              label="Operação"
+              label={translate("Operação")}
               value={kind}
               onChange={(v) => changeKind(v as DataStep["kind"])}
               options={Object.entries(STEP_NAMES)
@@ -373,17 +391,21 @@ export function DataStudio({
               kind,
             ) && (
               <Field
-                label="Coluna da transformação"
+                label={translate("Coluna da transformação")}
                 value={field}
                 onChange={setSelected}
-                options={source.columns.map((c) => ({ value: c, label: c }))}
+                options={source.columns.map((c) => ({
+                  raw: true,
+                  value: c,
+                  label: c,
+                }))}
               />
             )}
             <div className="transform-fields">
               {kind === "type" && (
                 <>
                   <Field
-                    label="Novo tipo"
+                    label={translate("Novo tipo")}
                     value={value}
                     onChange={setValue}
                     options={[
@@ -393,22 +415,22 @@ export function DataStudio({
                     ]}
                   />
                   <p className="model-note">
-                    Números aceitam vírgula ou ponto decimal. Datas: DD/MM/AAAA
-                    ou AAAA-MM-DD. Valores incompatíveis tornam-se vazios; a
-                    contagem aparece antes de aplicar.
+                    {translate(
+                      " Números aceitam vírgula ou ponto decimal. Datas: DD/MM/AAAA ou AAAA-MM-DD. Valores incompatíveis tornam-se vazios; a contagem aparece antes de aplicar. ",
+                    )}
                   </p>
                 </>
               )}
               {kind === "rename" && (
                 <TextField
-                  label="Novo nome da coluna"
+                  label={translate("Novo nome da coluna")}
                   value={value}
                   onChange={setValue}
                 />
               )}{" "}
               {kind === "fill" && (
                 <TextField
-                  label="Preencher vazios com"
+                  label={translate("Preencher vazios com")}
                   value={value}
                   onChange={setValue}
                 />
@@ -416,11 +438,14 @@ export function DataStudio({
               {kind === "edit" && (
                 <>
                   <div className="model-note">
-                    Linha {Number(extra) + 1} do resultado atual. A edição fica
-                    registrada como uma etapa.
+                    {translate(" Linha ")}
+                    {Number(extra) + 1}{" "}
+                    {translate(
+                      " do resultado atual. A edição fica registrada como uma etapa. ",
+                    )}
                   </div>
                   <TextField
-                    label="Novo valor da célula"
+                    label={translate("Novo valor da célula")}
                     value={value}
                     onChange={setValue}
                   />
@@ -429,36 +454,37 @@ export function DataStudio({
               {kind === "replace" && (
                 <>
                   <TextField
-                    label="Valor exato a localizar"
+                    label={translate("Valor exato a localizar")}
                     value={value}
                     onChange={setValue}
                   />
                   <TextField
-                    label="Substituir por"
+                    label={translate("Substituir por")}
                     value={extra}
                     onChange={setExtra}
                   />
                   <p className="model-note">
-                    Substituição do conteúdo completo da célula, com distinção
-                    de maiúsculas.
+                    {translate(
+                      " Substituição do conteúdo completo da célula, com distinção de maiúsculas. ",
+                    )}
                   </p>
                 </>
               )}{" "}
               {kind === "calculate" && (
                 <>
                   <TextField
-                    label="Nome da coluna calculada"
+                    label={translate("Nome da coluna calculada")}
                     value={name}
                     onChange={setName}
-                    placeholder="Ex.: Lucro"
+                    placeholder={translate("Ex.: Lucro")}
                   />
                   <label className="model-field">
-                    <span>Fórmula por linha</span>
+                    <span>{translate("Fórmula por linha")}</span>
                     <textarea
-                      aria-label="Fórmula da coluna calculada"
+                      aria-label={translate("Fórmula da coluna calculada")}
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
-                      placeholder="[Receita] - [Custo]"
+                      placeholder={translate("[Receita] - [Custo]")}
                       rows={4}
                     />
                   </label>
@@ -473,20 +499,19 @@ export function DataStudio({
                     ))}
                   </div>
                   <p className="model-note">
-                    Use +, −, *, / e parênteses. Ex.: ([Receita] - [Custo]) /
-                    [Receita]. A fórmula é calculada em cada linha. Vazios e
-                    divisão por zero resultam em vazio; não equivalem à razão
-                    entre totais.
+                    {translate(
+                      " Use +, −, *, / e parênteses. Ex.: ([Receita] - [Custo]) / [Receita]. A fórmula é calculada em cada linha. Vazios e divisão por zero resultam em vazio; não equivalem à razão entre totais. ",
+                    )}
                   </p>
                 </>
               )}{" "}
               {kind === "conditional" && (
                 <>
                   <TextField
-                    label="Nome da coluna condicional"
+                    label={translate("Nome da coluna condicional")}
                     value={name}
                     onChange={setName}
-                    placeholder="Ex.: Faixa de venda"
+                    placeholder={translate("Ex.: Faixa de venda")}
                   />
                   <FilterBuilder
                     source={source}
@@ -494,33 +519,34 @@ export function DataStudio({
                     onChange={setFilters}
                   />
                   <TextField
-                    label="Se atender às condições"
+                    label={translate("Se atender às condições")}
                     value={value}
                     onChange={setValue}
-                    placeholder="Ex.: Alto valor"
+                    placeholder={translate("Ex.: Alto valor")}
                   />
                   <TextField
-                    label="Senão"
+                    label={translate("Senão")}
                     value={extra}
                     onChange={setExtra}
-                    placeholder="Ex.: Padrão"
+                    placeholder={translate("Ex.: Padrão")}
                   />
                   <p className="model-note">
-                    Cria uma categoria de texto por linha. Combine condições com
-                    E ou OU.
+                    {translate(
+                      " Cria uma categoria de texto por linha. Combine condições com E ou OU. ",
+                    )}
                   </p>
                 </>
               )}
               {kind === "datepart" && (
                 <>
                   <TextField
-                    label="Nome da coluna de período"
+                    label={translate("Nome da coluna de período")}
                     value={name}
                     onChange={setName}
-                    placeholder="Ex.: Mês da venda"
+                    placeholder={translate("Ex.: Mês da venda")}
                   />
                   <Field
-                    label="Período a extrair"
+                    label={translate("Período a extrair")}
                     value={value}
                     onChange={setValue}
                     options={[
@@ -531,16 +557,18 @@ export function DataStudio({
                     ]}
                   />
                   <p className="model-note">
-                    A data original é preservada. Datas inválidas ficam vazias
-                    na nova coluna.
+                    {translate(
+                      " A data original é preservada. Datas inválidas ficam vazias na nova coluna. ",
+                    )}
                   </p>
                 </>
               )}
               {kind === "deduplicate" && (
                 <>
                   <p className="model-note">
-                    Selecione as colunas que identificam uma duplicação. Sem
-                    seleção, compara todas. Mantém a primeira linha.
+                    {translate(
+                      " Selecione as colunas que identificam uma duplicação. Sem seleção, compara todas. Mantém a primeira linha. ",
+                    )}
                   </p>
                   <div className="column-checklist">
                     {source.columns.map((c) => (
@@ -571,8 +599,9 @@ export function DataStudio({
               )}{" "}
               {["trim", "upper", "lower"].includes(kind) && (
                 <p className="model-note">
-                  Aplica {STEP_NAMES[kind].toLocaleLowerCase()} aos valores
-                  desta coluna.
+                  {translate(" Aplica ")}
+                  {translate(STEP_NAMES[kind].toLocaleLowerCase())}{" "}
+                  {translate(" aos valores desta coluna. ")}
                 </p>
               )}
             </div>
@@ -580,16 +609,19 @@ export function DataStudio({
               <div className="step-preview">
                 <Check size={16} />
                 <div>
-                  <strong>Prévia da etapa</strong>
+                  <strong>{translate("Prévia da etapa")}</strong>
                   <span>
-                    {candidatePreview.source.rows.length} linhas após aplicar
+                    {candidatePreview.source.rows.length}{" "}
+                    {translate(" linhas após aplicar ")}
                     {last?.invalid
-                      ? ` · ${last.invalid} valores ficarão vazios`
+                      ? translate(" · {v0} valores ficarão vazios", {
+                          v0: last.invalid,
+                        })
                       : ""}
                   </span>
                   {kind === "calculate" && (
                     <small>
-                      Primeiros resultados:{" "}
+                      {translate(" Primeiros resultados:")}{" "}
                       {candidatePreview.source.rows
                         .slice(0, 3)
                         .map((r) => r[name.trim()] || "vazio")
@@ -601,7 +633,7 @@ export function DataStudio({
             )}
             {(error || prepared.error) && (
               <div className="model-error" role="alert">
-                {error || prepared.error}
+                {translate(error || prepared.error)}
               </div>
             )}
             <button
@@ -609,29 +641,33 @@ export function DataStudio({
               disabled={!!prepared.error || draft.length >= 60}
               onClick={append}
             >
-              <Plus size={15} /> Adicionar etapa
+              <Plus size={15} /> {translate(" Adicionar etapa ")}
             </button>
             <p className="model-note">
-              Confira a prévia antes de aplicar. As alterações ficam apenas
-              neste rascunho até confirmar abaixo.
+              {translate(
+                " Confira a prévia antes de aplicar. As alterações ficam apenas neste rascunho até confirmar abaixo. ",
+              )}
             </p>
           </aside>
         </div>
         <div className="model-footer">
           <span>
             {prepared.error
-              ? "Revise a etapa com erro."
-              : `${draft.length} etapas · ${source.rows.length} linhas no resultado`}
+              ? translate("Revise a etapa com erro.")
+              : translate("{v0} etapas · {v1} linhas no resultado", {
+                  v0: draft.length,
+                  v1: source.rows.length,
+                })}
           </span>
           <button className="secondary-button" onClick={onClose}>
-            Cancelar alterações
+            {translate(" Cancelar alterações ")}
           </button>
           <button
             className="primary-button"
             disabled={!!prepared.error}
             onClick={() => onApply(draft)}
           >
-            <Check size={16} /> Aplicar ao dashboard
+            <Check size={16} /> {translate(" Aplicar ao dashboard ")}
           </button>
         </div>
       </DialogContent>

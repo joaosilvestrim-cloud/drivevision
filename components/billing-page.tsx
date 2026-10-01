@@ -1,3 +1,4 @@
+import { t as translate, locale } from "@/lib/i18n";
 /* This Vite application uses native navigation for query-based public routes. */
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -32,7 +33,7 @@ type Billing = {
   }[];
 };
 const date = (s: string) =>
-  new Date(s.length === 10 ? s + "T12:00:00Z" : s).toLocaleDateString("pt-BR");
+  new Date(s.length === 10 ? s + "T12:00:00Z" : s).toLocaleDateString(locale());
 const names: Record<string, string> = {
   CONFIRMED: "Confirmado",
   RECEIVED: "Recebido",
@@ -135,15 +136,15 @@ export function BillingPage({
     <main className="sales-page billing-page">
       <PublicHeader />
       <div className="billing-heading">
-        <span className="sales-eyebrow">SEU ESPAÇO COMEÇA AQUI</span>
         <h1>
-          OI, {account.name.split(" ")[0]}.<br />
+          {translate(" OI, ")}
+          {account.name.split(" ")[0]}.<br />
           <em>
             {data?.access
               ? data.state === "trialing"
-                ? "SEU TESTE ESTÁ LIBERADO."
-                : "SUA ASSINATURA, EM DIA."
-              : "VAMOS ATIVAR SUA VISÃO?"}
+                ? translate("SEU TESTE ESTÁ LIBERADO.")
+                : translate("SUA ASSINATURA, EM DIA.")
+              : translate("VAMOS ATIVAR SUA VISÃO?")}
           </em>
         </h1>
         <p>
@@ -157,35 +158,56 @@ export function BillingPage({
             }
             disabled={busy}
           >
-            Sair da conta
+            {translate(" Sair da conta ")}
           </button>
         </p>
       </div>
       <div className="billing-layout">
         <section className="billing-main">
-          <span className="sales-eyebrow">MINHA ASSINATURA</span>
           <h2>
             {!data
-              ? "CONSULTANDO…"
+              ? translate("CONSULTANDO…")
               : !data.required
-                ? "ACESSO ADMINISTRADO PELA DRIVEDATA"
+                ? translate("ACESSO ADMINISTRADO PELA DRIVEDATA")
                 : data.access
-                  ? "SEU WORKSPACE ESTÁ LIBERADO."
+                  ? translate("SEU WORKSPACE ESTÁ LIBERADO.")
                   : data.trialEligible
-                    ? "COMECE SEUS 7 DIAS GRÁTIS."
-                    : "FALTA SÓ O PAGAMENTO."}
+                    ? translate("COMECE SEUS 7 DIAS GRÁTIS.")
+                    : translate("FALTA SÓ O PAGAMENTO.")}
           </h2>
           {!data && !error && <Loader2 className="spin" />}
           {data && (
             <>
               <p>
                 {!data.required
-                  ? "Seu acesso foi concedido pela administração e não possui renovação automática neste plano."
+                  ? translate(
+                      "Seu acesso foi concedido pela administração e não possui renovação automática neste plano.",
+                    )
                   : data.access
-                    ? `Acesso disponível até ${date(data.state === "trialing" ? data.trialEndsAt! : data.paidUntil!)}. ${data.canceled ? "A renovação está cancelada; não haverá nova cobrança." : data.state === "trialing" ? "Após o teste, R$ 59,90/mês no cartão cadastrado. Cancele antes dessa data para não cobrar." : "Sua assinatura renova mensalmente."}`
+                    ? translate("Acesso disponível até {v0}. {v1}", {
+                        v0: date(
+                          data.state === "trialing"
+                            ? data.trialEndsAt!
+                            : data.paidUntil!,
+                        ),
+                        v1: data.canceled
+                          ? translate(
+                              "A renovação está cancelada; não haverá nova cobrança.",
+                            )
+                          : data.state === "trialing"
+                            ? translate(
+                                "Após o teste, R$ 59,90/mês no cartão cadastrado. Cancele antes dessa data para não cobrar.",
+                              )
+                            : translate("Sua assinatura renova mensalmente."),
+                      })
                     : data.trialEligible
-                      ? `Cadastre seu cartão no ambiente seguro do Asaas. Primeira cobrança prevista para ${date(data.firstChargeDate!)}; depois, R$ 59,90/mês automaticamente. Confira a data no checkout. O acesso é liberado após a confirmação do cadastro do cartão.`
-                      : "O workspace é liberado após o Asaas confirmar o pagamento. Seus dados de cartão são preenchidos no ambiente do Asaas."}
+                      ? translate(
+                          "Cadastre seu cartão no ambiente seguro do Asaas. Primeira cobrança prevista para {v0}; depois, R$ 59,90/mês automaticamente. Confira a data no checkout. O acesso é liberado após a confirmação do cadastro do cartão.",
+                          { v0: date(data.firstChargeDate!) },
+                        )
+                      : translate(
+                          "O workspace é liberado após o Asaas confirmar o pagamento. Seus dados de cartão são preenchidos no ambiente do Asaas.",
+                        )}
               </p>
               {data.error && (
                 <p className="billing-notice" role="status">
@@ -203,14 +225,16 @@ export function BillingPage({
                     onChange={(e) => setAcceptedTrial(e.target.checked)}
                   />
                   <span>
-                    Autorizo a cobrança automática de R$ 59,90/mês após os 7
-                    dias grátis, salvo cancelamento antes da primeira cobrança.
+                    {translate(
+                      " Autorizo a cobrança automática de R$ 59,90/mês após os 7 dias grátis, salvo cancelamento antes da primeira cobrança. ",
+                    )}
                   </span>
                 </label>
               )}
               {data.access ? (
                 <a className="sales-button" href="/?view=studio">
-                  Acessar meu workspace <ArrowRight size={18} />
+                  {translate(" Acessar meu workspace ")}
+                  <ArrowRight size={18} />
                 </a>
               ) : (
                 <button
@@ -232,10 +256,10 @@ export function BillingPage({
                     <CreditCard size={19} />
                   )}{" "}
                   {data.hasSubscription && !data.canceled
-                    ? "Regularizar pagamento"
+                    ? translate("Regularizar pagamento")
                     : data.trialEligible
-                      ? "Cadastrar cartão e testar grátis"
-                      : "Assinar por R$ 59,90/mês"}
+                      ? translate("Cadastrar cartão e testar grátis")
+                      : translate("Assinar por R$ 59,90/mês")}
                 </button>
               )}
               {data.required && (
@@ -249,12 +273,12 @@ export function BillingPage({
                       })
                     }
                   >
-                    <RefreshCw size={16} /> Atualizar situação
+                    <RefreshCw size={16} /> {translate(" Atualizar situação ")}
                   </button>
                   {((data.hasSubscription && !data.canceled) ||
                     data.checkoutUrl) && (
                     <button disabled={busy} onClick={() => setConfirm(true)}>
-                      Cancelar renovação
+                      {translate(" Cancelar renovação ")}
                     </button>
                   )}
                 </div>
@@ -263,12 +287,13 @@ export function BillingPage({
                 <div
                   className="billing-confirm"
                   role="group"
-                  aria-label="Confirmar cancelamento"
+                  aria-label={translate("Confirmar cancelamento")}
                 >
-                  <strong>Cancelar a renovação?</strong>
+                  <strong>{translate("Cancelar a renovação?")}</strong>
                   <p>
-                    Você mantém o acesso até o fim do teste ou do período pago.
-                    Novas cobranças da assinatura serão interrompidas.
+                    {translate(
+                      " Você mantém o acesso até o fim do teste ou do período pago. Novas cobranças da assinatura serão interrompidas. ",
+                    )}
                   </p>
                   <div>
                     <button
@@ -283,29 +308,31 @@ export function BillingPage({
                         })
                       }
                     >
-                      Confirmar cancelamento
+                      {translate(" Confirmar cancelamento ")}
                     </button>
                     <button
                       className="sales-link"
                       disabled={busy}
                       onClick={() => setConfirm(false)}
                     >
-                      Manter assinatura
+                      {translate(" Manter assinatura ")}
                     </button>
                   </div>
                 </div>
               )}
               {!!data.payments?.length && (
                 <div className="billing-payments">
-                  <h3>Seus pagamentos</h3>
+                  <h3>{translate("Seus pagamentos")}</h3>
                   {data.payments.map((p) => (
                     <div key={p.id}>
                       <span>
                         {date(p.dueDate)}
-                        <small>{names[p.status] || "Em processamento"}</small>
+                        <small>
+                          {translate(names[p.status] || "Em processamento")}
+                        </small>
                       </span>
                       <strong>
-                        {(p.amountCents / 100).toLocaleString("pt-BR", {
+                        {(p.amountCents / 100).toLocaleString(locale(), {
                           style: "currency",
                           currency: "BRL",
                         })}
@@ -316,7 +343,7 @@ export function BillingPage({
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Ver cobrança ↗
+                          {translate(" Ver cobrança ↗ ")}
                         </a>
                       )}
                     </div>
@@ -327,7 +354,7 @@ export function BillingPage({
           )}
           {error && (
             <p className="billing-error" role="alert">
-              {error}
+              {translate(error)}
             </p>
           )}
           {!data && error && (
@@ -336,21 +363,20 @@ export function BillingPage({
               disabled={busy}
               onClick={() => void run(load)}
             >
-              Tentar novamente
+              {translate(" Tentar novamente ")}
             </button>
           )}
           {notice && (
             <p role="status" className="billing-notice">
-              {notice}
+              {translate(notice)}
             </p>
           )}
         </section>
         <aside className="billing-plan">
-          <span className="sales-eyebrow">DRIVEVISION MENSAL</span>
           <div className="sales-price">
-            <span>R$</span>
+            <span>{translate("R$")}</span>
             <strong>59,90</strong>
-            <span>/mês</span>
+            <span>{translate("/mês")}</span>
           </div>
           <ul>
             {[
@@ -362,25 +388,28 @@ export function BillingPage({
             ].map((s) => (
               <li key={s}>
                 <Check size={16} />
-                {s}
+                {translate(s)}
               </li>
             ))}
           </ul>
           <p>
-            <ShieldCheck size={18} /> Pagamento pelo Asaas
+            <ShieldCheck size={18} /> {translate(" Pagamento pelo Asaas ")}
           </p>
           <small>
-            Uma conta por assinatura. Renovação mensal no cartão, sem
-            fidelidade.{" "}
+            {translate(
+              " Uma conta por assinatura. Renovação mensal no cartão, sem fidelidade.",
+            )}{" "}
             <a href="/?view=terms" target="_blank" rel="noreferrer">
-              Consulte os termos e limites.
+              {translate(" Consulte os termos e limites. ")}
             </a>
           </small>
         </aside>
       </div>
       <p className="billing-help">
-        Precisa de ajuda com acesso, cobrança ou reembolso?{" "}
-        <a href="mailto:suporte@drivedata.com.br">suporte@drivedata.com.br</a>
+        {translate(" Precisa de ajuda com acesso, cobrança ou reembolso?")}{" "}
+        <a href="mailto:suporte@drivedata.com.br">
+          {translate("suporte@drivedata.com.br")}
+        </a>
       </p>
       <PublicFooter />
     </main>
@@ -421,28 +450,30 @@ export function BillingAdmin() {
     <section className="billing-admin">
       <div>
         <div>
-          <span className="sales-eyebrow">ASSINATURAS ONLINE · ASAAS</span>
-          <h2>VENDAS E LIBERAÇÕES</h2>
+          <h2>{translate("VENDAS E LIBERAÇÕES")}</h2>
         </div>
         <button className="secondary-button" onClick={refresh}>
-          <RefreshCw size={16} /> Atualizar
+          <RefreshCw size={16} /> {translate(" Atualizar ")}
         </button>
       </div>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{translate(error)}</p>}
       {data && (
         <>
           <p>
             {data.configured
-              ? "Checkout configurado"
-              : "Checkout aguardando configuração"}{" "}
-            · {data.counts.active} com período pago · {data.counts.trialing} em
-            teste · {data.counts.total} cadastros online ·{" "}
-            {data.counts.canceled} renovações canceladas
+              ? translate("Checkout configurado")
+              : translate("Checkout aguardando configuração")}{" "}
+            · {data.counts.active} {translate(" com período pago · ")}
+            {data.counts.trialing} {translate(" em teste · ")}
+            {data.counts.total} {translate(" cadastros online ·")}{" "}
+            {data.counts.canceled} {translate(" renovações canceladas ")}
           </p>
           {data.pendingEvents > 0 && (
             <p role="alert">
-              {data.pendingEvents} confirmações exigem atenção. O processamento
-              será tentado novamente.
+              {data.pendingEvents}{" "}
+              {translate(
+                " confirmações exigem atenção. O processamento será tentado novamente. ",
+              )}
             </p>
           )}
           <div className="billing-admin-table">
@@ -455,27 +486,33 @@ export function BillingAdmin() {
                   </span>
                   <span>
                     {row.paidUntil && new Date(row.paidUntil) > new Date()
-                      ? `Pago até ${date(row.paidUntil)}`
+                      ? translate("Pago até {v0}", { v0: date(row.paidUntil) })
                       : row.trialEndsAt &&
                           new Date(row.trialEndsAt) > new Date()
-                        ? `Em teste até ${date(row.trialEndsAt)}`
-                        : "Aguardando pagamento"}
+                        ? translate("Em teste até {v0}", {
+                            v0: date(row.trialEndsAt),
+                          })
+                        : translate("Aguardando pagamento")}
                     <small>
-                      {row.canceled ? "Renovação cancelada" : row.error || ""}
+                      {row.canceled
+                        ? translate("Renovação cancelada")
+                        : row.error || ""}
                     </small>
                   </span>
                 </article>
               ))
             ) : (
               <p>
-                Nenhuma assinatura online ainda. Contas criadas manualmente
-                continuam sob sua gestão.
+                {translate(
+                  " Nenhuma assinatura online ainda. Contas criadas manualmente continuam sob sua gestão. ",
+                )}
               </p>
             )}
           </div>
           <small>
-            Mostrando os 100 cadastros online mais recentes. Suspensão
-            administrativa e situação de pagamento são controles independentes.
+            {translate(
+              " Mostrando os 100 cadastros online mais recentes. Suspensão administrativa e situação de pagamento são controles independentes. ",
+            )}
           </small>
         </>
       )}

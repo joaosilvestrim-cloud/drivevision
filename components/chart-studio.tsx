@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -134,7 +135,7 @@ export function ChartStudio({
         checked={draft[key] ?? key !== "labels"}
         onChange={(e) => patch({ [key]: e.target.checked })}
       />
-      <span>{label}</span>
+      <span>{translate(label)}</span>
     </label>
   );
   return (
@@ -146,26 +147,24 @@ export function ChartStudio({
     >
       <DialogContent className="model-dialog chart-studio">
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">
-            <ChartNoAxesCombined size={16} /> CONSTRUTOR DE GRÁFICOS
-          </div>
-          <DialogTitle>Configurar gráfico</DialogTitle>
+          <DialogTitle>{translate("Configurar gráfico")}</DialogTitle>
           <DialogDescription>
-            Configure os campos e compare o resultado antes de aplicar ao
-            painel.
+            {translate(
+              " Configure os campos e compare o resultado antes de aplicar ao painel. ",
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="chart-studio-body">
           <div className="chart-preview-panel">
             <div className="preview-meta">
-              <span>PRÉVIA COM SEUS DADOS</span>
+              <span>{translate("PRÉVIA COM SEUS DADOS")}</span>
               <span>
-                {calculated.rows.length} linhas · {calculated.series.length}{" "}
-                séries
+                {calculated.rows.length} {translate(" linhas · ")}
+                {calculated.series.length} {translate(" séries ")}
               </span>
             </div>
             <div className="chart-preview-card">
-              <h3>{draft.title || "Visual sem título"}</h3>
+              <h3>{draft.title || translate("Visual sem título")}</h3>
               {draft.subtitle && <p>{draft.subtitle}</p>}
               <div className="chart-preview-plot">
                 <VisualChart
@@ -180,27 +179,32 @@ export function ChartStudio({
             <div className="preview-explanation">
               <strong>
                 {isText
-                  ? "Contexto para a equipe"
+                  ? translate("Contexto para a equipe")
                   : isSingle
                     ? `${AGGREGATIONS.find((a) => a.value === measures[0].aggregation)?.label} de ${measures[0].field}`
-                    : `${draft.dimension}${draft.splitBy ? ` dividido por ${draft.splitBy}` : ""}`}
+                    : `${draft.dimension}${draft.splitBy ? translate(" dividido por {v0}", { v0: draft.splitBy }) : ""}`}
               </strong>
               <span>
                 {draft.filters?.rules.length
-                  ? `${draft.filters.rules.length} condições próprias + filtros do dashboard`
-                  : "Usando os filtros do dashboard"}
+                  ? translate(
+                      "{v0} condições próprias + filtros do dashboard",
+                      { v0: draft.filters.rules.length },
+                    )
+                  : translate("Usando os filtros do dashboard")}
               </span>
               {draft.type === "combo" && (
                 <span>
-                  Primeira medida em colunas; demais medidas em linhas. Todas
-                  usam o mesmo eixo e formato.
+                  {translate(
+                    " Primeira medida em colunas; demais medidas em linhas. Todas usam o mesmo eixo e formato. ",
+                  )}
                 </span>
               )}
             </div>
             {!isText && draft.type !== "pivot" && (
               <details className="preview-result">
                 <summary>
-                  Ver valores calculados ({calculated.data.length} grupos)
+                  {translate(" Ver valores calculados (")}
+                  {calculated.data.length} {translate(" grupos) ")}
                 </summary>
                 <div className="preview-result-scroll">
                   <table className="result-table">
@@ -220,7 +224,7 @@ export function ChartStudio({
                             <td key={s.key}>
                               {g[s.key] === null
                                 ? "—"
-                                : Number(g[s.key]).toLocaleString("pt-BR", {
+                                : Number(g[s.key]).toLocaleString(locale(), {
                                     maximumFractionDigits: 4,
                                   })}
                             </td>
@@ -237,24 +241,24 @@ export function ChartStudio({
             <Tabs value={tab} onValueChange={setTab}>
               <TabsList>
                 <TabsTrigger value="data">
-                  <SlidersHorizontal size={14} /> Dados
+                  <SlidersHorizontal size={14} /> {translate(" Dados ")}
                 </TabsTrigger>
                 <TabsTrigger value="format">
-                  <Palette size={14} /> Formato
+                  <Palette size={14} /> {translate(" Formato ")}
                 </TabsTrigger>
                 <TabsTrigger value="filters">
-                  <Filter size={14} /> Filtros
+                  <Filter size={14} /> {translate(" Filtros ")}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="data">
                 <div className="settings-stack">
                   <TextField
-                    label="Título do gráfico"
+                    label={translate("Título do gráfico")}
                     value={draft.title}
                     onChange={(title) => patch({ title })}
                   />
                   <Field
-                    label="Visualização"
+                    label={translate("Visualização")}
                     value={draft.type}
                     onChange={(type) => patch({ type: type as Visual["type"] })}
                     options={VISUAL_TYPES.map((t) => ({
@@ -265,7 +269,7 @@ export function ChartStudio({
                   {draft.type === "pivot" && (
                     <>
                       <Field
-                        label="Colunas da tabela dinâmica"
+                        label={translate("Colunas da tabela dinâmica")}
                         value={
                           draft.pivotColumn ||
                           source.columns[1] ||
@@ -273,6 +277,7 @@ export function ChartStudio({
                         }
                         onChange={(pivotColumn) => patch({ pivotColumn })}
                         options={source.columns.map((c) => ({
+                          raw: true,
                           value: c,
                           label: c,
                         }))}
@@ -283,15 +288,15 @@ export function ChartStudio({
                           checked={draft.heatmap ?? true}
                           onChange={(e) => patch({ heatmap: e.target.checked })}
                         />
-                        Mapa de calor
+                        {translate(" Mapa de calor ")}
                       </label>
                     </>
                   )}
                   {isText ? (
                     <label className="model-field">
-                      <span>Texto da análise</span>
+                      <span>{translate("Texto da análise")}</span>
                       <textarea
-                        aria-label="Texto da análise"
+                        aria-label={translate("Texto da análise")}
                         rows={7}
                         value={draft.text}
                         onChange={(e) => patch({ text: e.target.value })}
@@ -302,7 +307,9 @@ export function ChartStudio({
                       {!["kpi", "gauge"].includes(draft.type) && (
                         <>
                           <Field
-                            label="Eixo de categorias / agrupamento"
+                            label={translate(
+                              "Eixo de categorias / agrupamento",
+                            )}
                             value={draft.dimension}
                             onChange={(dimension) =>
                               patch({
@@ -313,6 +320,7 @@ export function ChartStudio({
                               })
                             }
                             options={source.columns.map((c) => ({
+                              raw: true,
                               value: c,
                               label: c,
                             }))}
@@ -320,7 +328,7 @@ export function ChartStudio({
                           {draft.type !== "pivot" &&
                             source.dates.includes(draft.dimension) && (
                               <Field
-                                label="Agrupar datas por"
+                                label={translate("Agrupar datas por")}
                                 value={draft.grain}
                                 onChange={(grain) =>
                                   patch({ grain: grain as Visual["grain"] })
@@ -336,19 +344,26 @@ export function ChartStudio({
                         </>
                       )}
                       <div className="model-section-label">
-                        MEDIDAS{" "}
+                        {translate(" MEDIDAS")}{" "}
                         <span>
-                          {isSingle ? "1 medida" : `${measures.length} / 4`}
+                          {isSingle
+                            ? translate("1 medida")
+                            : `${measures.length} / 4`}
                         </span>
                       </div>
                       {measures.slice(0, isSingle ? 1 : 4).map((m, index) => (
                         <div key={m.id} className="measure-card">
                           <div className="measure-title">
                             <span style={{ background: m.color }} />
-                            <strong>Medida {index + 1}</strong>
+                            <strong>
+                              {translate("Medida ")}
+                              {index + 1}
+                            </strong>
                             {index > 0 && (
                               <button
-                                aria-label={`Remover medida ${index + 1}`}
+                                aria-label={translate("Remover medida {v0}", {
+                                  v0: index + 1,
+                                })}
                                 onClick={() =>
                                   patch({
                                     measures: measures.filter(
@@ -362,7 +377,9 @@ export function ChartStudio({
                             )}
                           </div>
                           <Field
-                            label={`Campo da medida ${index + 1}`}
+                            label={translate("Campo da medida {v0}", {
+                              v0: index + 1,
+                            })}
                             value={m.field}
                             onChange={(field) =>
                               updateMeasure(m.id, {
@@ -374,12 +391,15 @@ export function ChartStudio({
                               })
                             }
                             options={source.columns.map((c) => ({
+                              raw: true,
                               value: c,
                               label: c,
                             }))}
                           />
                           <Field
-                            label={`Agregação da medida ${index + 1}`}
+                            label={translate("Agregação da medida {v0}", {
+                              v0: index + 1,
+                            })}
                             value={m.aggregation}
                             onChange={(aggregation) =>
                               updateMeasure(m.id, {
@@ -395,17 +415,21 @@ export function ChartStudio({
                           />
                           <div className="measure-label-row">
                             <TextField
-                              label={`Nome da série ${index + 1}`}
+                              label={translate("Nome da série {v0}", {
+                                v0: index + 1,
+                              })}
                               value={m.label}
                               onChange={(label) =>
                                 updateMeasure(m.id, { label })
                               }
                             />
                             <label className="model-field">
-                              <span>Cor</span>
+                              <span>{translate("Cor")}</span>
                               <input
                                 type="color"
-                                aria-label={`Cor da série ${index + 1}`}
+                                aria-label={translate("Cor da série {v0}", {
+                                  v0: index + 1,
+                                })}
                                 value={m.color}
                                 onChange={(e) =>
                                   updateMeasure(m.id, { color: e.target.value })
@@ -448,13 +472,14 @@ export function ChartStudio({
                             })
                           }
                         >
-                          <Plus size={14} /> Comparar outra medida
+                          <Plus size={14} />{" "}
+                          {translate(" Comparar outra medida ")}
                         </button>
                       )}
                       {!isSingle && (
                         <>
                           <Field
-                            label="Dividir em séries por"
+                            label={translate("Dividir em séries por")}
                             value={draft.splitBy || "__none"}
                             onChange={(v) =>
                               patch({ splitBy: v === "__none" ? undefined : v })
@@ -465,6 +490,7 @@ export function ChartStudio({
                                 label: "Sem divisão — comparar medidas",
                               },
                               ...source.columns.map((c) => ({
+                                raw: true,
                                 value: c,
                                 label: c,
                               })),
@@ -472,10 +498,9 @@ export function ChartStudio({
                           />
                           {draft.splitBy && (
                             <p className="model-note">
-                              Cada categoria vira uma série da primeira medida.
-                              Até 8 categorias, em ordem alfabética. As demais
-                              medidas ficam preservadas e voltam ao remover a
-                              divisão.
+                              {translate(
+                                " Cada categoria vira uma série da primeira medida. Até 8 categorias, em ordem alfabética. As demais medidas ficam preservadas e voltam ao remover a divisão. ",
+                              )}
                             </p>
                           )}
                         </>
@@ -483,7 +508,7 @@ export function ChartStudio({
                       {!isSingle &&
                         ["bar", "horizontal", "area"].includes(draft.type) && (
                           <Field
-                            label="Disposição das séries"
+                            label={translate("Disposição das séries")}
                             value={draft.stacking ?? "grouped"}
                             onChange={(v) =>
                               patch({ stacking: v as Visual["stacking"] })
@@ -500,7 +525,7 @@ export function ChartStudio({
                       {!["kpi", "gauge"].includes(draft.type) && (
                         <div className="model-two">
                           <Field
-                            label="Ordenação dos grupos"
+                            label={translate("Ordenação dos grupos")}
                             value={draft.sort}
                             onChange={(sort) =>
                               patch({ sort: sort as Visual["sort"] })
@@ -515,7 +540,7 @@ export function ChartStudio({
                             ]}
                           />
                           <Field
-                            label="Limite de grupos"
+                            label={translate("Limite de grupos")}
                             value={String(draft.limit)}
                             onChange={(v) => patch({ limit: Number(v) })}
                             options={[5, 8, 10, 12, 20, 50, 100, 0].map(
@@ -528,9 +553,9 @@ export function ChartStudio({
                         </div>
                       )}
                       <p className="model-note">
-                        A ordenação por valor considera a primeira medida. A
-                        contagem distinta desconsidera vazios. Mediana e média
-                        usam apenas valores numéricos preenchidos.
+                        {translate(
+                          " A ordenação por valor considera a primeira medida. A contagem distinta desconsidera vazios. Mediana e média usam apenas valores numéricos preenchidos. ",
+                        )}
                       </p>
                     </>
                   )}
@@ -539,13 +564,13 @@ export function ChartStudio({
               <TabsContent value="format">
                 <div className="settings-stack">
                   <TextField
-                    label="Subtítulo / contexto"
+                    label={translate("Subtítulo / contexto")}
                     value={draft.subtitle ?? ""}
                     onChange={(subtitle) => patch({ subtitle })}
                   />
                   <div className="model-two">
                     <Field
-                      label="Largura no dashboard"
+                      label={translate("Largura no dashboard")}
                       value={String(draft.span)}
                       onChange={(v) =>
                         patch({ span: Number(v) as Visual["span"] })
@@ -558,7 +583,7 @@ export function ChartStudio({
                       ]}
                     />
                     <Field
-                      label="Altura no dashboard"
+                      label={translate("Altura no dashboard")}
                       value={String(draft.height)}
                       onChange={(v) => patch({ height: Number(v) })}
                       options={[
@@ -576,9 +601,11 @@ export function ChartStudio({
                         .map((v) => ({ value: String(v), label: `${v} px` }))}
                     />
                   </div>
-                  <div className="model-section-label">NÚMEROS E UNIDADES</div>
+                  <div className="model-section-label">
+                    {translate("NÚMEROS E UNIDADES")}
+                  </div>
                   <Field
-                    label="Formato dos valores"
+                    label={translate("Formato dos valores")}
                     value={format.kind}
                     onChange={(kind) =>
                       updateFormat({ kind: kind as NumberStyle["kind"] })
@@ -593,22 +620,23 @@ export function ChartStudio({
                   {format.kind !== "auto" && (
                     <>
                       <Field
-                        label="Casas decimais"
+                        label={translate("Casas decimais")}
                         value={String(format.decimals)}
                         onChange={(v) => updateFormat({ decimals: Number(v) })}
                         options={[0, 1, 2, 3, 4].map((v) => ({
+                          raw: true,
                           value: String(v),
                           label: String(v),
                         }))}
                       />
                       <div className="model-two">
                         <TextField
-                          label="Prefixo"
+                          label={translate("Prefixo")}
                           value={format.prefix}
                           onChange={(prefix) => updateFormat({ prefix })}
                         />
                         <TextField
-                          label="Sufixo"
+                          label={translate("Sufixo")}
                           value={format.suffix}
                           onChange={(suffix) => updateFormat({ suffix })}
                         />
@@ -623,15 +651,17 @@ export function ChartStudio({
                         updateFormat({ compact: e.target.checked })
                       }
                     />
-                    Abreviar milhares e milhões
+                    {translate(" Abreviar milhares e milhões ")}
                   </label>
-                  <div className="model-section-label">LEITURA DO GRÁFICO</div>
+                  <div className="model-section-label">
+                    {translate("LEITURA DO GRÁFICO")}
+                  </div>
                   {(cartesian || draft.type === "donut") &&
                     toggle("Exibir valores sobre o gráfico", "labels")}
                   {hasLegend && toggle("Exibir legenda", "legend")}
                   {hasLegend && draft.legend && (
                     <Field
-                      label="Posição da legenda"
+                      label={translate("Posição da legenda")}
                       value={draft.legendPosition ?? "bottom"}
                       onChange={(v) =>
                         patch({ legendPosition: v as Visual["legendPosition"] })
@@ -644,7 +674,7 @@ export function ChartStudio({
                   )}{" "}
                   {draft.type === "donut" ? (
                     <Field
-                      label="Abertura da rosca"
+                      label={translate("Abertura da rosca")}
                       value={String(draft.donutHole ?? 53)}
                       onChange={(v) => patch({ donutHole: Number(v) })}
                       options={[0, 35, 53, 65].map((v) => ({
@@ -660,18 +690,18 @@ export function ChartStudio({
                           {toggle("Exibir eixo horizontal", "axisX")}
                           {toggle("Exibir eixo vertical", "axisY")}
                           <TextField
-                            label="Título do eixo horizontal"
+                            label={translate("Título do eixo horizontal")}
                             value={draft.xTitle ?? ""}
                             onChange={(xTitle) => patch({ xTitle })}
                           />
                           <TextField
-                            label="Título do eixo vertical"
+                            label={translate("Título do eixo vertical")}
                             value={draft.yTitle ?? ""}
                             onChange={(yTitle) => patch({ yTitle })}
                           />
                           <div className="model-two">
                             <TextField
-                              label="Mínimo do eixo numérico"
+                              label={translate("Mínimo do eixo numérico")}
                               type="number"
                               value={String(draft.yMin ?? "")}
                               onChange={(v) =>
@@ -679,10 +709,10 @@ export function ChartStudio({
                                   yMin: v === "" ? undefined : Number(v),
                                 })
                               }
-                              placeholder="Automático"
+                              placeholder={translate("Automático")}
                             />
                             <TextField
-                              label="Máximo do eixo numérico"
+                              label={translate("Máximo do eixo numérico")}
                               type="number"
                               value={String(draft.yMax ?? "")}
                               onChange={(v) =>
@@ -690,30 +720,32 @@ export function ChartStudio({
                                   yMax: v === "" ? undefined : Number(v),
                                 })
                               }
-                              placeholder="Automático"
+                              placeholder={translate("Automático")}
                             />
                           </div>
                           <p className="model-note">
-                            Limites manuais recortam valores fora do intervalo.
+                            {translate(
+                              " Limites manuais recortam valores fora do intervalo. ",
+                            )}
                           </p>
                         </>
                       )}
                       <TextField
                         label={
                           draft.type === "gauge"
-                            ? "Valor da meta"
-                            : "Linha de meta / referência"
+                            ? translate("Valor da meta")
+                            : translate("Linha de meta / referência")
                         }
                         type="number"
                         value={String(draft.target ?? "")}
                         onChange={(v) =>
                           patch({ target: v === "" ? undefined : Number(v) })
                         }
-                        placeholder="Sem meta"
+                        placeholder={translate("Sem meta")}
                       />
                       {draft.target !== undefined && (
                         <TextField
-                          label="Nome da referência"
+                          label={translate("Nome da referência")}
                           value={draft.targetLabel ?? "Meta"}
                           onChange={(targetLabel) => patch({ targetLabel })}
                         />
@@ -724,7 +756,7 @@ export function ChartStudio({
                   {["line", "area", "combo"].includes(draft.type) && (
                     <>
                       <Field
-                        label="Traçado das linhas"
+                        label={translate("Traçado das linhas")}
                         value={draft.curve ?? "monotone"}
                         onChange={(v) => patch({ curve: v as Visual["curve"] })}
                         options={[
@@ -734,7 +766,7 @@ export function ChartStudio({
                         ]}
                       />
                       <Field
-                        label="Espessura da linha"
+                        label={translate("Espessura da linha")}
                         value={String(draft.strokeWidth ?? 3)}
                         onChange={(v) => patch({ strokeWidth: Number(v) })}
                         options={[1, 2, 3, 4, 5].map((v) => ({
@@ -749,12 +781,12 @@ export function ChartStudio({
               <TabsContent value="filters">
                 <div className="settings-stack">
                   <div className="model-section-label">
-                    FILTROS DESTE VISUAL
+                    {translate(" FILTROS DESTE VISUAL ")}
                   </div>
                   <p className="model-note">
-                    Restrinja somente este gráfico. Os demais visuais continuam
-                    usando seus próprios filtros. Estas condições são aplicadas
-                    após os filtros do dashboard.
+                    {translate(
+                      " Restrinja somente este gráfico. Os demais visuais continuam usando seus próprios filtros. Estas condições são aplicadas após os filtros do dashboard. ",
+                    )}
                   </p>
                   <FilterBuilder
                     source={source}
@@ -769,16 +801,20 @@ export function ChartStudio({
         <div className="model-footer">
           {error ? (
             <span className="model-error" role="alert">
-              {error}
+              {translate(error)}
             </span>
           ) : (
-            <span>Alterações em prévia · aplicadas juntas ao confirmar</span>
+            <span>
+              {translate(
+                "Alterações em prévia · aplicadas juntas ao confirmar",
+              )}
+            </span>
           )}
           <button className="secondary-button" onClick={onClose}>
-            Cancelar
+            {translate(" Cancelar ")}
           </button>
           <button className="primary-button" onClick={apply}>
-            <Check size={16} /> Aplicar gráfico
+            <Check size={16} /> {translate(" Aplicar gráfico ")}
           </button>
         </div>
       </DialogContent>

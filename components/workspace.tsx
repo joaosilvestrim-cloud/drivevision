@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -96,7 +97,7 @@ function Nav({
       <button
         className="product-brand"
         onClick={() => onNavigate("library")}
-        aria-label="DriveVision, início"
+        aria-label={translate("DriveVision, início")}
       >
         <img
           className="product-logo"
@@ -106,10 +107,16 @@ function Nav({
           height={36}
         />
         <span>
-          drivedata<span className="product-brand-label">DRIVEVISION</span>
+          {translate(" drivedata")}
+          <span className="product-brand-label">
+            {translate("DRIVEVISION")}
+          </span>
         </span>
       </button>
-      <nav className="product-nav-links" aria-label="Navegação principal">
+      <nav
+        className="product-nav-links"
+        aria-label={translate("Navegação principal")}
+      >
         {[
           { icon: LayoutDashboard, label: "Estúdio", id: "studio" },
           { icon: Layers, label: "Área de trabalho", id: "library" },
@@ -125,7 +132,7 @@ function Nav({
             onClick={() => onNavigate(id as View)}
           >
             <Icon size={17} />
-            <span>{label}</span>
+            <span>{translate(label)}</span>
           </button>
         ))}
       </nav>
@@ -133,20 +140,24 @@ function Nav({
         <button
           className="account-button"
           onClick={onAccount}
-          aria-label={account ? "Minha conta" : "Entrar ou criar conta"}
+          aria-label={
+            account
+              ? translate("Minha conta")
+              : translate("Entrar ou criar conta")
+          }
         >
           {account ? <Cloud size={16} /> : <UserRound size={16} />}
-          <span>{account ? account.name : "Entrar"}</span>
+          <span>{account ? account.name : translate("Entrar")}</span>
         </button>
         <button
           className="product-help"
           onClick={onHelp}
-          aria-label="Como funciona"
+          aria-label={translate("Como funciona")}
         >
           <CircleHelp size={19} />
         </button>
-        <span className="product-avatar" aria-label="DriveData">
-          DD
+        <span className="product-avatar" aria-label={translate("DriveData")}>
+          {translate(" DD ")}
         </span>
       </div>
     </header>
@@ -366,7 +377,9 @@ export default function Workspace({
       workspace.dashboards.some((d) => d.sourceId === remove.id)
     ) {
       toast.error(
-        "Essa fonte está vinculada a um dashboard. Exclua os dashboards vinculados primeiro.",
+        translate(
+          "Essa fonte está vinculada a um dashboard. Exclua os dashboards vinculados primeiro.",
+        ),
       );
       setRemove(null);
       return;
@@ -394,7 +407,7 @@ export default function Workspace({
         setDraftKey((k) => k + 1);
       }
       setRemove(null);
-      toast.success("Item removido do workspace.");
+      toast.success(translate("Item removido do workspace."));
     }
   }
 
@@ -541,33 +554,40 @@ export default function Workspace({
       <main className="app-main">
         <header className="topbar">
           <div className="breadcrumb">
-            <span>Workspace</span>
+            <span>{translate("Workspace")}</span>
             <ChevronRight size={14} />
-            <strong>{view === "studio" ? "Visão geral" : heading}</strong>
+            <strong>
+              {view === "studio" ? translate("Visão geral") : translate(heading)}
+            </strong>
           </div>
           <button className="version-badge" onClick={() => setModal("help")}>
-            GUIA DO DRIVEVISION
+            {translate(" GUIA DO DRIVEVISION ")}
           </button>
         </header>
         <div className="page-content">
           <div className="page-heading">
             <div>
-              <div className="eyebrow">
-                {view === "studio"
-                  ? "SEUS DADOS, NOVAS PERSPECTIVAS"
-                  : "SEU WORKSPACE DRIVEDATA"}
-              </div>
-              <h1>{heading}</h1>
+              <h1>{translate(heading)}</h1>
               <p>
                 {view === "admin"
-                  ? "Cadastre clientes, libere acessos e acompanhe seus ambientes."
+                  ? translate(
+                      "Cadastre clientes, libere acessos e acompanhe seus ambientes.",
+                    )
                   : view === "studio"
-                    ? "Modele seus dados. Crie seus gráficos. Encontre suas respostas."
+                    ? translate(
+                        "Modele seus dados. Crie seus gráficos. Encontre suas respostas.",
+                      )
                     : view === "library"
-                      ? "Suas análises organizadas. Prontas para o próximo passo."
+                      ? translate(
+                          "Suas análises organizadas. Prontas para o próximo passo.",
+                        )
                       : view === "connections"
-                        ? "Conecte suas origens. Escolha o conteúdo. Mantenha suas análises atualizadas."
-                        : "Traga sua planilha como ela está. Organize e conecte os dados aqui."}
+                        ? translate(
+                            "Conecte suas origens. Escolha o conteúdo. Mantenha suas análises atualizadas.",
+                          )
+                        : translate(
+                            "Traga sua planilha como ela está. Organize e conecte os dados aqui.",
+                          )}
               </p>
             </div>
             <div className="heading-actions">
@@ -578,7 +598,7 @@ export default function Workspace({
                   onClick={() => setCombineOpen(true)}
                 >
                   <GitMerge size={16} />
-                  Combinar bases
+                  {translate(" Combinar bases ")}
                 </button>
               )}
               {view === "studio" && (
@@ -587,7 +607,7 @@ export default function Workspace({
                   onClick={openSave}
                   disabled={!loaded || busy || storageError}
                 >
-                  <Save size={16} /> Salvar
+                  <Save size={16} /> {translate(" Salvar ")}
                 </button>
               )}
               {view !== "connections" && view !== "admin" && (
@@ -597,31 +617,37 @@ export default function Workspace({
                   onClick={view === "sources" ? openImport : openNew}
                 >
                   <Plus size={17} />
-                  {view === "sources" ? "Importar planilha" : "Novo dashboard"}
+                  {view === "sources"
+                    ? translate("Importar planilha")
+                    : translate("Novo dashboard")}
                 </button>
               )}
             </div>
           </div>
           {storageError && (
             <div className="inline-error" role="alert">
-              O armazenamento está indisponível. A demonstração continua
-              disponível; seus dados ainda não podem ser salvos.
+              {translate(
+                " O armazenamento está indisponível. A demonstração continua disponível; seus dados ainda não podem ser salvos. ",
+              )}
             </div>
           )}
           {remoteChanged && (
             <div className="connection-alert workspace-refresh" role="status">
               <Cloud size={18} />
               <span>
-                Novos dados estão disponíveis na nuvem. Recarregue para
-                atualizar suas análises.
-                {dirty ? " Exporte seu rascunho antes de recarregar." : ""}
+                {translate(
+                  " Novos dados estão disponíveis na nuvem. Recarregue para atualizar suas análises. ",
+                )}
+                {dirty
+                  ? translate(" Exporte seu rascunho antes de recarregar.")
+                  : ""}
               </span>
               <button
                 className="secondary-button"
                 disabled={busy}
                 onClick={() => guard(() => window.location.reload())}
               >
-                Recarregar dados
+                {translate(" Recarregar dados ")}
               </button>
             </div>
           )}
@@ -643,20 +669,22 @@ export default function Workspace({
               <div className="draft-status">
                 {dirty ? (
                   <>
-                    <span className="draft-dot" /> Rascunho · alterações não
-                    salvas
+                    <span className="draft-dot" />{" "}
+                    {translate(" Rascunho · alterações não salvas ")}
                   </>
                 ) : currentId ? (
                   <>
                     <Check size={13} />{" "}
                     {storage.cloud
-                      ? "Salvo na sua conta"
-                      : "Salvo neste navegador"}
+                      ? translate("Salvo na sua conta")
+                      : translate("Salvo neste navegador")}
                   </>
                 ) : (
                   <>
-                    <Sparkles size={13} /> Explore a demonstração ou importe
-                    seus dados
+                    <Sparkles size={13} />{" "}
+                    {translate(
+                      " Explore a demonstração ou importe seus dados ",
+                    )}
                   </>
                 )}
               </div>
@@ -722,19 +750,20 @@ export default function Workspace({
                 className="secondary-button source-connect-button"
                 onClick={() => setView("connections")}
               >
-                <Cloud size={16} /> Conectar SharePoint, OneDrive ou Google
-                Drive <ArrowRight size={15} />
+                <Cloud size={16} />{" "}
+                {translate(" Conectar SharePoint, OneDrive ou Google Drive ")}
+                <ArrowRight size={15} />
               </button>
               <div className="import-banner">
                 <span className="import-icon">
                   <FileSpreadsheet size={28} />
                 </span>
                 <div>
-                  <h2>Uma planilha. Muitas respostas.</h2>
+                  <h2>{translate("Uma planilha. Muitas respostas.")}</h2>
                   <p>
-                    Importe Excel ou CSV, revise a estrutura encontrada e
-                    prepare seus dados. Até 10 MB e 20 mil registros na base
-                    final.
+                    {translate(
+                      " Importe Excel ou CSV, revise a estrutura encontrada e prepare seus dados. Até 10 MB e 20 mil registros na base final. ",
+                    )}
                   </p>
                 </div>
                 <button
@@ -747,7 +776,7 @@ export default function Workspace({
                     )
                   }
                 >
-                  Baixar exemplo
+                  {translate(" Baixar exemplo ")}
                 </button>
               </div>
               <div className="source-list">
@@ -763,15 +792,16 @@ export default function Workspace({
                     <div className="source-info">
                       <h2>{s.name}</h2>
                       <p>
-                        {s.rows.length.toLocaleString("pt-BR")} registros ·{" "}
-                        {s.columns.length} colunas{" "}
+                        {s.rows.length.toLocaleString(locale())}{" "}
+                        {translate(" registros ·")} {s.columns.length}{" "}
+                        {translate(" colunas")}{" "}
                         <span>
                           ·{" "}
                           {s.demo
-                            ? "Demonstração"
+                            ? translate("Demonstração")
                             : storage.cloud
-                              ? "Na sua conta"
-                              : "Base local"}
+                              ? translate("Na sua conta")
+                              : translate("Base local")}
                         </span>
                       </p>
                     </div>
@@ -781,7 +811,7 @@ export default function Workspace({
                           className="text-button"
                           onClick={() => guard(() => setHistorySource(s))}
                         >
-                          Histórico
+                          {translate(" Histórico ")}
                         </button>
                       )}
                       <button
@@ -791,7 +821,7 @@ export default function Workspace({
                           setModal("source");
                         }}
                       >
-                        Ver dados
+                        {translate(" Ver dados ")}
                       </button>
                       <button
                         className="secondary-button"
@@ -799,12 +829,15 @@ export default function Workspace({
                           guard(() => switchDraft(s, defaultConfig(s)))
                         }
                       >
-                        Analisar <ArrowRight size={15} />
+                        {translate(" Analisar ")}
+                        <ArrowRight size={15} />
                       </button>
                       {!s.demo && (
                         <button
                           className="icon-button"
-                          aria-label={`Excluir fonte ${s.name}`}
+                          aria-label={translate("Excluir fonte {v0}", {
+                            v0: s.name,
+                          })}
                           onClick={() =>
                             setRemove({
                               type: "source",
@@ -824,15 +857,19 @@ export default function Workspace({
                 <HardDrive size={18} />
                 <p>
                   {storage.cloud
-                    ? "A interpretação acontece no seu dispositivo. Ao confirmar, os dados organizados são salvos no workspace privado da sua conta."
-                    : "Os arquivos são lidos no seu dispositivo e salvos neste navegador. Entre na sua conta para salvar dados organizados na nuvem."}
+                    ? translate(
+                        "A interpretação acontece no seu dispositivo. Ao confirmar, os dados organizados são salvos no workspace privado da sua conta.",
+                      )
+                    : translate(
+                        "Os arquivos são lidos no seu dispositivo e salvos neste navegador. Entre na sua conta para salvar dados organizados na nuvem.",
+                      )}
                 </p>
               </div>
             </>
           )}
           <footer className="page-footer">
-            <span>DriveVision · DriveData</span>
-            <span>Transforme dados em próximos passos.</span>
+            <span>{translate("DriveVision · DriveData")}</span>
+            <span>{translate("Transforme dados em próximos passos.")}</span>
           </footer>
         </div>
       </main>
@@ -876,9 +913,11 @@ export default function Workspace({
       >
         <DialogContent className="app-dialog">
           <DialogHeader>
-            <DialogTitle>Vamos criar seu dashboard</DialogTitle>
+            <DialogTitle>{translate("Vamos criar seu dashboard")}</DialogTitle>
             <DialogDescription>
-              Dê um nome à sua análise e escolha os dados para começar.
+              {translate(
+                " Dê um nome à sua análise e escolha os dados para começar. ",
+              )}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -941,10 +980,10 @@ export default function Workspace({
           >
             <div className="form-fields">
               <label htmlFor="dashboard-name">
-                Nome do dashboard
+                {translate(" Nome do dashboard ")}
                 <Input
                   id="dashboard-name"
-                  placeholder="Ex.: Acompanhamento comercial"
+                  placeholder={translate("Ex.: Acompanhamento comercial")}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={80}
@@ -953,9 +992,9 @@ export default function Workspace({
                 />
               </label>
               <label>
-                Ponto de partida
+                {translate(" Ponto de partida ")}
                 <Choice
-                  label="Modelo inicial"
+                  label={translate("Modelo inicial")}
                   value={template}
                   onChange={setTemplate}
                   items={[
@@ -979,9 +1018,9 @@ export default function Workspace({
                 />
               </label>
               <label>
-                Fonte de dados
+                {translate(" Fonte de dados ")}
                 <Choice
-                  label="Fonte de dados"
+                  label={translate("Fonte de dados")}
                   value={newSource}
                   onChange={setNewSource}
                   items={sources.map((s) => ({ value: s.id, label: s.name }))}
@@ -993,14 +1032,14 @@ export default function Workspace({
               className="text-button import-link"
               onClick={openImport}
             >
-              <Upload size={15} /> Importar outra planilha
+              <Upload size={15} /> {translate(" Importar outra planilha ")}
             </button>
             <button
               className="primary-button full-button"
               disabled={!title.trim()}
               type="submit"
             >
-              <Sparkles size={16} /> Criar dashboard
+              <Sparkles size={16} /> {translate(" Criar dashboard ")}
             </button>
           </form>
         </DialogContent>
@@ -1013,11 +1052,15 @@ export default function Workspace({
       >
         <DialogContent className="app-dialog">
           <DialogHeader>
-            <DialogTitle>Salvar dashboard</DialogTitle>
+            <DialogTitle>{translate("Salvar dashboard")}</DialogTitle>
             <DialogDescription>
               {storage.cloud
-                ? "O painel e a fonte ficam disponíveis na sua conta, em Meus dashboards."
-                : "O painel e a fonte ficam disponíveis em Meus dashboards neste navegador."}
+                ? translate(
+                    "O painel e a fonte ficam disponíveis na sua conta, em Meus dashboards.",
+                  )
+                : translate(
+                    "O painel e a fonte ficam disponíveis em Meus dashboards neste navegador.",
+                  )}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -1028,7 +1071,7 @@ export default function Workspace({
           >
             <div className="form-fields">
               <label htmlFor="save-name">
-                Nome do dashboard
+                {translate(" Nome do dashboard ")}
                 <Input
                   id="save-name"
                   value={title}
@@ -1049,7 +1092,7 @@ export default function Workspace({
               ) : (
                 <Save size={16} />
               )}{" "}
-              Salvar dashboard
+              {translate(" Salvar dashboard ")}
             </button>
           </form>
         </DialogContent>
@@ -1093,10 +1136,12 @@ export default function Workspace({
             <DialogTitle>{inspected.name}</DialogTitle>
             <DialogDescription>
               {inspected.demo
-                ? "Dados fictícios para explorar a plataforma."
+                ? translate("Dados fictícios para explorar a plataforma.")
                 : storage.cloud
-                  ? "Dados importados e armazenados na sua conta."
-                  : "Dados importados e armazenados neste navegador."}
+                  ? translate("Dados importados e armazenados na sua conta.")
+                  : translate(
+                      "Dados importados e armazenados neste navegador.",
+                    )}
             </DialogDescription>
           </DialogHeader>
           <div className="column-tags">
@@ -1106,7 +1151,7 @@ export default function Workspace({
                   ? "#"
                   : inspected.dates.includes(c)
                     ? "◷"
-                    : "Aa"}{" "}
+                    : translate("Aa")}{" "}
                 {c}
               </span>
             ))}
@@ -1114,12 +1159,14 @@ export default function Workspace({
           {inspected.importNotes && (
             <div className="source-provenance">
               <strong>
-                Origem: {inspected.importNotes.file} ·{" "}
-                {inspected.importNotes.sheet}
+                {translate(" Origem: ")}
+                {inspected.importNotes.file} · {inspected.importNotes.sheet}
               </strong>
               <p>
-                Cabeçalho na linha {inspected.importNotes.header}; intervalo até
-                a linha {inspected.importNotes.end}.
+                {translate(" Cabeçalho na linha ")}
+                {inspected.importNotes.header}
+                {translate("; intervalo até a linha ")}
+                {inspected.importNotes.end}.
               </p>
               <p>{inspected.importNotes.details}</p>
             </div>
@@ -1132,7 +1179,8 @@ export default function Workspace({
               guard(() => switchDraft(inspected, defaultConfig(inspected)));
             }}
           >
-            Criar análise com esta fonte <ArrowRight size={16} />
+            {translate(" Criar análise com esta fonte ")}
+            <ArrowRight size={16} />
           </button>
         </DialogContent>
       </Dialog>
@@ -1144,59 +1192,66 @@ export default function Workspace({
       >
         <DialogContent className="app-dialog">
           <DialogHeader>
-            <DialogTitle>Seu workspace de análises</DialogTitle>
+            <DialogTitle>{translate("Seu workspace de análises")}</DialogTitle>
             <DialogDescription>
-              Transforme suas fontes de dados em análises que acompanham seu
-              negócio.
+              {translate(
+                " Transforme suas fontes de dados em análises que acompanham seu negócio. ",
+              )}
             </DialogDescription>
           </DialogHeader>
           <ol className="help-steps">
             <li>
               <span>1</span>
               <div>
-                <strong>Comece pelos dados</strong>
+                <strong>{translate("Comece pelos dados")}</strong>
                 <p>
-                  Use a demonstração ou importe Excel e CSV em Fontes de dados.
+                  {translate(
+                    " Use a demonstração ou importe Excel e CSV em Fontes de dados. ",
+                  )}
                 </p>
               </div>
             </li>
             <li>
               <span>2</span>
               <div>
-                <strong>Monte o painel do seu jeito</strong>
+                <strong>{translate("Monte o painel do seu jeito")}</strong>
                 <p>
-                  Adicione indicadores, gráficos, tabelas e textos. Cada bloco
-                  tem seus próprios dados, cores e tamanho. Arraste para
-                  organizar e use Estilo para personalizar o painel.
+                  {translate(
+                    " Adicione indicadores, gráficos, tabelas e textos. Cada bloco tem seus próprios dados, cores e tamanho. Arraste para organizar e use Estilo para personalizar o painel. ",
+                  )}
                 </p>
               </div>
             </li>
             <li>
               <span>3</span>
               <div>
-                <strong>Guarde sua análise</strong>
+                <strong>{translate("Guarde sua análise")}</strong>
                 <p>
-                  Salve e reabra em Meus dashboards. Exporte o CSV para ter uma
-                  cópia dos dados.
+                  {translate(
+                    " Salve e reabra em Meus dashboards. Exporte o CSV para ter uma cópia dos dados. ",
+                  )}
                 </p>
               </div>
             </li>
           </ol>
           <div className="help-limit">
-            <strong>O que você pode fazer</strong>
+            <strong>{translate("O que você pode fazer")}</strong>
             <p>
-              Área de trabalho com pastas, favoritos e múltiplos dashboards.
-              Importação de planilhas, preparação de dados, filtros, exploração
-              e 14 tipos de visualização. Arraste e redimensione seus gráficos e
-              salve o resultado.
+              {translate(
+                " Área de trabalho com pastas, favoritos e múltiplos dashboards. Importação de planilhas, preparação de dados, filtros, exploração e 14 tipos de visualização. Arraste e redimensione seus gráficos e salve o resultado. ",
+              )}
             </p>
             <p>
               {storage.cloud
-                ? "Sua conta mantém fontes e painéis disponíveis em outros dispositivos."
-                : "No modo local, os dados ficam neste navegador. Entre em uma conta para salvar na nuvem."}{" "}
-              Conecte OneDrive e SharePoint para agendar atualizações das fontes
-              selecionadas. Coedição e publicação de painéis para terceiros
-              ainda não estão disponíveis.
+                ? translate(
+                    "Sua conta mantém fontes e painéis disponíveis em outros dispositivos.",
+                  )
+                : translate(
+                    "No modo local, os dados ficam neste navegador. Entre em uma conta para salvar na nuvem.",
+                  )}{" "}
+              {translate(
+                " Conecte OneDrive e SharePoint para agendar atualizações das fontes selecionadas. Coedição e publicação de painéis para terceiros ainda não estão disponíveis. ",
+              )}
             </p>
           </div>
         </DialogContent>
@@ -1210,19 +1265,30 @@ export default function Workspace({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Excluir{" "}
-              {remove?.type === "source" ? "fonte de dados" : "dashboard"}?
+              {translate(" Excluir")}{" "}
+              {remove?.type === "source"
+                ? translate("fonte de dados")
+                : translate("dashboard")}
+              ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              “{remove?.name}” será removido{" "}
-              {storage.cloud ? "da sua conta" : "deste navegador"}.{" "}
+              “{remove?.name}
+              {translate("” será removido")}{" "}
+              {storage.cloud
+                ? translate("da sua conta")
+                : translate("deste navegador")}
+              .{" "}
               {remove?.type === "source"
-                ? "O arquivo original no seu computador não será alterado."
-                : "A fonte de dados será mantida."}
+                ? translate(
+                    "O arquivo original no seu computador não será alterado.",
+                  )
+                : translate("A fonte de dados será mantida.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>
+              {translate("Cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="delete-button"
               disabled={busy}
@@ -1231,7 +1297,7 @@ export default function Workspace({
                 void deleteItem();
               }}
             >
-              Excluir
+              {translate(" Excluir ")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1240,11 +1306,12 @@ export default function Workspace({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Descartar as alterações do rascunho?
+              {translate(" Descartar as alterações do rascunho? ")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Este dashboard tem alterações não salvas. Volte e salve para
-              mantê-las, ou continue para abrir outra análise.
+              {translate(
+                " Este dashboard tem alterações não salvas. Volte e salve para mantê-las, ou continue para abrir outra análise. ",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1253,7 +1320,7 @@ export default function Workspace({
                 pending.current = null;
               }}
             >
-              Voltar ao rascunho
+              {translate(" Voltar ao rascunho ")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -1262,7 +1329,7 @@ export default function Workspace({
                 pending.current = null;
               }}
             >
-              Descartar e continuar
+              {translate(" Descartar e continuar ")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { BarChart3, Download, Plus, ShieldCheck, Table2 } from "lucide-react";
 import {
@@ -58,7 +59,7 @@ export function AnalysisHub({
     () => insights(rows, source, metric, dimension),
     [rows, source, metric, dimension],
   );
-  const items = source.columns.map((c) => ({ value: c, label: c }));
+  const items = source.columns.map((c) => ({ raw: true, value: c, label: c }));
   const fmt = (v: number | null) => formatChartNumber(v, metric);
   function exportPivot() {
     const p = pivotData(rows, spec);
@@ -103,37 +104,40 @@ export function AnalysisHub({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="model-dialog analysis-hub">
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">
-            <BarChart3 size={16} /> LABORATÓRIO DE ANÁLISE
-          </div>
-          <DialogTitle>Encontre a próxima pergunta.</DialogTitle>
+          <DialogTitle>{translate("Encontre a próxima pergunta.")}</DialogTitle>
           <DialogDescription>
-            {rows.length.toLocaleString("pt-BR")} registros no recorte atual.
-            Explore padrões, cruze dimensões e confira a qualidade da base.
+            {rows.length.toLocaleString(locale())}{" "}
+            {translate(
+              " registros no recorte atual. Explore padrões, cruze dimensões e confira a qualidade da base. ",
+            )}
           </DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="hub-tabs">
           <TabsList>
             <TabsTrigger value="insights">
-              <BarChart3 size={16} /> Destaques
+              <BarChart3 size={16} /> {translate(" Destaques ")}
             </TabsTrigger>
             <TabsTrigger value="pivot">
-              <Table2 size={16} /> Tabela dinâmica
+              <Table2 size={16} /> {translate(" Tabela dinâmica ")}
             </TabsTrigger>
             <TabsTrigger value="quality">
-              <ShieldCheck size={16} /> Qualidade
+              <ShieldCheck size={16} /> {translate(" Qualidade ")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="insights" className="hub-content">
             <div className="hub-controls">
               <Field
-                label="Medida para explorar"
+                label={translate("Medida para explorar")}
                 value={metric}
                 onChange={setMetric}
-                options={source.numeric.map((c) => ({ value: c, label: c }))}
+                options={source.numeric.map((c) => ({
+                  raw: true,
+                  value: c,
+                  label: c,
+                }))}
               />
               <Field
-                label="Analisar por"
+                label={translate("Analisar por")}
                 value={dimension}
                 onChange={setDimension}
                 options={items}
@@ -141,41 +145,49 @@ export function AnalysisHub({
             </div>
             {!source.numeric.length ? (
               <p className="model-note">
-                Defina uma coluna numérica em Preparar dados para analisar
-                valores. A tabela dinâmica permite contar registros agora.
+                {translate(
+                  " Defina uma coluna numérica em Preparar dados para analisar valores. A tabela dinâmica permite contar registros agora. ",
+                )}
               </p>
             ) : (
               <>
                 <div className="analysis-stats">
                   <article>
-                    <span>Total de {metric}</span>
+                    <span>
+                      {translate("Total de ")}
+                      {metric}
+                    </span>
                     <strong>{fmt(facts.total)}</strong>
                     <small>
-                      {facts.valid} valores numéricos · {facts.missing} vazios
-                      ou inválidos
+                      {facts.valid} {translate(" valores numéricos · ")}
+                      {facts.missing} {translate(" vazios ou inválidos ")}
                     </small>
                   </article>
                   <article>
-                    <span>Maior grupo</span>
+                    <span>{translate("Maior grupo")}</span>
                     <strong>{facts.ranking[0]?.name || "—"}</strong>
                     <small>
                       {facts.ranking[0]
                         ? fmt(facts.ranking[0].value)
-                        : "Sem dados"}
+                        : translate("Sem dados")}
                       {facts.share !== null
-                        ? ` · ${(facts.share * 100).toFixed(1)}% do total`
+                        ? translate(" · {v0}% do total", {
+                            v0: (facts.share * 100).toFixed(1),
+                          })
                         : ""}
                     </small>
                   </article>
                   <article>
-                    <span>Valores fora da faixa usual</span>
+                    <span>{translate("Valores fora da faixa usual")}</span>
                     <strong>{facts.outliers}</strong>
                     <small>
-                      Regra de 1,5 × intervalo interquartil; não significa erro.
+                      {translate(
+                        " Regra de 1,5 × intervalo interquartil; não significa erro. ",
+                      )}
                     </small>
                   </article>
                 </div>
-                <h3>Onde está o resultado?</h3>
+                <h3>{translate("Onde está o resultado?")}</h3>
                 <div className="insight-ranking">
                   {facts.ranking.map((g, i) => (
                     <button
@@ -187,16 +199,18 @@ export function AnalysisHub({
                       <span className="ranking-index">0{i + 1}</span>
                       <span>
                         {g.name}
-                        <small>Explorar registros</small>
+                        <small>{translate("Explorar registros")}</small>
                       </span>
                       <strong>{fmt(g.value)}</strong>
                     </button>
                   ))}
                 </div>
                 <p className="model-note">
-                  Cálculos descritivos sobre o recorte atual, sem inferência
-                  causal ou previsão. Até cinco maiores grupos de {facts.groups}
-                  ; valores ausentes não entram na soma.
+                  {translate(
+                    " Cálculos descritivos sobre o recorte atual, sem inferência causal ou previsão. Até cinco maiores grupos de ",
+                  )}
+                  {facts.groups}
+                  {translate(" ; valores ausentes não entram na soma. ")}
                 </p>
               </>
             )}
@@ -204,19 +218,19 @@ export function AnalysisHub({
           <TabsContent value="pivot" className="hub-content">
             <div className="hub-controls pivot-controls">
               <Field
-                label="Linhas"
+                label={translate("Linhas")}
                 value={spec.row}
                 onChange={(row) => setSpec({ ...spec, row })}
                 options={items}
               />
               <Field
-                label="Colunas"
+                label={translate("Colunas")}
                 value={spec.column}
                 onChange={(column) => setSpec({ ...spec, column })}
                 options={items}
               />
               <Field
-                label="Valores"
+                label={translate("Valores")}
                 value={spec.metric}
                 onChange={(metric) =>
                   setSpec({
@@ -230,7 +244,7 @@ export function AnalysisHub({
                 options={items}
               />
               <Field
-                label="Calcular"
+                label={translate("Calcular")}
                 value={spec.aggregation}
                 onChange={(aggregation) =>
                   setSpec({
@@ -254,20 +268,24 @@ export function AnalysisHub({
                     setSpec({ ...spec, heatmap: e.target.checked })
                   }
                 />
-                Mapa de calor
+                {translate(" Mapa de calor ")}
               </label>
               <button className="secondary-button" onClick={exportPivot}>
                 <Download size={15} />
-                Exportar CSV
+                {translate(" Exportar CSV ")}
               </button>
               <button
                 className="primary-button"
                 disabled={!canAdd}
-                title={canAdd ? undefined : "Limite de 24 visuais por painel"}
+                title={
+                  canAdd
+                    ? undefined
+                    : translate("Limite de 24 visuais por painel")
+                }
                 onClick={() => onAdd(spec)}
               >
                 <Plus size={15} />
-                Adicionar ao painel
+                {translate(" Adicionar ao painel ")}
               </button>
             </div>
             <PivotTable
@@ -283,29 +301,36 @@ export function AnalysisHub({
           </TabsContent>
           <TabsContent value="quality" className="hub-content">
             <p className="model-note">
-              Base preparada completa: {source.rows.length} linhas. Filtros do
-              painel não alteram este diagnóstico.
+              {translate(" Base preparada completa: ")}
+              {source.rows.length}{" "}
+              {translate(
+                " linhas. Filtros do painel não alteram este diagnóstico. ",
+              )}
             </p>
             <div className="analysis-stats">
               <article>
-                <span>Preenchimento</span>
+                <span>{translate("Preenchimento")}</span>
                 <strong>
                   {report.completeness === null
                     ? "—"
                     : `${report.completeness.toFixed(1)}%`}
                 </strong>
-                <small>{report.empty} células vazias</small>
+                <small>
+                  {report.empty} {translate(" células vazias")}
+                </small>
               </article>
               <article>
-                <span>Valores incompatíveis com o tipo</span>
+                <span>{translate("Valores incompatíveis com o tipo")}</span>
                 <strong>{report.invalid}</strong>
-                <small>Campos numéricos e datas</small>
+                <small>{translate("Campos numéricos e datas")}</small>
               </article>
               <article>
-                <span>Linhas repetidas</span>
+                <span>{translate("Linhas repetidas")}</span>
                 <strong>{report.duplicates}</strong>
                 <small>
-                  Comparação de todas as colunas; revise antes de remover.
+                  {translate(
+                    " Comparação de todas as colunas; revise antes de remover. ",
+                  )}
                 </small>
               </article>
             </div>
@@ -313,11 +338,11 @@ export function AnalysisHub({
               <table className="result-table">
                 <thead>
                   <tr>
-                    <th>Coluna</th>
-                    <th>Tipo</th>
-                    <th>Distintos</th>
-                    <th>Vazios</th>
-                    <th>Inválidos</th>
+                    <th>{translate("Coluna")}</th>
+                    <th>{translate("Tipo")}</th>
+                    <th>{translate("Distintos")}</th>
+                    <th>{translate("Vazios")}</th>
+                    <th>{translate("Inválidos")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -338,14 +363,14 @@ export function AnalysisHub({
               </table>
             </div>
             <button className="primary-button" onClick={onPrepare}>
-              Tratar a base em Preparar dados
+              {translate(" Tratar a base em Preparar dados ")}
             </button>
           </TabsContent>
         </Tabs>
         <footer className="model-footer">
-          <span>Seus dados permanecem neste navegador.</span>
+          <span>{translate("Seus dados permanecem neste navegador.")}</span>
           <button className="secondary-button" onClick={onClose}>
-            Concluir
+            {translate(" Concluir ")}
           </button>
         </footer>
       </DialogContent>
@@ -394,18 +419,21 @@ export function DrillExplorer({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="model-dialog drill-dialog">
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">REGISTROS POR TRÁS DO RESULTADO</div>
-          <DialogTitle>{visual?.title || "Explorar recorte"}</DialogTitle>
+          <DialogTitle>
+            {visual?.title || translate("Explorar recorte")}
+          </DialogTitle>
           <DialogDescription>
             {initial.map((s) => `${s.field}: ${s.value}`).join(" · ") ||
-              "Todos os registros considerados neste visual, incluindo seus filtros."}
+              translate(
+                "Todos os registros considerados neste visual, incluindo seus filtros.",
+              )}
           </DialogDescription>
         </DialogHeader>
         <div className="data-toolbar">
           <label className="table-search">
             <input
-              aria-label="Buscar registros do recorte"
-              placeholder="Buscar nos registros…"
+              aria-label={translate("Buscar registros do recorte")}
+              placeholder={translate("Buscar nos registros…")}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -413,7 +441,9 @@ export function DrillExplorer({
               }}
             />
           </label>
-          <span>{matches.length} registros</span>
+          <span>
+            {matches.length} {translate(" registros")}
+          </span>
           <button
             className="secondary-button"
             onClick={() =>
@@ -425,7 +455,7 @@ export function DrillExplorer({
             }
           >
             <Download size={15} />
-            Exportar registros
+            {translate(" Exportar registros ")}
           </button>
         </div>
         <div className="drill-table">
@@ -461,37 +491,41 @@ export function DrillExplorer({
             </tbody>
           </table>
           {!matches.length && (
-            <p className="model-note">Nenhum registro neste recorte.</p>
+            <p className="model-note">
+              {translate("Nenhum registro neste recorte.")}
+            </p>
           )}
         </div>
         <footer className="model-footer">
           <span>
-            Página {current + 1} de {pages}
+            {translate(" Página ")}
+            {current + 1} {translate(" de ")}
+            {pages}
           </span>
           <button
             className="secondary-button"
             disabled={!current}
             onClick={() => setPage(current - 1)}
           >
-            Anterior
+            {translate(" Anterior ")}
           </button>
           <button
             className="secondary-button"
             disabled={current + 1 >= pages}
             onClick={() => setPage(current + 1)}
           >
-            Próxima
+            {translate(" Próxima ")}
           </button>
           {initial.length > 0 && (
             <button
               className="primary-button"
               onClick={() => onFilter(initial)}
             >
-              Filtrar painel por este recorte
+              {translate(" Filtrar painel por este recorte ")}
             </button>
           )}
           <button className="secondary-button" onClick={onClose}>
-            Fechar
+            {translate(" Fechar ")}
           </button>
         </footer>
       </DialogContent>

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { History, Download, RotateCcw, Trash2 } from "lucide-react";
 import {
@@ -102,62 +103,71 @@ export function SourceHistory({
       >
         <DialogHeader>
           <DialogTitle>
-            <History size={20} /> Histórico · {source.name}
+            <History size={20} /> {translate(" Histórico · ")}
+            {source.name}
           </DialogTitle>
           <DialogDescription>
-            Versões dos dados organizados, com exportação e recuperação.
+            {translate(
+              " Versões dos dados organizados, com exportação e recuperação. ",
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="history-body">
           <p className="history-policy">
-            Guardamos até 20 versões por base, dentro de 50 MB compactados por
-            conta. As mais antigas são removidas ao atingir esses limites. Os
-            dados atuais não são removidos. O arquivo Excel original não é
-            armazenado aqui. Este histórico de versões não define o período de
-            vendas que você pode analisar.
+            {translate(
+              " Guardamos até 20 versões por base, dentro de 50 MB compactados por conta. As mais antigas são removidas ao atingir esses limites. Os dados atuais não são removidos. O arquivo Excel original não é armazenado aqui. Este histórico de versões não define o período de vendas que você pode analisar. ",
+            )}
           </p>
           {listing && (
             <p className="history-policy">
-              Histórico da conta: {(listing.usedBytes / 1_000_000).toFixed(2)} /
-              50 MB. Excluir uma base também exclui suas versões.
+              {translate(" Histórico da conta: ")}
+              {(listing.usedBytes / 1_000_000).toFixed(2)}{" "}
+              {translate(
+                " / 50 MB. Excluir uma base também exclui suas versões. ",
+              )}
             </p>
           )}
-          {!listing && !error && <p role="status">Carregando versões…</p>}
+          {!listing && !error && (
+            <p role="status">{translate("Carregando versões…")}</p>
+          )}
           {listing?.versions.length === 0 && (
             <p>
-              Sem versões registradas. O histórico começa na próxima alteração
-              dos dados; cargas antigas não podem ser reconstruídas.
+              {translate(
+                " Sem versões registradas. O histórico começa na próxima alteração dos dados; cargas antigas não podem ser reconstruídas. ",
+              )}
             </p>
           )}
           {error && (
             <p className="model-error" role="alert">
-              {error}
+              {translate(error)}
             </p>
           )}
           {listing?.versions.map((v, i) => (
             <article className="history-entry" key={v.id}>
               <strong>
                 {v.metadata.reason.startsWith("restore:")
-                  ? "Restauração"
+                  ? translate("Restauração")
                   : v.metadata.reason === "remote-sync"
-                    ? "Atualização da conexão"
+                    ? translate("Atualização da conexão")
                     : v.metadata.reason === "baseline"
-                      ? "Versão anterior preservada"
-                      : "Publicação de dados"}
-                {i === 0 ? " · mais recente" : ""}
+                      ? translate("Versão anterior preservada")
+                      : translate("Publicação de dados")}
+                {i === 0 ? translate(" · mais recente") : ""}
               </strong>
               <time dateTime={v.created_at}>
-                {new Date(v.created_at).toLocaleString("pt-BR")}
+                {new Date(v.created_at).toLocaleString(locale())}
               </time>
               <p>
-                {v.metadata.rows.toLocaleString("pt-BR")} registros ·{" "}
-                {v.metadata.file || v.metadata.name}
+                {v.metadata.rows.toLocaleString(locale())}{" "}
+                {translate(" registros ·")} {v.metadata.file || v.metadata.name}
               </p>
               <p>
-                {v.metadata.changes.added} linhas incluídas ·{" "}
-                {v.metadata.changes.removed} retiradas ·{" "}
-                {v.metadata.changes.unchanged} iguais. Uma correção aparece como
-                retirada + inclusão.
+                {v.metadata.changes.added} {translate(" linhas incluídas ·")}{" "}
+                {v.metadata.changes.removed} {translate(" retiradas ·")}{" "}
+                {v.metadata.changes.unchanged}{" "}
+                {translate(
+                  " iguais. Uma correção aparece como retirada + inclusão. ",
+                )}
               </p>
               <div className="history-actions">
                 <button
@@ -165,7 +175,7 @@ export function SourceHistory({
                   disabled={busy}
                   onClick={() => void exportVersion(v.id)}
                 >
-                  <Download size={15} /> Exportar CSV
+                  <Download size={15} /> {translate(" Exportar CSV ")}
                 </button>
                 {!source.recipe && (
                   <button
@@ -175,7 +185,7 @@ export function SourceHistory({
                       setConfirm({ action: "restore", versionId: v.id })
                     }
                   >
-                    <RotateCcw size={15} /> Restaurar
+                    <RotateCcw size={15} /> {translate(" Restaurar ")}
                   </button>
                 )}
               </div>
@@ -187,20 +197,24 @@ export function SourceHistory({
               disabled={busy}
               onClick={() => setConfirm({ action: "delete" })}
             >
-              <Trash2 size={15} /> Excluir histórico desta base
+              <Trash2 size={15} /> {translate(" Excluir histórico desta base ")}
             </button>
           )}
           {confirm && (
             <div className="history-entry" role="alert">
               <strong>
                 {confirm.action === "delete"
-                  ? "Excluir todas as versões desta base?"
-                  : "Restaurar esta versão?"}
+                  ? translate("Excluir todas as versões desta base?")
+                  : translate("Restaurar esta versão?")}
               </strong>
               <p>
                 {confirm.action === "delete"
-                  ? "Esta exclusão não pode ser desfeita. A base atual e seus dashboards continuam disponíveis. Futuras alterações criam novas versões."
-                  : "Os dashboards e combinações serão recalculados. A atualização automática desta origem será pausada, se houver. Você poderá retomá-la em Conexões."}
+                  ? translate(
+                      "Esta exclusão não pode ser desfeita. A base atual e seus dashboards continuam disponíveis. Futuras alterações criam novas versões.",
+                    )
+                  : translate(
+                      "Os dashboards e combinações serão recalculados. A atualização automática desta origem será pausada, se houver. Você poderá retomá-la em Conexões.",
+                    )}
               </p>
               <div className="history-actions">
                 <button
@@ -208,7 +222,7 @@ export function SourceHistory({
                   disabled={busy}
                   onClick={() => setConfirm(null)}
                 >
-                  Cancelar
+                  {translate(" Cancelar ")}
                 </button>
                 <button
                   className="primary-button"
@@ -216,7 +230,7 @@ export function SourceHistory({
                   onClick={() => void apply()}
                   autoFocus
                 >
-                  {busy ? "Aplicando…" : "Confirmar"}
+                  {busy ? translate("Aplicando…") : translate("Confirmar")}
                 </button>
               </div>
             </div>

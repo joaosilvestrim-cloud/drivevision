@@ -1,3 +1,4 @@
+import { displayLocale } from "./display-locale.ts";
 import {
   formatValue,
   parseDate,
@@ -94,7 +95,7 @@ export function formatChartNumber(
   if (value === null || !Number.isFinite(value)) return "—";
   if (!style || style.kind === "auto")
     return formatValue(value, metric, style?.compact ?? true);
-  const text = new Intl.NumberFormat("pt-BR", {
+  const text = new Intl.NumberFormat(displayLocale(), {
     style:
       style.kind === "currency"
         ? "currency"

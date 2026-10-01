@@ -12,7 +12,9 @@ import {
 } from "../server/database.ts";
 import { hashPassword, verifyPassword } from "../server/security.ts";
 process.loadEnvFile(".env.local");
-process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString("base64");
+process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString(
+  "base64",
+);
 const http = createServer(handler);
 await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${http.address().port}`;
@@ -28,7 +30,7 @@ async function check(name, fn) {
 }
 async function request(
   path,
-  { method = "GET", body, cookie, origin = base, zip = false } = {},
+  { method = "GET", body, cookie, origin = base, zip = false, account } = {},
 ) {
   const response = await fetch(base + path, {
     method,
@@ -36,6 +38,7 @@ async function request(
       Origin: origin,
       "X-Forwarded-For": testIp,
       ...(cookie ? { Cookie: cookie } : {}),
+      ...(account ? { "X-Drivevision-Account": account } : {}),
       ...(body
         ? {
             "Content-Type": zip
@@ -78,6 +81,15 @@ async function signup() {
   });
   assert.equal(r.status, 200, JSON.stringify(r.data));
   accounts.push(r.data.user.id);
+  const provisioned = await admin.query(
+    "select w.id from drivevision.workspaces w join drivevision.billing_accounts b on b.owner_id=w.owner_id where w.owner_id=$1",
+    [r.data.user.id],
+  );
+  assert.equal(
+    provisioned.rowCount,
+    1,
+    "Every signup atomically provisions one workspace and billing account",
+  );
   assert.equal(r.data.user.access, false);
   assert.equal(
     (await request("/api/workspace", { cookie: r.cookie })).status,
@@ -241,6 +253,131 @@ try {
           ),
         ),
         (e) => e.code === "42501",
+      );
+    },
+  );
+  await check(
+    "stale tabs cannot read or save under a different account session",
+    async () => {
+      for (const path of [
+        "/api/workspace",
+        "/api/workspace/revision",
+        "/api/connectors",
+        "/api/billing",
+        "/api/support",
+      ])
+        assert.equal(
+          (await request(path, { cookie: b.cookie, account: a.data.user.id }))
+            .status,
+          409,
+        );
+      assert.equal(
+        (
+          await request("/api/workspace", {
+            method: "PUT",
+            cookie: b.cookie,
+            account: a.data.user.id,
+            body: { revision: 0, workspace },
+            zip: true,
+          })
+        ).status,
+        409,
+      );
+      assert.equal(
+        (
+          await request("/api/workspace", {
+            cookie: a.cookie,
+            account: a.data.user.id,
+          })
+        ).status,
+        200,
+      );
+    },
+  );
+  await check(
+    "matching source and dashboard identifiers remain isolated on write and delete",
+    async () => {
+      const otherWorkspace = structuredClone(workspace);
+      otherWorkspace.sources[0].rows = [{ Grupo: "Cliente B", Valor: "999" }];
+      otherWorkspace.dashboards[0].config.title = "Somente cliente B";
+      assert.equal(
+        (
+          await request("/api/workspace", {
+            method: "PUT",
+            cookie: b.cookie,
+            body: { revision: 0, workspace: otherWorkspace },
+            zip: true,
+          })
+        ).status,
+        200,
+      );
+      assert.deepEqual(
+        (await request("/api/workspace", { cookie: a.cookie })).data.workspace,
+        workspace,
+      );
+      const own = (
+        await admin.query(
+          "select id from drivevision.workspaces where owner_id=$1",
+          [a.data.user.id],
+        )
+      ).rows[0].id;
+      await transaction(b.data.user.id, async (c) => {
+        for (const table of ["sources", "dashboards"]) {
+          assert.equal(
+            (
+              await c.query(
+                `select id from drivevision.${table} where workspace_id=$1`,
+                [own],
+              )
+            ).rowCount,
+            0,
+          );
+          assert.equal(
+            (
+              await c.query(
+                `update drivevision.${table} set payload='{}'::jsonb where workspace_id=$1`,
+                [own],
+              )
+            ).rowCount,
+            0,
+          );
+          assert.equal(
+            (
+              await c.query(
+                `delete from drivevision.${table} where workspace_id=$1`,
+                [own],
+              )
+            ).rowCount,
+            0,
+          );
+        }
+        assert.equal(
+          (
+            await c.query(
+              "update drivevision.workspaces set owner_id=$1 where id=$2",
+              [b.data.user.id, own],
+            )
+          ).rowCount,
+          0,
+        );
+      });
+      assert.equal(
+        (
+          await request("/api/workspace", {
+            method: "PUT",
+            cookie: b.cookie,
+            body: {
+              revision: 1,
+              workspace: { version: 1, sources: [], dashboards: [] },
+            },
+            zip: true,
+          })
+        ).status,
+        200,
+      );
+      assert.deepEqual(
+        (await request("/api/workspace", { cookie: a.cookie })).data.workspace,
+        workspace,
       );
     },
   );

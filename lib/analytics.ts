@@ -1,3 +1,4 @@
+import { displayLocale } from "./display-locale.ts";
 import type { Selection, Bookmark } from "./exploration";
 import type { Visual, BoardAppearance } from "./visual-builder";
 import type { DataStep, FilterSet } from "./data-model";
@@ -312,7 +313,7 @@ export function isCurrency(metric: string) {
 }
 export function formatValue(value: number, metric: string, compact = false) {
   const abbreviated = compact && Math.abs(value) >= 10000;
-  return new Intl.NumberFormat("pt-BR", {
+  return new Intl.NumberFormat(displayLocale(), {
     ...(isCurrency(metric) ? { style: "currency", currency: "BRL" } : {}),
     maximumFractionDigits: abbreviated ? 1 : 2,
     notation: abbreviated ? "compact" : "standard",

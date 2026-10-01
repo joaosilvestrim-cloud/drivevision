@@ -1,25 +1,311 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useId, useMemo } from "react";
-import { Area,AreaChart,Bar,BarChart,Line,LineChart,Pie,PieChart,Cell,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,Legend } from "recharts";
-import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from "@/components/ui/table";
-import { formatValue,parseDate,type DataRow,type Source } from "@/lib/analytics";
-import { visualData,type Visual } from "@/lib/visual-builder";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  Cell,
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from "recharts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  formatValue,
+  parseDate,
+  type DataRow,
+  type Source,
+} from "@/lib/analytics";
+import { visualData, type Visual } from "@/lib/visual-builder";
 
-export function VisualChart({visual,source,rows,color,dark,onFilter}:{visual:Visual;source:Source;rows:DataRow[];color:string;dark:boolean;onFilter?:(value:string)=>void}){
-  const data=useMemo(()=>visualData(rows,source,visual),[rows,source,visual]);
-  const id=useId().replace(/:/g,"");
-  const unit=visual.aggregation==="count"?"Registros":visual.metric;
-  const ink=dark?"#b1c2cd":"#72818d",grid=dark?"#2a3c49":"#e9eff2";
-  const label=(value:string)=>{const t=parseDate(value);return t!==null?new Intl.DateTimeFormat("pt-BR",{month:"short",...(visual.grain==="day"?{day:"2-digit" as const}:{}),timeZone:"UTC"}).format(t):value.length>17?value.slice(0,15)+"…":value;};
-  if(visual.type==="text")return <div className="visual-note">{visual.text||"Selecione este bloco para escrever uma observação."}</div>;
-  if(visual.type==="kpi")return <div className="visual-kpi"><strong style={{color}} title={formatValue(data.value,unit)}>{formatValue(data.value,unit,true)}</strong><p>{visual.aggregation==="count"?"Registros no período":visual.aggregation==="average"?"Média dos valores preenchidos":"Soma dos valores preenchidos"}</p>{data.missing>0&&visual.aggregation!=="count"&&<small>{data.missing} valores vazios desconsiderados</small>}</div>;
-  if(!rows.length)return <div className="visual-empty">Nenhum registro neste filtro.</div>;
-  if(visual.type==="table")return <div className="visual-table"><Table><TableHeader><TableRow><TableHead>{visual.dimension}</TableHead><TableHead>{unit}</TableHead><TableHead>Registros</TableHead></TableRow></TableHeader><TableBody>{data.groups.map(g=><TableRow key={g.name}><TableCell>{g.name}</TableCell><TableCell>{formatValue(g.value,unit)}</TableCell><TableCell>{g.count}</TableCell></TableRow>)}</TableBody></Table></div>;
-  if(visual.type==="donut"&&(data.negative||!data.groups.some(g=>g.value>0)))return <div className="visual-empty">A rosca precisa de valores positivos. Use barras para visualizar esta base.</div>;
-  const tip=<Tooltip formatter={v=>formatValue(Number(v),unit)} labelFormatter={v=>label(String(v))} contentStyle={{background:dark?"#152a39":"white",color:dark?"#e3edf3":"#283943",border:`1px solid ${grid}`,borderRadius:10,fontSize:13}}/>;
-  const horizontal=visual.type==="horizontal";
-  const axes=<>{visual.grid&&<CartesianGrid strokeDasharray="3 5" vertical={false} stroke={grid}/>}<XAxis type={horizontal?"number":"category"} dataKey={horizontal?undefined:"name"} axisLine={false} tickLine={false} tick={{fontSize:12,fill:ink}} tickFormatter={horizontal?v=>formatValue(v,unit,true):label} minTickGap={25}/><YAxis type={horizontal?"category":"number"} dataKey={horizontal?"name":undefined} axisLine={false} tickLine={false} tick={{fontSize:12,fill:ink}} width={horizontal?90:62} tickFormatter={horizontal?label:v=>formatValue(v,unit,true)}/>{tip}{visual.legend&&<Legend iconType="circle" wrapperStyle={{fontSize:12,paddingTop:10}}/>}</>;
-  const fills=[color,`${color}bb`,`${color}88`,`${color}66`,`${color}dd`,`${color}99`];
-  const content=visual.type==="donut"?<PieChart>{tip}<Pie data={data.groups} dataKey="value" nameKey="name" innerRadius="53%" outerRadius="78%" paddingAngle={3} stroke="none" isAnimationActive={false} onClick={g=>onFilter?.(String(g.name))}>{data.groups.map((g,i)=><Cell key={g.name} fill={fills[i%fills.length]} cursor={onFilter?"pointer":"default"}/>)}</Pie>{visual.legend&&<Legend iconType="circle" wrapperStyle={{fontSize:12,color:ink}}/>}</PieChart>:visual.type==="bar"||horizontal?<BarChart data={data.groups} layout={horizontal?"vertical":"horizontal"} margin={{top:10,right:14,left:0,bottom:5}}>{axes}<Bar dataKey="value" name={unit} fill={color} radius={horizontal?[0,4,4,0]:[4,4,0,0]} maxBarSize={38} isAnimationActive={false} onClick={g=>onFilter?.(String(g.name))} cursor={onFilter?"pointer":"default"}/></BarChart>:visual.type==="line"?<LineChart data={data.groups} margin={{top:10,right:14,left:0,bottom:5}}>{axes}<Line type="monotone" dataKey="value" name={unit} stroke={color} strokeWidth={3} dot={data.groups.length<14?{r:4,fill:color}:false} isAnimationActive={false}/></LineChart>:<AreaChart data={data.groups} margin={{top:10,right:14,left:0,bottom:5}}>{axes}<defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={.3}/><stop offset="100%" stopColor={color} stopOpacity={.02}/></linearGradient></defs><Area type="monotone" dataKey="value" name={unit} stroke={color} strokeWidth={2.5} fill={`url(#${id})`} isAnimationActive={false}/></AreaChart>;
-  return <><div className="visual-chart" role="img" aria-label={`${visual.title}: ${data.groups.length} grupos de ${visual.dimension}`}><ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{width:500,height:240}}>{content}</ResponsiveContainer></div>{data.totalGroups>data.groups.length&&<p className="visual-caption">{data.groups.length} de {data.totalGroups} grupos exibidos{visual.type==="donut"?" · participação entre os grupos exibidos":""}</p>}</>;
+export function VisualChart({
+  visual,
+  source,
+  rows,
+  color,
+  dark,
+  onFilter,
+}: {
+  visual: Visual;
+  source: Source;
+  rows: DataRow[];
+  color: string;
+  dark: boolean;
+  onFilter?: (value: string) => void;
+}) {
+  const data = useMemo(
+    () => visualData(rows, source, visual),
+    [rows, source, visual],
+  );
+  const id = useId().replace(/:/g, "");
+  const unit = visual.aggregation === "count" ? "Registros" : visual.metric;
+  const ink = dark ? "#b1c2cd" : "#72818d",
+    grid = dark ? "#2a3c49" : "#e9eff2";
+  const label = (value: string) => {
+    const t = parseDate(value);
+    return t !== null
+      ? new Intl.DateTimeFormat("pt-BR", {
+          month: "short",
+          ...(visual.grain === "day" ? { day: "2-digit" as const } : {}),
+          timeZone: "UTC",
+        }).format(t)
+      : value.length > 17
+        ? value.slice(0, 15) + "…"
+        : value;
+  };
+  if (visual.type === "text")
+    return (
+      <div className="visual-note">
+        {visual.text ||
+          translate("Selecione este bloco para escrever uma observação.")}
+      </div>
+    );
+  if (visual.type === "kpi")
+    return (
+      <div className="visual-kpi">
+        <strong style={{ color }} title={formatValue(data.value, unit)}>
+          {formatValue(data.value, unit, true)}
+        </strong>
+        <p>
+          {visual.aggregation === "count"
+            ? translate("Registros no período")
+            : visual.aggregation === "average"
+              ? translate("Média dos valores preenchidos")
+              : translate("Soma dos valores preenchidos")}
+        </p>
+        {data.missing > 0 && visual.aggregation !== "count" && (
+          <small>
+            {data.missing} {translate(" valores vazios desconsiderados")}
+          </small>
+        )}
+      </div>
+    );
+  if (!rows.length)
+    return (
+      <div className="visual-empty">
+        {translate("Nenhum registro neste filtro.")}
+      </div>
+    );
+  if (visual.type === "table")
+    return (
+      <div className="visual-table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{visual.dimension}</TableHead>
+              <TableHead>{unit}</TableHead>
+              <TableHead>{translate("Registros")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.groups.map((g) => (
+              <TableRow key={g.name}>
+                <TableCell>{g.name}</TableCell>
+                <TableCell>{formatValue(g.value, unit)}</TableCell>
+                <TableCell>{g.count}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  if (
+    visual.type === "donut" &&
+    (data.negative || !data.groups.some((g) => g.value > 0))
+  )
+    return (
+      <div className="visual-empty">
+        {translate(
+          "A rosca precisa de valores positivos. Use barras para visualizar esta base.",
+        )}
+      </div>
+    );
+  const tip = (
+    <Tooltip
+      formatter={(v) => formatValue(Number(v), unit)}
+      labelFormatter={(v) => label(String(v))}
+      contentStyle={{
+        background: dark ? "#152a39" : "white",
+        color: dark ? "#e3edf3" : "#283943",
+        border: `1px solid ${grid}`,
+        borderRadius: 10,
+        fontSize: 13,
+      }}
+    />
+  );
+  const horizontal = visual.type === "horizontal";
+  const axes = (
+    <>
+      {visual.grid && (
+        <CartesianGrid strokeDasharray="3 5" vertical={false} stroke={grid} />
+      )}
+      <XAxis
+        type={horizontal ? "number" : "category"}
+        dataKey={horizontal ? undefined : "name"}
+        axisLine={false}
+        tickLine={false}
+        tick={{ fontSize: 12, fill: ink }}
+        tickFormatter={horizontal ? (v) => formatValue(v, unit, true) : label}
+        minTickGap={25}
+      />
+      <YAxis
+        type={horizontal ? "category" : "number"}
+        dataKey={horizontal ? "name" : undefined}
+        axisLine={false}
+        tickLine={false}
+        tick={{ fontSize: 12, fill: ink }}
+        width={horizontal ? 90 : 62}
+        tickFormatter={horizontal ? label : (v) => formatValue(v, unit, true)}
+      />
+      {tip}
+      {visual.legend && (
+        <Legend
+          iconType="circle"
+          wrapperStyle={{ fontSize: 12, paddingTop: 10 }}
+        />
+      )}
+    </>
+  );
+  const fills = [
+    color,
+    `${color}bb`,
+    `${color}88`,
+    `${color}66`,
+    `${color}dd`,
+    `${color}99`,
+  ];
+  const content =
+    visual.type === "donut" ? (
+      <PieChart>
+        {tip}
+        <Pie
+          data={data.groups}
+          dataKey="value"
+          nameKey="name"
+          innerRadius="53%"
+          outerRadius="78%"
+          paddingAngle={3}
+          stroke="none"
+          isAnimationActive={false}
+          onClick={(g) => onFilter?.(String(g.name))}
+        >
+          {data.groups.map((g, i) => (
+            <Cell
+              key={g.name}
+              fill={fills[i % fills.length]}
+              cursor={onFilter ? "pointer" : "default"}
+            />
+          ))}
+        </Pie>
+        {visual.legend && (
+          <Legend
+            iconType="circle"
+            wrapperStyle={{ fontSize: 12, color: ink }}
+          />
+        )}
+      </PieChart>
+    ) : visual.type === "bar" || horizontal ? (
+      <BarChart
+        data={data.groups}
+        layout={horizontal ? "vertical" : "horizontal"}
+        margin={{ top: 10, right: 14, left: 0, bottom: 5 }}
+      >
+        {axes}
+        <Bar
+          dataKey="value"
+          name={unit}
+          fill={color}
+          radius={horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]}
+          maxBarSize={38}
+          isAnimationActive={false}
+          onClick={(g) => onFilter?.(String(g.name))}
+          cursor={onFilter ? "pointer" : "default"}
+        />
+      </BarChart>
+    ) : visual.type === "line" ? (
+      <LineChart
+        data={data.groups}
+        margin={{ top: 10, right: 14, left: 0, bottom: 5 }}
+      >
+        {axes}
+        <Line
+          type="monotone"
+          dataKey="value"
+          name={unit}
+          stroke={color}
+          strokeWidth={3}
+          dot={data.groups.length < 14 ? { r: 4, fill: color } : false}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    ) : (
+      <AreaChart
+        data={data.groups}
+        margin={{ top: 10, right: 14, left: 0, bottom: 5 }}
+      >
+        {axes}
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <Area
+          type="monotone"
+          dataKey="value"
+          name={unit}
+          stroke={color}
+          strokeWidth={2.5}
+          fill={`url(#${id})`}
+          isAnimationActive={false}
+        />
+      </AreaChart>
+    );
+  return (
+    <>
+      <div
+        className="visual-chart"
+        role="img"
+        aria-label={translate("{v0}: {v1} grupos de {v2}", {
+          v0: visual.title,
+          v1: data.groups.length,
+          v2: visual.dimension,
+        })}
+      >
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          initialDimension={{ width: 500, height: 240 }}
+        >
+          {content}
+        </ResponsiveContainer>
+      </div>
+      {data.totalGroups > data.groups.length && (
+        <p className="visual-caption">
+          {data.groups.length} {translate(" de ")}
+          {data.totalGroups} {translate(" grupos exibidos")}
+          {visual.type === "donut"
+            ? translate(" · participação entre os grupos exibidos")
+            : ""}
+        </p>
+      )}
+    </>
+  );
 }

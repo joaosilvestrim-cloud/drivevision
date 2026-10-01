@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { Plus, Trash2 } from "lucide-react";
 import type { Source } from "@/lib/analytics";
 import { OPERATORS, type FilterSet, type Rule } from "@/lib/data-model";
@@ -13,21 +14,21 @@ export function Field({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; raw?: boolean }[];
   disabled?: boolean;
 }) {
   return (
     <label className="model-field">
-      <span>{label}</span>
+      <span>{translate(label)}</span>
       <select
-        aria-label={label}
+        aria-label={translate(label)}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {o.raw ? o.label : translate(o.label)}
           </option>
         ))}
       </select>
@@ -49,13 +50,13 @@ export function TextField({
 }) {
   return (
     <label className="model-field">
-      <span>{label}</span>
+      <span>{translate(label)}</span>
       <input
         type={type}
-        aria-label={label}
+        aria-label={translate(label)}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={translate(placeholder)}
       />
     </label>
   );
@@ -78,7 +79,7 @@ export function FilterBuilder({
   return (
     <div className="filter-builder">
       <Field
-        label="Combinar condições"
+        label={translate("Combinar condições")}
         value={value.mode}
         onChange={(mode) =>
           onChange({ ...value, mode: mode as FilterSet["mode"] })
@@ -90,16 +91,19 @@ export function FilterBuilder({
       />
       {!value.rules.length && (
         <div className="model-empty">
-          Sem condições. Todos os registros participam da análise.
+          {translate(
+            " Sem condições. Todos os registros participam da análise. ",
+          )}
         </div>
       )}
       {value.rules.map((r, index) => (
         <div className="filter-condition" key={r.id}>
           <div className="model-section-label">
-            CONDIÇÃO {index + 1}
+            {translate(" CONDIÇÃO ")}
+            {index + 1}
             <button
               type="button"
-              aria-label={`Remover condição ${index + 1}`}
+              aria-label={translate("Remover condição {v0}", { v0: index + 1 })}
               onClick={() =>
                 onChange({
                   ...value,
@@ -111,13 +115,17 @@ export function FilterBuilder({
             </button>
           </div>
           <Field
-            label={`Campo da condição ${index + 1}`}
+            label={translate("Campo da condição {v0}", { v0: index + 1 })}
             value={r.field}
             onChange={(field) => update(r.id, { field, value: "", end: "" })}
-            options={source.columns.map((c) => ({ value: c, label: c }))}
+            options={source.columns.map((c) => ({
+              raw: true,
+              value: c,
+              label: c,
+            }))}
           />
           <Field
-            label={`Operador da condição ${index + 1}`}
+            label={translate("Operador da condição {v0}", { v0: index + 1 })}
             value={r.op}
             onChange={(op) => update(r.id, { op: op as Rule["op"] })}
             options={OPERATORS}
@@ -125,18 +133,18 @@ export function FilterBuilder({
           {!["empty", "filled"].includes(r.op) && (
             <>
               <TextField
-                label={`Valor da condição ${index + 1}`}
+                label={translate("Valor da condição {v0}", { v0: index + 1 })}
                 value={r.value}
                 onChange={(v) => update(r.id, { value: v })}
                 placeholder={
                   source.dates.includes(r.field)
-                    ? "AAAA-MM-DD ou DD/MM/AAAA"
-                    : "Valor"
+                    ? translate("AAAA-MM-DD ou DD/MM/AAAA")
+                    : translate("Valor")
                 }
               />
               {r.op === "between" && (
                 <TextField
-                  label={`Até, condição ${index + 1}`}
+                  label={translate("Até, condição {v0}", { v0: index + 1 })}
                   value={r.end ?? ""}
                   onChange={(end) => update(r.id, { end })}
                 />
@@ -164,11 +172,12 @@ export function FilterBuilder({
           })
         }
       >
-        <Plus size={15} /> Adicionar condição
+        <Plus size={15} /> {translate(" Adicionar condição ")}
       </button>
       <p className="model-note">
-        Condições numéricas e de data usam o tipo da coluna. Textos são
-        comparados sem diferença de maiúsculas ou acentos.
+        {translate(
+          " Condições numéricas e de data usam o tipo da coluna. Textos são comparados sem diferença de maiúsculas ou acentos. ",
+        )}
       </p>
     </div>
   );

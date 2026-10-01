@@ -22,7 +22,9 @@ import {
   verifyPassword,
 } from "../server/security.ts";
 process.loadEnvFile(".env.local");
-process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString("base64");
+process.env.DRIVEVISION_CONNECTOR_KEY ||= Buffer.alloc(32, 42).toString(
+  "base64",
+);
 process.env.DRIVEVISION_RESEND_API_KEY = "re_test_only_not_real";
 const admin = new Client(connectionOptions(true));
 await admin.connect();
@@ -226,6 +228,49 @@ try {
   assert.equal((await request("/api/admin/email")).status, 401);
   console.log(
     "PASS neutral recovery response and private administrator monitoring",
+  );
+  // Confirmation must lead to the next product step without logging into a different account.
+  const checkoutSession = newToken();
+  await admin.query(
+    "insert into drivevision.sessions(token_hash,user_id,expires_at) values($1,$2,now()+interval '1 hour')",
+    [tokenHash(checkoutSession), owner],
+  );
+  await admin.query(
+    "insert into drivevision.billing_accounts(owner_id,terms_version) values($1,'qa')",
+    [owner],
+  );
+  const unpaidToken = await issue("verify");
+  const unpaid = await request(
+    "/api/email/verify",
+    { token: unpaidToken.token },
+    `drivevision_session=${checkoutSession}`,
+  );
+  assert.equal(unpaid.status, 200);
+  assert.equal(unpaid.data.next, "/?view=billing");
+  assert.equal(unpaid.data.accountId, undefined);
+  const anonymousToken = await issue("verify");
+  assert.equal(
+    (await request("/api/email/verify", { token: anonymousToken.token })).data
+      .next,
+    "/?view=login&verified=1",
+  );
+  await admin.query(
+    "update drivevision.billing_accounts set paid_until=now()+interval '1 month' where owner_id=$1",
+    [owner],
+  );
+  const activeToken = await issue("verify");
+  assert.equal(
+    (
+      await request(
+        "/api/email/verify",
+        { token: activeToken.token },
+        `drivevision_session=${checkoutSession}`,
+      )
+    ).data.next,
+    "/",
+  );
+  console.log(
+    "PASS email confirmation routes unpaid sessions to checkout setup, anonymous visitors to login, and active accounts to workspace",
   );
 } finally {
   globalThis.fetch = realFetch;

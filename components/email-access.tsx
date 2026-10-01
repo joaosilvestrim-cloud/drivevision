@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useEffect, useState, type FormEvent } from "react";
 import { Mail, ShieldCheck, Loader2, RefreshCw } from "lucide-react";
 import { apiJson, type Account } from "@/lib/cloud-workspace";
@@ -19,13 +20,23 @@ export function EmailAccess({
     [done, setDone] = useState(false),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
+  const [next, setNext] = useState("/?view=login");
+  useEffect(() => {
+    if (!done || mode !== "verify") return;
+    const timer = window.setTimeout(() => window.location.replace(next), 1200);
+    return () => window.clearTimeout(timer);
+  }, [done, mode, next]);
+  useEffect(() => {
+    if (mode === "verify" && !token && account?.emailVerified)
+      window.location.replace(account.access ? "/" : "/?view=billing");
+  }, [mode, token, account]);
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
     setError("");
     setNotice("");
     if (mode === "reset" && password !== confirmation) {
-      setError("As senhas precisam ser iguais.");
+      setError(translate("As senhas precisam ser iguais."));
       return;
     }
     setBusy(true);
@@ -34,10 +45,20 @@ export function EmailAccess({
         await apiJson("email/recover", { email });
         setDone(true);
       } else if (token) {
-        await apiJson(`email/${mode}`, {
+        const result = await apiJson<{ next: string }>(`email/${mode}`, {
           token,
           ...(mode === "reset" ? { password } : {}),
         });
+        setNext(
+          [
+            "/",
+            "/?view=billing",
+            "/?view=login",
+            "/?view=login&verified=1",
+          ].includes(result.next)
+            ? result.next
+            : "/?view=login",
+        );
         setPassword("");
         setConfirmation("");
         setDone(true);
@@ -73,43 +94,61 @@ export function EmailAccess({
       <a className="drive-brand" href="/">
         <img src="/drivedata-logo.png" width={40} height={40} alt="" />
         <span>
-          drive<span>data</span>
-          <small>DRIVEVISION</small>
+          {translate(" drive")}
+          <span>{translate("data")}</span>
+          <small>{translate("DRIVEVISION")}</small>
         </span>
       </a>
       <section className="email-card">
         <span className="email-icon">
           {done ? <ShieldCheck size={28} /> : <Mail size={28} />}
         </span>
-        <p className="email-eyebrow">SEU ACESSO. SUA SEGURANÇA.</p>
-        <h1>{title}</h1>
+
+        <h1>{translate(title)}</h1>
         {done ? (
           <>
             <p>
               {mode === "recover"
-                ? "Se existe uma conta ativa com esse e-mail, você receberá um link para criar uma nova senha. Confira também o spam."
+                ? translate(
+                    "Se existe uma conta ativa com esse e-mail, você receberá um link para criar uma nova senha. Confira também o spam.",
+                  )
                 : mode === "reset"
-                  ? "Sua senha foi alterada e as sessões anteriores foram encerradas. Entre com a nova senha."
-                  : "Tudo certo. Você já pode continuar com sua assinatura e abrir seu workspace."}
+                  ? translate(
+                      "Sua senha foi alterada e as sessões anteriores foram encerradas. Entre com a nova senha.",
+                    )
+                  : translate(
+                      "E-mail confirmado. Estamos levando você para a próxima etapa.",
+                    )}
             </p>
-            <a className="login-submit" href="/?view=login">
-              {mode === "verify" ? "Continuar" : "Voltar para entrar"}
+            <a className="login-submit" href={next}>
+              {mode === "verify"
+                ? translate("Continuar agora")
+                : translate("Voltar para entrar")}
             </a>
           </>
         ) : (
           <form onSubmit={submit}>
             <p>
               {mode === "recover"
-                ? "Informe o e-mail usado no cadastro. Enviaremos um link válido por 30 minutos."
+                ? translate(
+                    "Informe o e-mail usado no cadastro. Enviaremos um link válido por 30 minutos.",
+                  )
                 : mode === "reset"
-                  ? "Use pelo menos 12 caracteres. Após a alteração, você entrará novamente nos seus dispositivos."
+                  ? translate(
+                      "Use pelo menos 12 caracteres. Após a alteração, você entrará novamente nos seus dispositivos.",
+                    )
                   : token
-                    ? "Clique abaixo para confirmar seu endereço e continuar."
-                    : `Enviamos um link de confirmação para ${account?.email || "seu e-mail"}. Confirme o endereço para continuar com a assinatura.`}
+                    ? translate(
+                        "Clique abaixo para confirmar seu endereço e continuar.",
+                      )
+                    : translate(
+                        "Enviamos um link de confirmação para {v0}. Confirme o endereço para continuar com a assinatura.",
+                        { v0: account?.email || "seu e-mail" },
+                      )}
             </p>
             {mode === "recover" && (
               <label>
-                E-mail
+                {translate(" E-mail ")}
                 <input
                   type="email"
                   value={email}
@@ -124,7 +163,7 @@ export function EmailAccess({
             {mode === "reset" && token && (
               <>
                 <label>
-                  Nova senha
+                  {translate(" Nova senha ")}
                   <input
                     type="password"
                     autoComplete="new-password"
@@ -137,7 +176,7 @@ export function EmailAccess({
                   />
                 </label>
                 <label>
-                  Confirme a nova senha
+                  {translate(" Confirme a nova senha ")}
                   <input
                     type="password"
                     autoComplete="new-password"
@@ -153,12 +192,12 @@ export function EmailAccess({
             )}
             {notice && (
               <p role="status" className="email-notice">
-                {notice}
+                {translate(notice)}
               </p>
             )}
             {error && (
               <p role="alert" className="login-error">
-                {error}
+                {translate(error)}
               </p>
             )}
             {(mode === "recover" || token || account) && (
@@ -166,20 +205,23 @@ export function EmailAccess({
                 {busy ? (
                   <Loader2 className="spin" size={18} />
                 ) : mode === "recover" ? (
-                  "Enviar link de recuperação"
+                  translate("Enviar link de recuperação")
                 ) : mode === "reset" ? (
-                  "Salvar nova senha"
+                  translate("Salvar nova senha")
                 ) : token ? (
-                  "Confirmar meu e-mail"
+                  translate("Confirmar meu e-mail")
                 ) : (
-                  "Reenviar confirmação"
+                  translate("Reenviar confirmação")
                 )}
               </button>
             )}
             {mode === "reset" && !token && (
               <p>
-                Abra o link recebido por e-mail ou{" "}
-                <a href="/?view=recover">solicite um novo link</a>.
+                {translate(" Abra o link recebido por e-mail ou")}{" "}
+                <a href="/?view=recover">
+                  {translate("solicite um novo link")}
+                </a>
+                .
               </p>
             )}
             {mode === "verify" && !token && account && (
@@ -189,7 +231,7 @@ export function EmailAccess({
                   type="button"
                   onClick={() => window.location.assign("/?view=billing")}
                 >
-                  Já confirmei · atualizar acesso
+                  {translate(" Já confirmei · atualizar acesso ")}
                 </button>
                 <button
                   className="email-link"
@@ -200,23 +242,25 @@ export function EmailAccess({
                     window.location.assign("/?view=login");
                   }}
                 >
-                  Sair e usar outra conta
+                  {translate(" Sair e usar outra conta ")}
                 </button>
               </>
             )}
             {mode === "reset" && error && (
-              <a href="/?view=recover">Solicitar outro link</a>
+              <a href="/?view=recover">{translate("Solicitar outro link")}</a>
             )}
             {mode === "recover" && (
               <a className="email-link" href="/?view=login">
-                Voltar para entrar
+                {translate(" Voltar para entrar ")}
               </a>
             )}
           </form>
         )}
         <footer>
-          Precisa de ajuda?{" "}
-          <a href="mailto:suporte@drivedata.com.br">Fale com a DriveData</a>
+          {translate(" Precisa de ajuda?")}{" "}
+          <a href="mailto:suporte@drivedata.com.br">
+            {translate("Fale com a DriveData")}
+          </a>
         </footer>
       </section>
     </main>
@@ -272,20 +316,24 @@ export function EmailAdmin() {
     <section className="email-admin">
       <header>
         <div>
-          <h2>E-mails automáticos</h2>
-          <p>Cadastro, recuperação de acesso e avisos da assinatura.</p>
+          <h2>{translate("E-mails automáticos")}</h2>
+          <p>
+            {translate(
+              "Cadastro, recuperação de acesso e avisos da assinatura.",
+            )}
+          </p>
         </div>
-        <button onClick={load} aria-label="Atualizar e-mails">
+        <button onClick={load} aria-label={translate("Atualizar e-mails")}>
           <RefreshCw size={18} />
         </button>
       </header>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{translate(error)}</p>}
       {data && (
         <>
           <p>
             {data.configured
-              ? "Envio configurado"
-              : "Envio aguardando configuração"}{" "}
+              ? translate("Envio configurado")
+              : translate("Envio aguardando configuração")}{" "}
             ·{" "}
             {data.counts
               .map((c) => `${states[c.state]}: ${c.count}`)
@@ -295,10 +343,10 @@ export function EmailAdmin() {
             <table>
               <thead>
                 <tr>
-                  <th>Destinatário</th>
-                  <th>Mensagem</th>
-                  <th>Situação</th>
-                  <th>Solicitada em</th>
+                  <th>{translate("Destinatário")}</th>
+                  <th>{translate("Mensagem")}</th>
+                  <th>{translate("Situação")}</th>
+                  <th>{translate("Solicitada em")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,19 +362,22 @@ export function EmailAdmin() {
                       }[r.kind] || r.kind}
                     </td>
                     <td>
-                      {states[r.state]}
+                      {translate(states[r.state])}
                       {r.error && <small>{r.error}</small>}
                     </td>
-                    <td>{new Date(r.createdAt).toLocaleString("pt-BR")}</td>
+                    <td>{new Date(r.createdAt).toLocaleString(locale())}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!data.recent.length && <p>Os próximos envios aparecerão aqui.</p>}
+            {!data.recent.length && (
+              <p>{translate("Os próximos envios aparecerão aqui.")}</p>
+            )}
           </div>
           <small>
-            “Aceito” confirma o envio ao serviço. A entrega na caixa de entrada
-            também depende do provedor do destinatário.
+            {translate(
+              " “Aceito” confirma o envio ao serviço. A entrega na caixa de entrada também depende do provedor do destinatário. ",
+            )}
           </small>
         </>
       )}

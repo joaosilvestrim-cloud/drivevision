@@ -1,7 +1,8 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { HelpWidget } from "./help-center";
+import { LanguageSelector, useLanguage } from "./language-selector";
 import { EmailAccess } from "./email-access";
-("use client");
 import {
   useCallback,
   useEffect,
@@ -24,6 +25,7 @@ import {
 } from "./ui/dialog";
 import {
   apiJson,
+  setApiAccount,
   cloudPersistence,
   localPersistence,
   type Account,
@@ -31,10 +33,15 @@ import {
 import { loadWorkspace } from "@/lib/local-workspace";
 
 export default function App() {
-  const [user, setUser] = useState<Account | null>(null),
+  useLanguage();
+  const [user, setUserState] = useState<Account | null>(null),
     [checking, setChecking] = useState(true),
     [accountOpen, setAccountOpen] = useState(false),
     [generation, setGeneration] = useState(0);
+  const setUser = useCallback((next: Account | null) => {
+    setApiAccount(next?.id || null);
+    setUserState(next);
+  }, []);
   const [localMode, setLocalMode] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [entrance, setEntrance] = useState<string | null>(null);
@@ -64,7 +71,7 @@ export default function App() {
       );
   }, [activationToken]);
   const storage = useMemo(
-    () => (user ? cloudPersistence() : localPersistence),
+    () => (user ? cloudPersistence(user.id) : localPersistence),
     [user, generation],
   );
   useEffect(() => {
@@ -88,18 +95,26 @@ export default function App() {
   if (checking)
     return (
       <div className="login-boot">
-        <img src="/drivedata-logo.png" width={60} height={60} alt="DriveData" />
+        <img
+          src="/drivedata-logo.png"
+          width={60}
+          height={60}
+          alt={translate("DriveData")}
+        />
         <Loader2 className="spin" size={18} />
-        Abrindo seu workspace…
+        {translate(" Abrindo seu workspace… ")}
       </div>
     );
   const view = new URLSearchParams(window.location.search).get("view");
+  const verifiedLogin =
+    view === "login" &&
+    new URLSearchParams(window.location.search).get("verified") === "1";
   function screen() {
     if (view === "terms" || view === "privacy")
       return <LegalPage privacy={view === "privacy"} />;
     if (
       ["verify", "reset", "recover"].includes(view || "") ||
-      (!activationToken && user?.emailVerified === false)
+      (!activationToken && !verifiedLogin && user?.emailVerified === false)
     )
       return (
         <EmailAccess
@@ -118,11 +133,12 @@ export default function App() {
       !activationToken &&
       !user &&
       !localMode &&
-      !["login", "signup"].includes(view || "")
+      !["login", "signup", "admin"].includes(view || "")
     )
       return <LandingPage onDemo={() => setLocalMode(true)} />;
     if (
       !activationToken &&
+      !verifiedLogin &&
       user &&
       (user.access === false || view === "billing")
     )
@@ -135,10 +151,11 @@ export default function App() {
           }}
         />
       );
-    if (activationToken || (!user && !localMode))
+    if (activationToken || verifiedLogin || (!user && !localMode))
       return (
         <LoginScreen
           initialRegister={view === "signup"}
+          verifiedEmail={verifiedLogin}
           configured={configured}
           hasSession={!!user}
           activationToken={activationToken}
@@ -151,6 +168,12 @@ export default function App() {
             }
           }}
           onLogin={(account) => {
+            if (verifiedLogin)
+              window.history.replaceState(
+                null,
+                "",
+                account.access ? "/" : "/?view=billing",
+              );
             setActivationToken(null);
             setUser(account);
             setLocalMode(false);
@@ -172,7 +195,7 @@ export default function App() {
                 height={64}
                 alt="DriveData"
               />
-              <span>Abrindo sua área de trabalho…</span>
+              <span>{translate("Abrindo sua área de trabalho…")}</span>
             </div>
           }
         >
@@ -205,6 +228,7 @@ export default function App() {
   }
   return (
     <>
+      <LanguageSelector />
       {screen()}
       <HelpWidget account={user} />
     </>
@@ -245,7 +269,7 @@ function AccountDialog({
   }
   async function copyLocal() {
     const local = await loadWorkspace(),
-      remote = cloudPersistence(),
+      remote = cloudPersistence(user!.id),
       cloud = await remote.load();
     const ids = new Map(local.sources.map((s) => [s.id, crypto.randomUUID()]));
     await remote.save({
@@ -273,21 +297,21 @@ function AccountDialog({
         onPointerDownOutside={(e) => busy && e.preventDefault()}
       >
         <DialogHeader>
-          <div className="model-eyebrow">
-            <Cloud size={16} />
-            SEU WORKSPACE, COM VOCÊ
-          </div>
           <DialogTitle>
             {user
-              ? "Sua conta"
+              ? translate("Sua conta")
               : register
-                ? "Crie sua conta"
-                : "Entre no DriveVision"}
+                ? translate("Crie sua conta")
+                : translate("Entre no DriveVision")}
           </DialogTitle>
           <DialogDescription>
             {user
-              ? "Fontes e dashboards salvos ficam disponíveis ao entrar em outro dispositivo."
-              : "Salve suas análises na nuvem. Cada conta tem um workspace privado."}
+              ? translate(
+                  "Fontes e dashboards salvos ficam disponíveis ao entrar em outro dispositivo.",
+                )
+              : translate(
+                  "Salve suas análises na nuvem. Cada conta tem um workspace privado.",
+                )}
           </DialogDescription>
         </DialogHeader>
         {user ? (
@@ -297,22 +321,25 @@ function AccountDialog({
               <span>{user.email}</span>
               <small>
                 <ShieldCheck size={14} />
-                Workspace privado na nuvem
+                {translate(" Workspace privado na nuvem ")}
               </small>
             </div>
             <a className="primary-button" href="/?view=billing">
-              Minha assinatura
+              {translate(" Minha assinatura ")}
             </a>
             <p className="model-note">
-              O modo local e a sua conta têm dados separados. Você pode copiar
-              as análises salvas neste navegador para a conta.
+              {translate(
+                " O modo local e a sua conta têm dados separados. Você pode copiar as análises salvas neste navegador para a conta. ",
+              )}
             </p>
             {localCount ? (
               <>
                 <p>
-                  {localCount.sources} bases e {localCount.dashboards}{" "}
-                  dashboards serão copiados. Os itens já salvos na conta serão
-                  mantidos.
+                  {localCount.sources} {translate(" bases e ")}
+                  {localCount.dashboards}{" "}
+                  {translate(
+                    " dashboards serão copiados. Os itens já salvos na conta serão mantidos. ",
+                  )}
                 </p>
                 <button
                   className="primary-button"
@@ -321,7 +348,7 @@ function AccountDialog({
                   }
                   onClick={() => void run(copyLocal)}
                 >
-                  Confirmar cópia para a conta
+                  {translate(" Confirmar cópia para a conta ")}
                 </button>
               </>
             ) : (
@@ -338,7 +365,7 @@ function AccountDialog({
                   })
                 }
               >
-                Trazer análises deste navegador
+                {translate(" Trazer análises deste navegador ")}
               </button>
             )}
             <button
@@ -352,7 +379,7 @@ function AccountDialog({
               }
             >
               <LogOut size={16} />
-              Sair da conta
+              {translate(" Sair da conta ")}
             </button>
           </div>
         ) : (
@@ -372,7 +399,7 @@ function AccountDialog({
           >
             {register && (
               <label>
-                Seu nome
+                {translate(" Seu nome ")}
                 <input
                   autoComplete="name"
                   value={name}
@@ -384,7 +411,7 @@ function AccountDialog({
               </label>
             )}
             <label>
-              E-mail
+              {translate(" E-mail ")}
               <input
                 type="email"
                 autoComplete="email"
@@ -395,7 +422,7 @@ function AccountDialog({
               />
             </label>
             <label>
-              Senha
+              {translate(" Senha ")}
               <input
                 type="password"
                 autoComplete={register ? "new-password" : "current-password"}
@@ -407,12 +434,15 @@ function AccountDialog({
               />
             </label>
             <p className="model-note">
-              Use pelo menos 12 caracteres. Nesta versão, ainda não há
-              recuperação de senha por e-mail.
+              {translate(
+                " Use pelo menos 12 caracteres. Nesta versão, ainda não há recuperação de senha por e-mail. ",
+              )}
             </p>
             <button className="primary-button" type="submit" disabled={busy}>
               {busy ? <Loader2 size={16} className="spin" /> : null}
-              {register ? "Criar conta e entrar" : "Entrar"}
+              {register
+                ? translate("Criar conta e entrar")
+                : translate("Entrar")}
             </button>
             <button
               className="text-button"
@@ -423,7 +453,9 @@ function AccountDialog({
                 setError("");
               }}
             >
-              {register ? "Já tenho conta" : "Criar uma conta"}
+              {register
+                ? translate("Já tenho conta")
+                : translate("Criar uma conta")}
             </button>
             <button
               className="secondary-button"
@@ -431,13 +463,13 @@ function AccountDialog({
               disabled={busy}
               onClick={onClose}
             >
-              Continuar no modo local
+              {translate(" Continuar no modo local ")}
             </button>
           </form>
         )}
         {error && (
           <p className="model-error" role="alert">
-            {error}
+            {translate(error)}
           </p>
         )}
       </DialogContent>

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
@@ -139,12 +140,12 @@ export function SmartImport({
     setWorkbook(null);
     setPlan(null);
     if (!/\.(xlsx?|csv|tsv)$/i.test(file.name)) {
-      setError("Escolha um arquivo XLSX, XLS, CSV ou TSV.");
+      setError(translate("Escolha um arquivo XLSX, XLS, CSV ou TSV."));
       setReading(false);
       return;
     }
     if (file.size > 10_000_000) {
-      setError("O limite desta versão é 10 MB por arquivo.");
+      setError(translate("O limite desta versão é 10 MB por arquivo."));
       setReading(false);
       return;
     }
@@ -166,7 +167,9 @@ export function SmartImport({
         if (token === generation.current) {
           finish();
           setError(
-            "A leitura levou mais de 30 segundos. Reduza a área utilizada da planilha e tente novamente.",
+            translate(
+              "A leitura levou mais de 30 segundos. Reduza a área utilizada da planilha e tente novamente.",
+            ),
           );
         }
       }, 30000);
@@ -181,7 +184,9 @@ export function SmartImport({
         }
         const book = event.data.result!;
         if (!book.sheets.length) {
-          setError("Não encontramos células preenchidas no arquivo.");
+          setError(
+            translate("Não encontramos células preenchidas no arquivo."),
+          );
           return;
         }
         setWorkbook(book);
@@ -194,7 +199,9 @@ export function SmartImport({
         if (token === generation.current) {
           finish();
           setError(
-            "Não foi possível ler o arquivo. Confira se está íntegro e sem senha.",
+            translate(
+              "Não foi possível ler o arquivo. Confira se está íntegro e sem senha.",
+            ),
           );
         }
       };
@@ -229,7 +236,9 @@ export function SmartImport({
         onClose();
       else
         setError(
-          "Não foi possível salvar a base. Confira o armazenamento do navegador.",
+          translate(
+            "Não foi possível salvar a base. Confira o armazenamento do navegador.",
+          ),
         );
     } catch (e) {
       setError(
@@ -249,18 +258,19 @@ export function SmartImport({
         onPointerDownOutside={(e) => saving && e.preventDefault()}
       >
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">
-            <ShieldCheck size={16} /> LEITURA LOCAL · SEM API EXTERNA
-          </div>
           <DialogTitle>
             {stage === "structure"
-              ? "Da sua planilha aos gráficos."
-              : "Revise antes de publicar."}
+              ? translate("Da sua planilha aos gráficos.")
+              : translate("Revise antes de publicar.")}
           </DialogTitle>
           <DialogDescription>
             {stage === "structure"
-              ? "1 de 2 · Confira a tabela e os campos encontrados no arquivo."
-              : "2 de 2 · Escolha o destino e confira o impacto sobre seus dados."}
+              ? translate(
+                  "1 de 2 · Confira a tabela e os campos encontrados no arquivo.",
+                )
+              : translate(
+                  "2 de 2 · Escolha o destino e confira o impacto sobre seus dados.",
+                )}
           </DialogDescription>
         </DialogHeader>
         <input
@@ -269,7 +279,7 @@ export function SmartImport({
           type="file"
           tabIndex={-1}
           accept=".xlsx,.xls,.csv,.tsv"
-          aria-label="Selecionar planilha"
+          aria-label={translate("Selecionar planilha")}
           onChange={(e) => void read(e.target.files?.[0])}
         />
         {!workbook ? (
@@ -291,24 +301,38 @@ export function SmartImport({
               )}
               <strong>
                 {reading
-                  ? "Lendo abas e procurando tabelas…"
-                  : "Solte sua planilha aqui"}
+                  ? translate("Lendo abas e procurando tabelas…")
+                  : translate("Solte sua planilha aqui")}
               </strong>
-              <span>ou clique para selecionar · Excel e CSV · até 10 MB</span>
+              <span>
+                {translate(
+                  "ou clique para selecionar · Excel e CSV · até 10 MB",
+                )}
+              </span>
             </button>
             <div className="import-promises">
               <article>
-                <strong>Encontra o início</strong>
-                <p>Procura cabeçalhos abaixo de títulos e espaços vazios.</p>
-              </article>
-              <article>
-                <strong>Reorganiza</strong>
-                <p>Combina cabeçalhos, trata mesclagens e empilha meses.</p>
-              </article>
-              <article>
-                <strong>Explica as escolhas</strong>
+                <strong>{translate("Encontra o início")}</strong>
                 <p>
-                  Você confere o intervalo, os tipos e os dados resultantes.
+                  {translate(
+                    "Procura cabeçalhos abaixo de títulos e espaços vazios.",
+                  )}
+                </p>
+              </article>
+              <article>
+                <strong>{translate("Reorganiza")}</strong>
+                <p>
+                  {translate(
+                    "Combina cabeçalhos, trata mesclagens e empilha meses.",
+                  )}
+                </p>
+              </article>
+              <article>
+                <strong>{translate("Explica as escolhas")}</strong>
+                <p>
+                  {translate(
+                    " Você confere o intervalo, os tipos e os dados resultantes. ",
+                  )}
                 </p>
               </article>
             </div>
@@ -328,11 +352,11 @@ export function SmartImport({
                   onClick={() => input.current?.click()}
                 >
                   <Upload size={14} />
-                  Trocar arquivo
+                  {translate(" Trocar arquivo ")}
                 </button>
                 <span className="local-reading">
                   <ShieldCheck size={14} />
-                  Processado no seu dispositivo
+                  {translate(" Processado no seu dispositivo ")}
                 </span>
               </div>
               <div
@@ -341,7 +365,7 @@ export function SmartImport({
               >
                 <aside className="import-settings">
                   <Field
-                    label="Aba da planilha"
+                    label={translate("Aba da planilha")}
                     value={String(sheetIndex)}
                     onChange={(v) => selectSheet(Number(v))}
                     options={workbook.sheets.map((s, i) => ({
@@ -352,17 +376,19 @@ export function SmartImport({
                   <div className="detection-note">
                     <strong>
                       {candidates.length
-                        ? "Possível tabela encontrada"
-                        : "Estrutura ambígua: selecione o intervalo"}
+                        ? translate("Possível tabela encontrada")
+                        : translate("Estrutura ambígua: selecione o intervalo")}
                     </strong>
                     <p>
                       {candidates[0]?.reason ||
-                        "Não há indício suficiente para escolher automaticamente. Ajuste as linhas e confira a prévia."}
+                        translate(
+                          "Não há indício suficiente para escolher automaticamente. Ajuste as linhas e confira a prévia.",
+                        )}
                     </p>
                   </div>
                   {candidates.length > 1 && (
                     <Field
-                      label="Blocos encontrados"
+                      label={translate("Blocos encontrados")}
                       value={String(
                         candidates.findIndex((c) => c.header === plan.header),
                       )}
@@ -380,20 +406,20 @@ export function SmartImport({
                   )}
                   <div className="model-two">
                     <TextField
-                      label="Linha do cabeçalho"
+                      label={translate("Linha do cabeçalho")}
                       type="number"
                       value={String(plan.header + 1)}
                       onChange={(v) => update({ header: Number(v) - 1 })}
                     />
                     <TextField
-                      label="Última linha"
+                      label={translate("Última linha")}
                       type="number"
                       value={String(plan.end + 1)}
                       onChange={(v) => update({ end: Number(v) - 1 })}
                     />
                   </div>
                   <Field
-                    label="Linhas de cabeçalho"
+                    label={translate("Linhas de cabeçalho")}
                     value={String(plan.headerDepth)}
                     onChange={(v) => update({ headerDepth: Number(v) })}
                     options={[1, 2, 3].map((n) => ({
@@ -403,7 +429,7 @@ export function SmartImport({
                   />
                   <div className="model-two">
                     <TextField
-                      label="Primeira coluna (nº)"
+                      label={translate("Primeira coluna (nº)")}
                       type="number"
                       value={String(plan.left + 1)}
                       onChange={(v) =>
@@ -415,7 +441,7 @@ export function SmartImport({
                       }
                     />
                     <TextField
-                      label="Última coluna (nº)"
+                      label={translate("Última coluna (nº)")}
                       type="number"
                       value={String(plan.right + 1)}
                       onChange={(v) =>
@@ -428,8 +454,9 @@ export function SmartImport({
                     />
                   </div>
                   <p className="model-note">
-                    A = 1, B = 2, C = 3… Apenas o intervalo selecionado será
-                    importado. Ajuste o fim se houver espaços no meio da tabela.
+                    {translate(
+                      " A = 1, B = 2, C = 3… Apenas o intervalo selecionado será importado. Ajuste o fim se houver espaços no meio da tabela. ",
+                    )}
                   </p>
                   <label className="model-toggle">
                     <input
@@ -437,7 +464,7 @@ export function SmartImport({
                       checked={plan.fillMerged}
                       onChange={(e) => update({ fillMerged: e.target.checked })}
                     />
-                    Repetir valores de células mescladas
+                    {translate(" Repetir valores de células mescladas ")}
                   </label>
                   <label className="model-toggle">
                     <input
@@ -447,7 +474,7 @@ export function SmartImport({
                         update({ skipRepeated: e.target.checked })
                       }
                     />
-                    Remover cabeçalhos repetidos
+                    {translate(" Remover cabeçalhos repetidos ")}
                   </label>
                   <label className="model-toggle">
                     <input
@@ -455,13 +482,16 @@ export function SmartImport({
                       checked={plan.skipTotals}
                       onChange={(e) => update({ skipTotals: e.target.checked })}
                     />
-                    Excluir linhas marcadas Total / Subtotal
+                    {translate(" Excluir linhas marcadas Total / Subtotal ")}
                   </label>
                   <details className="import-option">
-                    <summary>Preencher grupos para baixo</summary>
+                    <summary>
+                      {translate("Preencher grupos para baixo")}
+                    </summary>
                     <p className="model-note">
-                      Use apenas em categorias cujo nome aparece na primeira
-                      linha de cada grupo.
+                      {translate(
+                        " Use apenas em categorias cujo nome aparece na primeira linha de cada grupo. ",
+                      )}
                     </p>
                     <div className="column-checklist">
                       {columns.map((c, i) => (
@@ -486,12 +516,14 @@ export function SmartImport({
                   </details>
                   <details className="import-option">
                     <summary>
-                      Meses ou categorias espalhados em colunas?
+                      {translate(
+                        " Meses ou categorias espalhados em colunas? ",
+                      )}
                     </summary>
                     <p className="model-note">
-                      Selecione as colunas a empilhar. Ex.: Janeiro e Fevereiro
-                      viram Período + Valor. Mantenha os campos que identificam
-                      cada registro.
+                      {translate(
+                        " Selecione as colunas a empilhar. Ex.: Janeiro e Fevereiro viram Período + Valor. Mantenha os campos que identificam cada registro. ",
+                      )}
                     </p>
                     <div className="column-checklist">
                       {columns.map((c, i) => (
@@ -516,12 +548,12 @@ export function SmartImport({
                     {plan.unpivot.length > 0 && (
                       <>
                         <TextField
-                          label="Nome da coluna de categorias"
+                          label={translate("Nome da coluna de categorias")}
                           value={plan.variableName}
                           onChange={(variableName) => update({ variableName })}
                         />
                         <TextField
-                          label="Nome da coluna de valores"
+                          label={translate("Nome da coluna de valores")}
                           value={plan.valueName}
                           onChange={(valueName) => update({ valueName })}
                         />
@@ -529,20 +561,22 @@ export function SmartImport({
                     )}
                   </details>
                   <TextField
-                    label="Nome da base"
+                    label={translate("Nome da base")}
                     value={name}
                     onChange={setName}
                   />
                 </aside>
                 <div className="import-preview">
                   <div className="import-preview-label">
-                    01 / ARQUIVO ORIGINAL · PERTO DO CABEÇALHO ESCOLHIDO
+                    {translate(
+                      " 01 / ARQUIVO ORIGINAL · PERTO DO CABEÇALHO ESCOLHIDO ",
+                    )}
                   </div>
                   <div className="import-grid-scroll original-grid">
                     <table className="result-table">
                       <thead>
                         <tr>
-                          <th>Linha</th>
+                          <th>{translate("Linha")}</th>
                           {Array.from(
                             {
                               length: Math.min(
@@ -551,7 +585,10 @@ export function SmartImport({
                               ),
                             },
                             (_, i) => (
-                              <th key={i}>Coluna {plan.left + i + 1}</th>
+                              <th key={i}>
+                                {translate("Coluna ")}
+                                {plan.left + i + 1}
+                              </th>
                             ),
                           )}
                         </tr>
@@ -589,27 +626,31 @@ export function SmartImport({
                     </table>
                   </div>
                   <div className="import-preview-label">
-                    02 / O QUE O SISTEMA ENTENDEU
+                    {translate(" 02 / O QUE O SISTEMA ENTENDEU ")}
                   </div>
                   {preview.error ? (
                     <p className="model-error" role="alert">
-                      {preview.error}
+                      {translate(preview.error)}
                     </p>
                   ) : (
                     preview.result && (
                       <>
                         <div className="import-result-stats">
                           <strong>
-                            {preview.result.source.rows.length} registros
+                            {preview.result.source.rows.length}{" "}
+                            {translate(" registros ")}
                           </strong>
                           <span>
-                            {preview.result.source.columns.length} colunas
+                            {preview.result.source.columns.length}{" "}
+                            {translate(" colunas ")}
                           </span>
                           <span>
-                            {preview.result.source.numeric.length} numéricas
+                            {preview.result.source.numeric.length}{" "}
+                            {translate(" numéricas ")}
                           </span>
                           <span>
-                            {preview.result.source.dates.length} datas
+                            {preview.result.source.dates.length}{" "}
+                            {translate(" datas ")}
                           </span>
                         </div>
                         <div className="import-grid-scroll">
@@ -626,8 +667,8 @@ export function SmartImport({
                                         : preview.result!.source.dates.includes(
                                               c,
                                             )
-                                          ? "DATA"
-                                          : "ABC"}
+                                          ? translate("DATA")
+                                          : translate("ABC")}
                                     </span>{" "}
                                     {c}
                                   </th>
@@ -650,44 +691,55 @@ export function SmartImport({
                         <div className="interpretation-report">
                           <p>
                             <Check size={14} />
-                            {preview.result.empty} linhas vazias e{" "}
-                            {preview.result.removedColumns} colunas vazias
-                            removidas.
+                            {preview.result.empty}{" "}
+                            {translate(" linhas vazias e")}{" "}
+                            {preview.result.removedColumns}{" "}
+                            {translate(" colunas vazias removidas. ")}
                           </p>
                           <p>
                             <Check size={14} />
-                            {preview.result.repeated} cabeçalhos repetidos
-                            removidos; {preview.result.filled} células
-                            preenchidas.
+                            {preview.result.repeated}{" "}
+                            {translate(" cabeçalhos repetidos removidos; ")}
+                            {preview.result.filled}{" "}
+                            {translate(" células preenchidas. ")}
                           </p>
                           {preview.result.totals > 0 && (
                             <p className="import-warning">
-                              {preview.result.totals} possíveis totais/subtotais{" "}
-                              {plan.skipTotals ? "excluídos" : "mantidos"}.
-                              Confira se eles duplicam os valores detalhados.
+                              {preview.result.totals}{" "}
+                              {translate(" possíveis totais/subtotais")}{" "}
+                              {plan.skipTotals
+                                ? translate("excluídos")
+                                : translate("mantidos")}
+                              {translate(
+                                ". Confira se eles duplicam os valores detalhados. ",
+                              )}
                             </p>
                           )}
                           {preview.result.mixed.length > 0 && (
                             <p className="import-warning">
-                              Tipos misturados em{" "}
-                              {preview.result.mixed.join(", ")}. Valores
-                              preservados como texto; trate-os em Preparar
-                              dados.
+                              {translate(" Tipos misturados em")}{" "}
+                              {preview.result.mixed.join(", ")}
+                              {translate(
+                                ". Valores preservados como texto; trate-os em Preparar dados. ",
+                              )}
                             </p>
                           )}
                           {sheet.formulas > 0 && (
                             <p className="import-warning">
-                              {sheet.formulas} fórmulas na aba: usamos apenas o
-                              resultado salvo pelo Excel. {sheet.uncached} sem
-                              resultado salvo. Fórmulas não são recalculadas;
-                              abra e salve no Excel se necessário.
+                              {sheet.formulas}{" "}
+                              {translate(
+                                " fórmulas na aba: usamos apenas o resultado salvo pelo Excel. ",
+                              )}
+                              {sheet.uncached}{" "}
+                              {translate(
+                                " sem resultado salvo. Fórmulas não são recalculadas; abra e salve no Excel se necessário. ",
+                              )}
                             </p>
                           )}
                           <p className="model-note">
-                            Sugestões estruturais por regras locais, sem IA
-                            generativa. Não interpretamos imagens, macros ou o
-                            significado de regras de negócio. O arquivo original
-                            não é alterado.
+                            {translate(
+                              " Sugestões estruturais por regras locais, sem IA generativa. Não interpretamos imagens, macros ou o significado de regras de negócio. O arquivo original não é alterado. ",
+                            )}
                           </p>
                         </div>
                       </>
@@ -699,10 +751,13 @@ export function SmartImport({
           )
         )}
         {preview.result && stage === "publish" && (
-          <section className="load-review" aria-label="Revisão da publicação">
-            <h3>Como estes dados entram na sua base?</h3>
+          <section
+            className="load-review"
+            aria-label={translate("Revisão da publicação")}
+          >
+            <h3>{translate("Como estes dados entram na sua base?")}</h3>
             <Field
-              label="Destino da carga"
+              label={translate("Destino da carga")}
               value={targetId}
               onChange={(id) => {
                 setTargetId(id);
@@ -722,7 +777,7 @@ export function SmartImport({
             {targetId && (
               <>
                 <Field
-                  label="Modo de atualização"
+                  label={translate("Modo de atualização")}
                   value={loadOptions.mode}
                   onChange={(mode) => {
                     setLoadOptions({
@@ -741,11 +796,13 @@ export function SmartImport({
                   ]}
                 />
                 <fieldset>
-                  <legend>Colunas que identificam uma operação</legend>
+                  <legend>
+                    {translate("Colunas que identificam uma operação")}
+                  </legend>
                   <p>
-                    Exemplo: ID da venda + ID do item. Valores são comparados
-                    exatamente; não usamos valor ou data para adivinhar
-                    duplicidades.
+                    {translate(
+                      " Exemplo: ID da venda + ID do item. Valores são comparados exatamente; não usamos valor ou data para adivinhar duplicidades. ",
+                    )}
                   </p>
                   <div className="load-keys">
                     {preview.result.source.columns.map((c) => (
@@ -771,7 +828,7 @@ export function SmartImport({
                 {loadOptions.mode === "replace-period" && (
                   <>
                     <Field
-                      label="Data da operação"
+                      label={translate("Data da operação")}
                       value={loadOptions.dateField || ""}
                       onChange={(dateField) => {
                         setReplaceConfirmed(false);
@@ -780,6 +837,7 @@ export function SmartImport({
                       options={[
                         { value: "", label: "Selecione a data" },
                         ...preview.result.source.dates.map((c) => ({
+                          raw: true,
                           value: c,
                           label: c,
                         })),
@@ -787,7 +845,7 @@ export function SmartImport({
                     />
                     <div className="model-two">
                       <label>
-                        Início
+                        {translate(" Início ")}
                         <input
                           type="date"
                           value={loadOptions.start || ""}
@@ -801,7 +859,7 @@ export function SmartImport({
                         />
                       </label>
                       <label>
-                        Fim
+                        {translate(" Fim ")}
                         <input
                           type="date"
                           value={loadOptions.end || ""}
@@ -821,8 +879,9 @@ export function SmartImport({
                         checked={replaceConfirmed}
                         onChange={(e) => setReplaceConfirmed(e.target.checked)}
                       />
-                      Confirmo a substituição deste período, incluindo a remoção
-                      das operações que não estão no novo arquivo.
+                      {translate(
+                        " Confirmo a substituição deste período, incluindo a remoção das operações que não estão no novo arquivo. ",
+                      )}
                     </label>
                   </>
                 )}
@@ -830,7 +889,7 @@ export function SmartImport({
             )}
             {publication.error && (
               <p className="model-error" role="alert">
-                {publication.error}
+                {translate(publication.error)}
               </p>
             )}
             {publication.summary && (
@@ -844,39 +903,47 @@ export function SmartImport({
                 }).map(([label, count]) => (
                   <div key={label}>
                     <strong>{count}</strong>
-                    <span>{label}</span>
+                    <span>{translate(label)}</span>
                   </div>
                 ))}
               </div>
             )}
             <p className="model-note">
               {targetId
-                ? "Os dashboards mantêm o vínculo. As combinações dependentes serão recalculadas antes de salvar."
-                : "Para enviar novos meses da mesma operação, selecione uma base existente nas próximas cargas."}
+                ? translate(
+                    "Os dashboards mantêm o vínculo. As combinações dependentes serão recalculadas antes de salvar.",
+                  )
+                : translate(
+                    "Para enviar novos meses da mesma operação, selecione uma base existente nas próximas cargas.",
+                  )}
             </p>
           </section>
         )}
         {error && (
           <p className="model-error import-error" role="alert">
-            {error}
+            {translate(error)}
           </p>
         )}
         <footer className="model-footer">
           <span>
             {workbook
               ? stage === "structure"
-                ? "Confira a prévia. Uma aba/tabela será importada por vez."
-                : "A publicação só acontece após sua confirmação."
+                ? translate(
+                    "Confira a prévia. Uma aba/tabela será importada por vez.",
+                  )
+                : translate("A publicação só acontece após sua confirmação.")
               : cloud
-                ? "A interpretação é local. Ao confirmar, os dados organizados serão salvos na sua conta."
-                : "O arquivo permanece neste dispositivo."}
+                ? translate(
+                    "A interpretação é local. Ao confirmar, os dados organizados serão salvos na sua conta.",
+                  )
+                : translate("O arquivo permanece neste dispositivo.")}
           </span>
           <button
             className="secondary-button"
             disabled={saving}
             onClick={onClose}
           >
-            Cancelar
+            {translate(" Cancelar ")}
           </button>
           {stage === "publish" && (
             <button
@@ -884,7 +951,7 @@ export function SmartImport({
               disabled={saving}
               onClick={() => setStage("structure")}
             >
-              Voltar à estrutura
+              {translate(" Voltar à estrutura ")}
             </button>
           )}
           {workbook && (
@@ -911,10 +978,10 @@ export function SmartImport({
                 <ArrowRight size={16} />
               )}
               {stage === "structure"
-                ? "Revisar publicação"
+                ? translate("Revisar publicação")
                 : targetId
-                  ? "Publicar atualização"
-                  : "Confirmar estrutura e gerar painel"}
+                  ? translate("Publicar atualização")
+                  : translate("Confirmar estrutura e gerar painel")}
             </button>
           )}
         </footer>

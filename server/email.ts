@@ -95,8 +95,8 @@ export async function queueSupportNotification(
 ) {
   // Fixed recipients: a public contact form must never become an arbitrary mail relay.
   for (const to of [
-    "tamirescavani@drivedata.com",
-    "joaosilvestrim@drivedata.com",
+    "tamirescavani@drivedata.com.br",
+    "joaosilvestrim@drivedata.com.br",
   ]) {
     const id = randomUUID();
     const link = `${origin()}/?view=admin&ticket=${ticket}`;
@@ -309,7 +309,7 @@ export async function consumeEmailToken(
         "update drivevision.accounts set email_verified_at=now() where id=$1",
         [account.id],
       );
-    return { ok: true };
+    return { ok: true, accountId: account.id as string };
   });
 }
 export async function emailVerified(owner: string) {

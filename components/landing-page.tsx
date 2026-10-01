@@ -1,3 +1,4 @@
+import { t as translate, locale } from "@/lib/i18n";
 /* This Vite application uses native navigation for query-based public routes. */
 /* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 import { useState } from "react";
@@ -20,15 +21,17 @@ export function PublicHeader() {
       <a href="/" className="sales-brand">
         <img src="/drivedata-logo.png" width="36" height="36" alt="" />
         <span>
-          drive<b>vision</b>
-          <small>POR DRIVEDATA</small>
+          {translate(" drive")}
+          <b>{translate("vision")}</b>
+          <small>{translate("POR DRIVEDATA")}</small>
         </span>
       </a>
-      <nav aria-label="Menu principal">
-        <a href="/#recursos">O produto</a>
-        <a href="/#plano">O plano</a>
+      <nav aria-label={translate("Menu principal")}>
+        <a href="/#recursos">{translate("O produto")}</a>
+        <a href="/#plano">{translate("O plano")}</a>
         <a className="sales-login" href="/?view=login">
-          Entrar <ArrowUpRight size={16} />
+          {translate(" Entrar ")}
+          <ArrowUpRight size={16} />
         </a>
       </nav>
     </header>
@@ -38,14 +41,15 @@ export function PublicFooter() {
   return (
     <footer className="sales-footer">
       <div>
-        <strong>DriveVision / DriveData</strong>
-        <p>DRIVEDATA LTDA · CNPJ 55.175.790/0001-38</p>
+        <strong>{translate("DriveVision / DriveData")}</strong>
+        <p>{translate("DRIVEDATA LTDA · CNPJ 55.175.790/0001-38")}</p>
       </div>
-      <nav aria-label="Informações">
-        <a href="/?view=terms">Termos de uso</a>
-        <a href="/?view=privacy">Privacidade</a>
+      <nav aria-label={translate("Informações")}>
+        <a href="/?view=terms">{translate("Termos de uso")}</a>
+        <a href="/?view=privacy">{translate("Privacidade")}</a>
         <a href="mailto:suporte@drivedata.com.br">
-          Fale com a gente <ArrowUpRight size={14} />
+          {translate(" Fale com a gente ")}
+          <ArrowUpRight size={14} />
         </a>
       </nav>
     </footer>
@@ -59,9 +63,9 @@ function Preview() {
     <div className="sales-preview">
       <div className="preview-top">
         <span>
-          <span className="preview-dot" /> SEU WORKSPACE
+          <span className="preview-dot" /> {translate(" SEU WORKSPACE ")}
         </span>
-        <span>DADOS ILUSTRATIVOS</span>
+        <span>{translate("DADOS ILUSTRATIVOS")}</span>
       </div>
       <div className="preview-layout">
         <div className="preview-rail" aria-hidden="true">
@@ -73,81 +77,90 @@ function Preview() {
         <div className="preview-content">
           <div className="preview-title">
             <div>
-              <small>VISÃO COMERCIAL</small>
-              <h3>O negócio, por inteiro.</h3>
+              <small>{translate("VISÃO COMERCIAL")}</small>
+              <h3>{translate("O negócio, por inteiro.")}</h3>
             </div>
             <select
-              aria-label="Período da demonstração"
+              aria-label={translate("Período da demonstração")}
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
             >
-              <option>Semestre</option>
-              <option>Últimos meses</option>
+              <option value="Semestre">{translate("Semestre")}</option>
+              <option value="Últimos meses">
+                {translate("Últimos meses")}
+              </option>
             </select>
           </div>
           <div className="preview-kpis">
             <article>
-              <small>Receita</small>
+              <small>{translate("Receita")}</small>
               <strong>
-                R$ {period === "Semestre" ? "128.450" : "142.780"}
+                {translate(" R$ ")}
+                {period === "Semestre" ? "128.450" : "142.780"}
               </strong>
-              <span>↗ Visão do período</span>
+              <span>{translate("↗ Visão do período")}</span>
             </article>
             <article>
-              <small>Pedidos</small>
+              <small>{translate("Pedidos")}</small>
               <strong>{period === "Semestre" ? "842" : "916"}</strong>
-              <span>Todos os canais</span>
+              <span>{translate("Todos os canais")}</span>
             </article>
             <article>
-              <small>Ticket médio</small>
-              <strong>R$ {period === "Semestre" ? "152" : "156"}</strong>
-              <span>Por pedido</span>
+              <small>{translate("Ticket médio")}</small>
+              <strong>
+                {translate("R$ ")}
+                {period === "Semestre" ? "152" : "156"}
+              </strong>
+              <span>{translate("Por pedido")}</span>
             </article>
           </div>
           <div className="preview-charts">
             <article>
               <div className="preview-chart-label">
-                <strong>Receita ao longo do tempo</strong>
-                <span>● Vendas</span>
+                <strong>{translate("Receita ao longo do tempo")}</strong>
+                <span>{translate("● Vendas")}</span>
               </div>
               <div
                 className="preview-bars"
-                aria-label="Gráfico ilustrativo de receita"
+                aria-label={translate("Gráfico ilustrativo de receita")}
               >
                 <div className="preview-grid" />
                 {bars.map((height, i) => (
                   <div key={i}>
                     <span style={{ height: `${height}%` }} />
                     <small>
-                      {["Abr", "Mai", "Jun", "Jul", "Ago", "Set"][i]}
+                      {translate(["Abr", "Mai", "Jun", "Jul", "Ago", "Set"][i])}
                     </small>
                   </div>
                 ))}
               </div>
             </article>
             <article className="preview-mix">
-              <strong>Vendas por canal</strong>
+              <strong>{translate("Vendas por canal")}</strong>
               <div className="preview-donut">
                 <span>
-                  3<small>CANAIS</small>
+                  3<small>{translate("CANAIS")}</small>
                 </span>
               </div>
               <p>
-                <i /> Online <b>48%</b>
+                <i /> {translate(" Online ")}
+                <b>48%</b>
               </p>
               <p>
-                <i /> Loja <b>32%</b>
+                <i /> {translate(" Loja ")}
+                <b>32%</b>
               </p>
               <p>
-                <i /> Parceiros <b>20%</b>
+                <i /> {translate(" Parceiros ")}
+                <b>20%</b>
               </p>
             </article>
           </div>
           <div className="preview-bottom">
             <span>
-              <Check size={14} /> Excel + OneDrive + SharePoint
+              <Check size={14} /> {translate(" Excel + OneDrive + SharePoint ")}
             </span>
-            <span>Suas métricas. Seu jeito.</span>
+            <span>{translate("Suas métricas. Seu jeito.")}</span>
           </div>
         </div>
       </div>
@@ -186,61 +199,65 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
     <main className="sales-page">
       <PublicHeader />
       <section className="sales-hero">
-        <div className="sales-eyebrow">
-          <span /> SEU PRÓXIMO PASSO COMEÇA NOS DADOS
-        </div>
         <h1>
-          MENOS PLANILHAS ABERTAS.
+          {translate(" MENOS PLANILHAS ABERTAS. ")}
           <br />
-          <em>MAIS VISÃO DO NEGÓCIO.</em>
+          <em>{translate("MAIS VISÃO DO NEGÓCIO.")}</em>
         </h1>
         <p>
-          Junte suas bases, crie dashboards do seu jeito e acompanhe
-          <br className="desktop-break" /> os números que movem a sua empresa.
-          Em um só lugar.
+          {translate(
+            " Junte suas bases, crie dashboards do seu jeito e acompanhe ",
+          )}
+          <br className="desktop-break" />{" "}
+          {translate(" os números que movem a sua empresa. Em um só lugar. ")}
         </p>
         <div className="sales-actions">
           <a className="sales-button" href="/?view=signup">
-            Testar grátis por 7 dias <ArrowUpRight size={20} />
+            {translate(" Testar grátis por 7 dias ")}
+            <ArrowUpRight size={20} />
           </a>
           <button className="sales-link" onClick={onDemo}>
-            Explorar a demonstração <ArrowRight size={18} />
+            {translate(" Explorar a demonstração ")}
+            <ArrowRight size={18} />
           </button>
         </div>
         <div className="sales-hero-note">
           <span>
-            <Check size={14} /> Sem fidelidade
+            <Check size={14} /> {translate(" Sem fidelidade ")}
           </span>
           <span>
-            <Check size={14} /> Workspace privado
+            <Check size={14} /> {translate(" Workspace privado ")}
           </span>
           <span>
-            <Check size={14} /> Sem programação
+            <Check size={14} /> {translate(" Sem programação ")}
           </span>
         </div>
         <Preview />
       </section>
-      <section className="sales-strip" aria-label="Fontes de dados">
-        <span>DO ARQUIVO À DECISÃO</span>
-        <b>Excel</b>
+      <section
+        className="sales-strip"
+        aria-label={translate("Fontes de dados")}
+      >
+        <span>{translate("DO ARQUIVO À DECISÃO")}</span>
+        <b>{translate("Excel")}</b>
         <span>+</span>
-        <b>CSV</b>
+        <b>{translate("CSV")}</b>
         <span>+</span>
-        <b>OneDrive</b>
+        <b>{translate("OneDrive")}</b>
         <span>+</span>
-        <b>SharePoint</b>
+        <b>{translate("SharePoint")}</b>
       </section>
       <section className="sales-features" id="recursos">
         <div className="sales-section-heading">
-          <span className="sales-eyebrow">01 / DO SEU JEITO</span>
           <h2>
-            VOCÊ CONHECE O NEGÓCIO.
+            {translate(" VOCÊ CONHECE O NEGÓCIO. ")}
             <br />
-            <em>AGORA, ENXERGUE OS DADOS.</em>
+            <em>{translate("AGORA, ENXERGUE OS DADOS.")}</em>
           </h2>
           <p>
-            Um espaço para explorar, organizar e transformar números em próximas
-            ações.
+            {translate(
+              " Um espaço para explorar, organizar e transformar números em próximas ações. ",
+            )}
           </p>
         </div>
         <div className="sales-feature-grid">
@@ -248,30 +265,33 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
             <Database size={28} />
             <span>01</span>
             <h3>
-              SUAS BASES.
+              {translate(" SUAS BASES. ")}
               <br />
-              CONECTADAS.
+              {translate(" CONECTADAS. ")}
             </h3>
             <p>
-              Importe Excel e CSV ou conecte arquivos da Microsoft. Escolha o
-              conteúdo e programe as atualizações.
+              {translate(
+                " Importe Excel e CSV ou conecte arquivos da Microsoft. Escolha o conteúdo e programe as atualizações. ",
+              )}
             </p>
             <div className="feature-tags">
-              <b>.xlsx</b>
-              <b>.csv</b>
-              <b>↻ Conexões</b>
+              <b>{translate(".xlsx")}</b>
+              <b>{translate(".csv")}</b>
+              <b>{translate("↻ Conexões")}</b>
             </div>
           </article>
           <article>
             <SlidersHorizontal size={28} />
             <span>02</span>
             <h3>
-              GRÁFICOS COM
-              <br />A SUA CARA.
+              {translate(" GRÁFICOS COM ")}
+              <br />
+              {translate("A SUA CARA. ")}
             </h3>
             <p>
-              Escolha medidas, dimensões, filtros e tipos de visual. Organize o
-              painel com arrastar e soltar.
+              {translate(
+                " Escolha medidas, dimensões, filtros e tipos de visual. Organize o painel com arrastar e soltar. ",
+              )}
             </p>
             <div className="feature-mini-bars" aria-hidden="true">
               <i />
@@ -286,61 +306,65 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
             <Layers3 size={28} />
             <span>03</span>
             <h3>
-              UMA VISÃO PARA
+              {translate(" UMA VISÃO PARA ")}
               <br />
-              CADA PERGUNTA.
+              {translate(" CADA PERGUNTA. ")}
             </h3>
             <p>
-              Crie diferentes dashboards no mesmo workspace. Vendas, operação ou
-              financeiro: você escolhe o foco.
+              {translate(
+                " Crie diferentes dashboards no mesmo workspace. Vendas, operação ou financeiro: você escolhe o foco. ",
+              )}
             </p>
             <div className="feature-tags">
-              <b>Comercial ↗</b>
-              <b>Financeiro ↗</b>
+              <b>{translate("Comercial ↗")}</b>
+              <b>{translate("Financeiro ↗")}</b>
             </div>
           </article>
         </div>
       </section>
       <section className="sales-how">
         <div>
-          <span className="sales-eyebrow">02 / SIMPLES DE COMEÇAR</span>
           <h2>
-            SEU PRIMEIRO PAINEL
+            {translate(" SEU PRIMEIRO PAINEL ")}
             <br />
-            COMEÇA AQUI.
+            {translate(" COMEÇA AQUI. ")}
           </h2>
           <a className="sales-link" href="/?view=signup">
-            Criar minha conta <ArrowUpRight size={18} />
+            {translate(" Criar minha conta ")}
+            <ArrowUpRight size={18} />
           </a>
         </div>
         <ol>
           <li>
             <span>01</span>
             <div>
-              <h3>Crie sua conta e teste</h3>
+              <h3>{translate("Crie sua conta e teste")}</h3>
               <p>
-                Pagamento protegido no ambiente do Asaas. Seu acesso é liberado
-                após a confirmação.
+                {translate(
+                  " Pagamento protegido no ambiente do Asaas. Seu acesso é liberado após a confirmação. ",
+                )}
               </p>
             </div>
           </li>
           <li>
             <span>02</span>
             <div>
-              <h3>Traga seus dados</h3>
+              <h3>{translate("Traga seus dados")}</h3>
               <p>
-                Importe um arquivo ou conecte uma origem. Revise e prepare as
-                informações.
+                {translate(
+                  " Importe um arquivo ou conecte uma origem. Revise e prepare as informações. ",
+                )}
               </p>
             </div>
           </li>
           <li>
             <span>03</span>
             <div>
-              <h3>Monte sua visão</h3>
+              <h3>{translate("Monte sua visão")}</h3>
               <p>
-                Escolha as métricas, ajuste os visuais e salve seu dashboard
-                para acompanhar depois.
+                {translate(
+                  " Escolha as métricas, ajuste os visuais e salve seu dashboard para acompanhar depois. ",
+                )}
               </p>
             </div>
           </li>
@@ -348,41 +372,38 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
       </section>
       <section className="sales-pricing" id="plano">
         <div>
-          <span className="sales-eyebrow">
-            03 / UM PLANO. MUITAS POSSIBILIDADES.
-          </span>
           <h2>
-            UM INVESTIMENTO
+            {translate(" UM INVESTIMENTO ")}
             <br />
-            <em>QUE CABE NO MÊS.</em>
+            <em>{translate("QUE CABE NO MÊS.")}</em>
           </h2>
           <p>
-            Saia das abas espalhadas para um workspace
+            {translate(" Saia das abas espalhadas para um workspace ")}
             <br />
-            que acompanha suas decisões.
+            {translate(" que acompanha suas decisões. ")}
           </p>
           <div className="sales-security">
             <ShieldCheck size={24} />
             <p>
-              Seu ambiente é privado.
+              {translate(" Seu ambiente é privado. ")}
               <br />
-              <strong>Pagamento processado pelo Asaas.</strong>
+              <strong>{translate("Pagamento processado pelo Asaas.")}</strong>
             </p>
           </div>
         </div>
         <article className="sales-price-card">
           <div className="sales-price-top">
-            <strong>DRIVEVISION</strong>
-            <span>PLANO MENSAL</span>
+            <strong>{translate("DRIVEVISION")}</strong>
+            <span>{translate("PLANO MENSAL")}</span>
           </div>
           <div className="sales-price">
-            <span>R$</span>
+            <span>{translate("R$")}</span>
             <strong>59,90</strong>
-            <span>/mês</span>
+            <span>{translate("/mês")}</span>
           </div>
           <p>
-            <strong>7 dias grátis para começar.</strong> Uma conta. Seu
-            workspace de análises.
+            <strong>{translate("7 dias grátis para começar.")}</strong>{" "}
+            {translate(" Uma conta. Seu workspace de análises. ")}
           </p>
           <ul>
             {[
@@ -395,24 +416,25 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
             ].map((s) => (
               <li key={s}>
                 <Check size={17} />
-                {s}
+                {translate(s)}
               </li>
             ))}
           </ul>
           <a className="sales-button" href="/?view=signup">
-            Quero meu DriveVision <ArrowUpRight size={21} />
+            {translate(" Quero meu DriveVision ")}
+            <ArrowUpRight size={21} />
           </a>
           <small>
-            Cartão necessário. Após 7 dias grátis, renovação mensal automática.
-            Cancele antes da primeira cobrança para não cobrar.
+            {translate(
+              " Cartão necessário. Após 7 dias grátis, renovação mensal automática. Cancele antes da primeira cobrança para não cobrar. ",
+            )}
             <br />
-            Confira os limites de uso nas perguntas abaixo.
+            {translate(" Confira os limites de uso nas perguntas abaixo. ")}
           </small>
         </article>
       </section>
       <section className="sales-faq">
-        <span className="sales-eyebrow">04 / SEM PONTAS SOLTAS</span>
-        <h2>ANTES DE COMEÇAR.</h2>
+        <h2>{translate("ANTES DE COMEÇAR.")}</h2>
         {faqs.map(([q, a], i) => (
           <article key={q}>
             <h3>
@@ -421,23 +443,23 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
                 aria-controls={`faq-${i}`}
                 onClick={() => setOpen(open === i ? null : i)}
               >
-                {q}
+                {translate(q)}
                 {open === i ? <Minus size={19} /> : <Plus size={19} />}
               </button>
             </h3>
             <p id={`faq-${i}`} hidden={open !== i}>
-              {a}
+              {translate(a)}
             </p>
           </article>
         ))}
       </section>
       <section className="sales-last">
         <div>
-          <span className="sales-eyebrow">OS DADOS JÁ ESTÃO AÍ.</span>
-          <h2>DÊ UMA NOVA VISÃO A ELES.</h2>
+          <h2>{translate("DÊ UMA NOVA VISÃO A ELES.")}</h2>
         </div>
         <a className="sales-button" href="/?view=signup">
-          Começar agora <ArrowUpRight size={22} />
+          {translate(" Começar agora ")}
+          <ArrowUpRight size={22} />
         </a>
       </section>
       <PublicFooter />
@@ -450,144 +472,102 @@ export function LegalPage({ privacy }: { privacy: boolean }) {
     <main className="sales-page">
       <PublicHeader />
       <article className="sales-legal">
-        <span className="sales-eyebrow">DRIVEVISION · VERSÃO 30/09/2026</span>
         <h1>
-          {privacy ? "POLÍTICA DE PRIVACIDADE" : "TERMOS DE USO E ASSINATURA"}
+          {privacy
+            ? translate("POLÍTICA DE PRIVACIDADE")
+            : translate("TERMOS DE USO E ASSINATURA")}
         </h1>
         <p>
-          Serviço oferecido por DRIVEDATA LTDA, CNPJ 55.175.790/0001-38.
-          Endereço: Alameda Rio Negro, 503, Alphaville, Barueri/SP, CEP
-          06454-000. Contato:{" "}
-          <a href="mailto:suporte@drivedata.com.br">suporte@drivedata.com.br</a>
+          {translate(
+            " Serviço oferecido por DRIVEDATA LTDA, CNPJ 55.175.790/0001-38. Endereço: Alameda Rio Negro, 503, Alphaville, Barueri/SP, CEP 06454-000. Contato:",
+          )}{" "}
+          <a href="mailto:suporte@drivedata.com.br">
+            {translate("suporte@drivedata.com.br")}
+          </a>
           .
         </p>
         {privacy ? (
           <>
-            <h2>Quais dados utilizamos</h2>
+            <h2>{translate("Quais dados utilizamos")}</h2>
             <p>
-              Tratamos nome, e-mail, credenciais protegidas, registros de acesso
-              e os arquivos e análises que você escolhe salvar. Ao conectar uma
-              conta Microsoft, guardamos os tokens de acesso criptografados para
-              ler o conteúdo autorizado e executar as atualizações solicitadas.
+              {translate(
+                " Tratamos nome, e-mail, credenciais protegidas, registros de acesso e os arquivos e análises que você escolhe salvar. Ao conectar uma conta Microsoft, guardamos os tokens de acesso criptografados para ler o conteúdo autorizado e executar as atualizações solicitadas. ",
+              )}
             </p>
-            <h2>Para quais finalidades</h2>
+            <h2>{translate("Para quais finalidades")}</h2>
             <p>
-              Os dados são usados para fornecer seu workspace, autenticar
-              acessos, processar a assinatura, atender solicitações e proteger o
-              serviço. Para dados pessoais presentes nas suas bases, cabe a você
-              possuir autorização e definir a finalidade do tratamento. Evite
-              enviar dados sensíveis desnecessários.
+              {translate(
+                " Os dados são usados para fornecer seu workspace, autenticar acessos, processar a assinatura, atender solicitações e proteger o serviço. Para dados pessoais presentes nas suas bases, cabe a você possuir autorização e definir a finalidade do tratamento. Evite enviar dados sensíveis desnecessários. ",
+              )}
             </p>
-            <h2>Pagamento e fornecedores</h2>
+            <h2>{translate("Pagamento e fornecedores")}</h2>
             <p>
-              O Asaas processa o pagamento no próprio ambiente. O DriveVision
-              não recebe o número completo do cartão nem seu código de
-              segurança. Mantemos identificadores de cobrança, situação, valor,
-              vencimento e período de acesso. Utilizamos Vercel para hospedagem
-              e Supabase/PostgreSQL para armazenamento. Esses fornecedores podem
-              processar dados em infraestrutura fora do Brasil, conforme seus
-              contratos e políticas.
+              {translate(
+                " O Asaas processa o pagamento no próprio ambiente. O DriveVision não recebe o número completo do cartão nem seu código de segurança. Mantemos identificadores de cobrança, situação, valor, vencimento e período de acesso. Utilizamos Vercel para hospedagem e Supabase/PostgreSQL para armazenamento. Esses fornecedores podem processar dados em infraestrutura fora do Brasil, conforme seus contratos e políticas. ",
+              )}
             </p>
-            <h2>Seu controle sobre os dados</h2>
+            <h2>{translate("Seu controle sobre os dados")}</h2>
             <p>
-              Você pode gerenciar suas fontes, remover conexões e exportar suas
-              análises pela aplicação. Solicitações de acesso, correção,
-              exclusão, informação sobre compartilhamento e demais direitos
-              devem ser enviadas ao suporte. Podemos solicitar confirmação de
-              identidade antes de atendê-las.
+              {translate(
+                " Você pode gerenciar suas fontes, remover conexões e exportar suas análises pela aplicação. Solicitações de acesso, correção, exclusão, informação sobre compartilhamento e demais direitos devem ser enviadas ao suporte. Podemos solicitar confirmação de identidade antes de atendê-las. ",
+              )}
             </p>
-            <h2>Retenção e encerramento</h2>
+            <h2>{translate("Retenção e encerramento")}</h2>
             <p>
-              Cancelar a renovação não exclui automaticamente a conta nem os
-              dados. Eles permanecem armazenados para permitir a continuidade ou
-              retomada do serviço, até a exclusão solicitada ou comunicada pela
-              DriveData. Registros necessários ao cumprimento de obrigações e à
-              defesa de direitos podem ser mantidos pelo prazo aplicável.
-              Backups podem ter um ciclo de eliminação diferente da base
-              principal. O histórico de fontes obedece às opções e limites
-              disponíveis no produto.
+              {translate(
+                " Cancelar a renovação não exclui automaticamente a conta nem os dados. Eles permanecem armazenados para permitir a continuidade ou retomada do serviço, até a exclusão solicitada ou comunicada pela DriveData. Registros necessários ao cumprimento de obrigações e à defesa de direitos podem ser mantidos pelo prazo aplicável. Backups podem ter um ciclo de eliminação diferente da base principal. O histórico de fontes obedece às opções e limites disponíveis no produto. ",
+              )}
             </p>
-            <h2>Atendimento e mensagens</h2>
+            <h2>{translate("Atendimento e mensagens")}</h2>
             <p>
-              Ao falar conosco, armazenamos nome, e-mail, empresa e telefone
-              quando informados, assunto, descrição, autorização de contato e
-              histórico do atendimento. Esses dados são utilizados pela equipe
-              DriveData para responder e acompanhar sua solicitação. As
-              notificações de novos chamados são enviadas aos responsáveis pelo
-              atendimento via Resend. O assistente de ajuda consulta guias
-              locais; as perguntas do chat não são enviadas a serviços de
-              inteligência artificial. Evite inserir dados sensíveis nos
-              formulários.
+              {translate(
+                " Ao falar conosco, armazenamos nome, e-mail, empresa e telefone quando informados, assunto, descrição, autorização de contato e histórico do atendimento. Esses dados são utilizados pela equipe DriveData para responder e acompanhar sua solicitação. As notificações de novos chamados são enviadas aos responsáveis pelo atendimento via Resend. O assistente de ajuda consulta guias locais; as perguntas do chat não são enviadas a serviços de inteligência artificial. Evite inserir dados sensíveis nos formulários. ",
+              )}
             </p>
-            <h2>Cookies e segurança</h2>
+            <h2>{translate("Cookies e segurança")}</h2>
             <p>
-              Utilizamos um cookie essencial para manter sua sessão e
-              armazenamento local para preferências e o modo de demonstração. O
-              acesso aos dados é separado por conta. Não compartilhe sua senha e
-              desconecte o acesso em dispositivos de terceiros.
+              {translate(
+                " Utilizamos um cookie essencial para manter sua sessão e armazenamento local para preferências e o modo de demonstração. O acesso aos dados é separado por conta. Não compartilhe sua senha e desconecte o acesso em dispositivos de terceiros. ",
+              )}
             </p>
           </>
         ) : (
           <>
-            <h2>O que você contrata</h2>
+            <h2>{translate("O que você contrata")}</h2>
             <p>
-              O plano mensal oferece uma conta responsável e um workspace
-              privado para importar, preparar e visualizar dados. Inclui
-              múltiplos dashboards, até 50 bases, 20 mil linhas e 100 colunas
-              por base, até 24 visuais por painel e até 3,5 MB compactados por
-              salvamento do workspace. Arquivos de conexões externas têm limite
-              de 10 MB. Não inclui implantação personalizada, consultoria,
-              licença Microsoft ou licença de outro fornecedor.
+              {translate(
+                " O plano mensal oferece uma conta responsável e um workspace privado para importar, preparar e visualizar dados. Inclui múltiplos dashboards, até 50 bases, 20 mil linhas e 100 colunas por base, até 24 visuais por painel e até 3,5 MB compactados por salvamento do workspace. Arquivos de conexões externas têm limite de 10 MB. Não inclui implantação personalizada, consultoria, licença Microsoft ou licença de outro fornecedor. ",
+              )}
             </p>
-            <h2>Preço, pagamento e liberação</h2>
+            <h2>{translate("Preço, pagamento e liberação")}</h2>
             <p>
-              O preço é de R$ 59,90 por mês, com renovação automática no cartão
-              via Asaas. Novas contas elegíveis têm um teste de 7 dias,
-              concedido uma única vez por conta após a confirmação do cadastro
-              do cartão no checkout. A primeira cobrança ocorre na data exibida
-              no checkout e em Minha assinatura, após pelo menos sete dias
-              completos de teste. Como a cobrança ocorre por data, o prazo é
-              arredondado para o próximo dia em Brasília para não antecipar a
-              cobrança. Criar a conta ou abrir o checkout não libera o teste.
-              Após o teste, o acesso depende da confirmação do pagamento. O
-              período disponível e a situação são exibidos em Minha assinatura.
-              Alterações futuras de preço ou condições serão comunicadas antes
-              de sua aplicação.
+              {translate(
+                " O preço é de R$ 59,90 por mês, com renovação automática no cartão via Asaas. Novas contas elegíveis têm um teste de 7 dias, concedido uma única vez por conta após a confirmação do cadastro do cartão no checkout. A primeira cobrança ocorre na data exibida no checkout e em Minha assinatura, após pelo menos sete dias completos de teste. Como a cobrança ocorre por data, o prazo é arredondado para o próximo dia em Brasília para não antecipar a cobrança. Criar a conta ou abrir o checkout não libera o teste. Após o teste, o acesso depende da confirmação do pagamento. O período disponível e a situação são exibidos em Minha assinatura. Alterações futuras de preço ou condições serão comunicadas antes de sua aplicação. ",
+              )}
             </p>
-            <h2>Cancelamento e reembolso</h2>
+            <h2>{translate("Cancelamento e reembolso")}</h2>
             <p>
-              Você pode cancelar a renovação em Minha assinatura. O cancelamento
-              impede novas cobranças e mantém o acesso até o fim do teste ou do
-              período já pago, salvo estorno ou contestação. Para evitar a
-              primeira cobrança, cancele antes da data de término do teste.
-              Solicite reembolso ou atendimento sobre cobrança pelo suporte. Os
-              direitos legais aplicáveis ao consumidor, inclusive arrependimento
-              quando cabível, são preservados.
+              {translate(
+                " Você pode cancelar a renovação em Minha assinatura. O cancelamento impede novas cobranças e mantém o acesso até o fim do teste ou do período já pago, salvo estorno ou contestação. Para evitar a primeira cobrança, cancele antes da data de término do teste. Solicite reembolso ou atendimento sobre cobrança pelo suporte. Os direitos legais aplicáveis ao consumidor, inclusive arrependimento quando cabível, são preservados. ",
+              )}
             </p>
-            <h2>Uso dos dados e conexões</h2>
+            <h2>{translate("Uso dos dados e conexões")}</h2>
             <p>
-              Você é responsável pela origem e autorização de uso das bases e
-              pela conferência dos resultados. A preparação automática auxilia a
-              importação, mas exige sua revisão. Integrações dependem da
-              disponibilidade e das permissões dos fornecedores. Não envie
-              conteúdo ilícito nem tente acessar informações de outras contas.
+              {translate(
+                " Você é responsável pela origem e autorização de uso das bases e pela conferência dos resultados. A preparação automática auxilia a importação, mas exige sua revisão. Integrações dependem da disponibilidade e das permissões dos fornecedores. Não envie conteúdo ilícito nem tente acessar informações de outras contas. ",
+              )}
             </p>
-            <h2>Disponibilidade, suporte e encerramento</h2>
+            <h2>{translate("Disponibilidade, suporte e encerramento")}</h2>
             <p>
-              O suporte é prestado pela central Ajuda e contato e pelo e-mail
-              informado nesta página. O serviço pode passar por manutenção e
-              apresentar interrupções; mantenha cópias das suas bases originais.
-              Não há garantia de resultado de negócio. Em caso de inadimplência,
-              o acesso às análises é interrompido ao fim do teste ou do período
-              pago, permanecendo disponíveis a área de assinatura e a central de
-              atendimento. Suspensões por segurança ou uso indevido serão
-              tratadas pelo suporte. A exclusão da conta pode ser solicitada ao
-              suporte, observadas as retenções legais.
+              {translate(
+                " O suporte é prestado pela central Ajuda e contato e pelo e-mail informado nesta página. O serviço pode passar por manutenção e apresentar interrupções; mantenha cópias das suas bases originais. Não há garantia de resultado de negócio. Em caso de inadimplência, o acesso às análises é interrompido ao fim do teste ou do período pago, permanecendo disponíveis a área de assinatura e a central de atendimento. Suspensões por segurança ou uso indevido serão tratadas pelo suporte. A exclusão da conta pode ser solicitada ao suporte, observadas as retenções legais. ",
+              )}
             </p>
           </>
         )}
         <a className="sales-button" href="/?view=signup">
-          Voltar ao cadastro <ArrowRight size={18} />
+          {translate(" Voltar ao cadastro ")}
+          <ArrowRight size={18} />
         </a>
       </article>
       <PublicFooter />

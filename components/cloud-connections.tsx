@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useCallback, useEffect, useState } from "react";
 import {
   Cloud,
@@ -57,7 +58,7 @@ type Preview = {
   rowCount: number;
 };
 const when = (value: string | null) =>
-  value ? new Date(value).toLocaleString("pt-BR") : "Ainda não atualizado";
+  value ? new Date(value).toLocaleString(locale()) : "Ainda não atualizado";
 const overdue = (b: CloudBinding) =>
   !b.paused &&
   !!b.next_due_at &&
@@ -146,13 +147,15 @@ export function CloudConnections({
     return (
       <section className="connections-empty">
         <Cloud size={36} />
-        <h2>Seus dados continuam conectados.</h2>
+        <h2>{translate("Seus dados continuam conectados.")}</h2>
         <p>
-          Entre na sua conta para conectar SharePoint ou OneDrive e atualizar
-          suas análises.
+          {translate(
+            " Entre na sua conta para conectar SharePoint ou OneDrive e atualizar suas análises. ",
+          )}
         </p>
         <button className="primary-button" onClick={onLogin}>
-          Entrar para conectar <ArrowRight size={16} />
+          {translate(" Entrar para conectar ")}
+          <ArrowRight size={16} />
         </button>
       </section>
     );
@@ -160,38 +163,38 @@ export function CloudConnections({
     <div className="connections-page">
       <section className="connection-intro">
         <div>
-          <span className="eyebrow">DA ORIGEM AO DASHBOARD</span>
           <h2>
-            Escolha uma vez.
+            {translate(" Escolha uma vez. ")}
             <br />
-            Acompanhe sempre.
+            {translate(" Acompanhe sempre. ")}
           </h2>
           <p>
-            Conecte uma conta, selecione o conteúdo e mantenha suas análises
-            atualizadas. Você decide o que acompanhar.
+            {translate(
+              " Conecte uma conta, selecione o conteúdo e mantenha suas análises atualizadas. Você decide o que acompanhar. ",
+            )}
           </p>
         </div>
         <div className="connection-steps">
           <span>
-            <b>01</b> Autorize a leitura
+            <b>01</b> {translate(" Autorize a leitura ")}
           </span>
           <span>
-            <b>02</b> Escolha arquivo ou pasta
+            <b>02</b> {translate(" Escolha arquivo ou pasta ")}
           </span>
           <span>
-            <b>03</b> Defina sua atualização
+            <b>03</b> {translate(" Defina sua atualização ")}
           </span>
         </div>
       </section>
       {error && (
         <div className="connection-alert" role="alert">
           <AlertCircle size={18} />
-          <span>{error}</span>
+          <span>{translate(error)}</span>
           <button
             className="text-button"
             onClick={() => action("reload", load)}
           >
-            Tentar novamente
+            {translate(" Tentar novamente ")}
           </button>
         </div>
       )}
@@ -205,16 +208,20 @@ export function CloudConnections({
               <span className={`provider-symbol ${p}`} aria-hidden="true">
                 {p === "sharepoint" ? "S" : p === "onedrive" ? <Cloud /> : "G"}
               </span>
-              <h3>{labels[p]}</h3>
+              <h3>{translate(labels[p])}</h3>
               <p>
                 {p === "sharepoint"
-                  ? "Sites, bibliotecas e pastas da sua organização."
+                  ? translate("Sites, bibliotecas e pastas da sua organização.")
                   : p === "onedrive"
-                    ? "Planilhas e arquivos da sua conta Microsoft."
-                    : "Arquivos, drives compartilhados e Google Sheets."}
+                    ? translate("Planilhas e arquivos da sua conta Microsoft.")
+                    : translate(
+                        "Arquivos, drives compartilhados e Google Sheets.",
+                      )}
               </p>
               <span className="connection-tag">
-                {comingSoon ? "Em breve" : "Somente leitura"}
+                {comingSoon
+                  ? translate("Em breve")
+                  : translate("Somente leitura")}
               </span>
               <button
                 className="secondary-button"
@@ -230,17 +237,19 @@ export function CloudConnections({
                 }
               >
                 {comingSoon
-                  ? "Em breve"
+                  ? translate("Em breve")
                   : busy === p
-                    ? "Abrindo autorização…"
+                    ? translate("Abrindo autorização…")
                     : ready
-                      ? "Conectar conta"
-                      : "Aguardando configuração"}
+                      ? translate("Conectar conta")
+                      : translate("Aguardando configuração")}
                 <Plus size={15} />
               </button>
               {state && !ready && !comingSoon && (
                 <small>
-                  A integração precisa ser habilitada pelo administrador.
+                  {translate(
+                    " A integração precisa ser habilitada pelo administrador. ",
+                  )}
                 </small>
               )}
             </article>
@@ -250,31 +259,35 @@ export function CloudConnections({
           <span className="provider-symbol" aria-hidden="true">
             ↔
           </span>
-          <h3>APIs externas</h3>
-          <p>Integrações diretas com outros sistemas e serviços.</p>
-          <span className="connection-tag">Em breve</span>
+          <h3>{translate("APIs externas")}</h3>
+          <p>
+            {translate("Integrações diretas com outros sistemas e serviços.")}
+          </p>
+          <span className="connection-tag">{translate("Em breve")}</span>
           <button className="secondary-button" disabled>
-            Em breve <Plus size={15} />
+            {translate(" Em breve ")}
+            <Plus size={15} />
           </button>
         </article>
       </div>
       <section className="connected-accounts">
         <div className="connections-section-title">
-          <h2>Contas conectadas</h2>
+          <h2>{translate("Contas conectadas")}</h2>
           <button
             className="text-button"
             disabled={!!busy}
             onClick={() => action("reload", load)}
           >
-            <RefreshCw size={15} /> Atualizar lista
+            <RefreshCw size={15} /> {translate(" Atualizar lista ")}
           </button>
         </div>
         {!state ? (
-          <p role="status">Carregando conexões…</p>
+          <p role="status">{translate("Carregando conexões…")}</p>
         ) : !state.connections.length ? (
           <p className="connection-muted">
-            Nenhuma conta conectada. Seus arquivos só serão lidos após a
-            autorização e a seleção do conteúdo.
+            {translate(
+              " Nenhuma conta conectada. Seus arquivos só serão lidos após a autorização e a seleção do conteúdo. ",
+            )}
           </p>
         ) : (
           state.connections.map((c) => (
@@ -292,7 +305,7 @@ export function CloudConnections({
                 )}
               </span>
               <div>
-                <h3>{labels[c.provider]}</h3>
+                <h3>{translate(labels[c.provider])}</h3>
                 <p>{c.label}</p>
               </div>
               <button
@@ -300,11 +313,11 @@ export function CloudConnections({
                 disabled={!!busy || locked}
                 onClick={() => setBrowser(c)}
               >
-                <Folder size={16} /> Escolher conteúdo
+                <Folder size={16} /> {translate(" Escolher conteúdo ")}
               </button>
               <button
                 className="text-button"
-                aria-label={`Desconectar ${c.label}`}
+                aria-label={translate("Desconectar {v0}", { v0: c.label })}
                 disabled={!!busy}
                 onClick={() =>
                   setConfirm({ kind: "disconnect", id: c.id, name: c.label })
@@ -318,32 +331,36 @@ export function CloudConnections({
       </section>
       <section>
         <div className="connections-section-title">
-          <h2>Conteúdo acompanhado</h2>
+          <h2>{translate("Conteúdo acompanhado")}</h2>
           <span className="connection-tag">
             <Clock3 size={13} />{" "}
             {state?.scheduled
-              ? "Atualização em segundo plano"
-              : "Atualização manual disponível"}
+              ? translate("Atualização em segundo plano")
+              : translate("Atualização manual disponível")}
           </span>
         </div>
         {locked && (
           <p className="connection-alert">
-            Salve seu rascunho antes de atualizar as fontes nesta tela.
+            {translate(
+              " Salve seu rascunho antes de atualizar as fontes nesta tela. ",
+            )}
           </p>
         )}
         {state && !state.scheduled && (
           <p className="connection-muted">
-            O agendamento será ativado quando o administrador concluir a
-            configuração. Até lá, use “Atualizar agora”.
+            {translate(
+              " O agendamento será ativado quando o administrador concluir a configuração. Até lá, use “Atualizar agora”. ",
+            )}
           </p>
         )}
         {!state?.bindings.length ? (
           <div className="connections-empty compact">
             <FileSpreadsheet size={28} />
-            <h3>Uma origem. Análises sempre à mão.</h3>
+            <h3>{translate("Uma origem. Análises sempre à mão.")}</h3>
             <p>
-              Escolha um arquivo ou uma pasta em uma conta conectada para
-              começar.
+              {translate(
+                " Escolha um arquivo ou uma pasta em uma conta conectada para começar. ",
+              )}
             </p>
           </div>
         ) : (
@@ -357,77 +374,90 @@ export function CloudConnections({
                     ) : (
                       <FileSpreadsheet size={13} />
                     )}{" "}
-                    {b.target.kind === "folder" ? "Pasta" : "Arquivo"}
+                    {b.target.kind === "folder"
+                      ? translate("Pasta")
+                      : translate("Arquivo")}
                   </span>
                   <span
                     className={`connection-state ${b.last_error ? "error" : ""}`}
                   >
                     {b.paused
-                      ? "Pausado"
+                      ? translate("Pausado")
                       : b.last_error
-                        ? "Precisa de atenção"
+                        ? translate("Precisa de atenção")
                         : state.scheduled && overdue(b)
-                          ? "Atualização atrasada"
+                          ? translate("Atualização atrasada")
                           : b.last_success_at
-                            ? "Atualizado"
-                            : "Primeira atualização pendente"}
+                            ? translate("Atualizado")
+                            : translate("Primeira atualização pendente")}
                   </span>
                 </div>
                 <h3>{b.name}</h3>
                 <p className="connection-path">
-                  {b.target.name} · Aba {b.options.sheet}
+                  {b.target.name} {translate(" · Aba ")}
+                  {b.options.sheet}
                 </p>
                 <dl>
                   <div>
-                    <dt>Seleção</dt>
+                    <dt>{translate("Seleção")}</dt>
                     <dd>
-                      Linha {b.options.header} · colunas {b.options.left}–
-                      {b.options.right}
+                      {translate(" Linha ")}
+                      {b.options.header} {translate(" · colunas ")}
+                      {b.options.left}–{b.options.right}
                       {b.options.end
-                        ? ` · até a linha ${b.options.end}`
-                        : " · novas linhas incluídas"}
+                        ? translate(" · até a linha {v0}", {
+                            v0: b.options.end,
+                          })
+                        : translate(" · novas linhas incluídas")}
                     </dd>
                   </div>
                   <div>
-                    <dt>Frequência</dt>
+                    <dt>{translate("Frequência")}</dt>
                     <dd>
                       {b.interval_minutes === 1440 && b.options.daily
-                        ? `Todos os dias às ${b.options.daily.time} · ${b.options.daily.timeZone}`
+                        ? translate("Todos os dias às {v0} · {v1}", {
+                            v0: b.options.daily.time,
+                            v1: b.options.daily.timeZone,
+                          })
                         : b.interval_minutes === 1440
-                          ? "A cada 24 horas"
-                          : intervals.find(
+                          ? translate("A cada 24 horas")
+                          : translate(intervals.find(
                               (i) => i.value === b.interval_minutes,
-                            )?.label}
+                            )?.label)}
                     </dd>
                   </div>
                   <div>
-                    <dt>Última atualização</dt>
+                    <dt>{translate("Última atualização")}</dt>
                     <dd>{when(b.last_success_at)}</dd>
                   </div>
                   <div>
-                    <dt>Última verificação</dt>
+                    <dt>{translate("Última verificação")}</dt>
                     <dd>{when(b.last_checked_at)}</dd>
                   </div>
                   <div>
                     <dt>
-                      {b.last_error ? "Próxima tentativa" : "Próxima execução"}
+                      {b.last_error
+                        ? translate("Próxima tentativa")
+                        : translate("Próxima execução")}
                     </dt>
                     <dd>
                       {b.paused
-                        ? "Pausada"
+                        ? translate("Pausada")
                         : !state.scheduled
-                          ? "Agendamento não ativado"
+                          ? translate("Agendamento não ativado")
                           : b.next_due_at
-                            ? `${when(b.next_due_at)} (horário deste dispositivo)`
-                            : "Aguardando programação"}
+                            ? translate("{v0} (horário deste dispositivo)", {
+                                v0: when(b.next_due_at),
+                              })
+                            : translate("Aguardando programação")}
                     </dd>
                   </div>
                 </dl>
                 {state.scheduled && overdue(b) && (
                   <p className="connection-alert" role="status">
-                    A execução prevista está atrasada. Os gráficos mantêm os
-                    dados da última carga concluída. Você pode usar Atualizar
-                    agora.
+                    {translate(
+                      " A execução prevista está atrasada. Os gráficos mantêm os dados da última carga concluída. Você pode usar Atualizar agora. ",
+                    )}
                   </p>
                 )}
                 {b.last_error && (
@@ -445,14 +475,17 @@ export function CloudConnections({
                       size={15}
                       className={busy === b.id ? "spin" : ""}
                     />
-                    {busy === b.id ? "Atualizando…" : "Atualizar agora"}
+                    {busy === b.id
+                      ? translate("Atualizando…")
+                      : translate("Atualizar agora")}
                   </button>
                   {b.last_success_at && (
                     <button
                       className="secondary-button"
                       onClick={() => onAnalyze(b.source_id)}
                     >
-                      Analisar <ArrowRight size={15} />
+                      {translate(" Analisar ")}
+                      <ArrowRight size={15} />
                     </button>
                   )}
                   <button
@@ -470,14 +503,14 @@ export function CloudConnections({
                     }
                   >
                     {b.paused ? <Play size={15} /> : <Pause size={15} />}{" "}
-                    {b.paused ? "Retomar" : "Pausar"}
+                    {b.paused ? translate("Retomar") : translate("Pausar")}
                   </button>
                   <button
                     className="text-button"
                     disabled={!!busy || locked}
                     onClick={() => setEditing(b)}
                   >
-                    <Settings2 size={15} /> Seleção
+                    <Settings2 size={15} /> {translate(" Seleção ")}
                   </button>
                   <button
                     className="text-button"
@@ -492,7 +525,7 @@ export function CloudConnections({
                       })
                     }
                   >
-                    <History size={15} /> Histórico
+                    <History size={15} /> {translate(" Histórico ")}
                   </button>
                   <button
                     className="text-button"
@@ -501,7 +534,7 @@ export function CloudConnections({
                       setConfirm({ kind: "remove", id: b.id, name: b.name })
                     }
                   >
-                    Parar acompanhamento
+                    {translate(" Parar acompanhamento ")}
                   </button>
                 </div>
               </article>
@@ -532,14 +565,17 @@ export function CloudConnections({
         <Dialog open onOpenChange={() => setHistory(null)}>
           <DialogContent className="connection-dialog">
             <DialogHeader>
-              <DialogTitle>Histórico · {history.binding.name}</DialogTitle>
+              <DialogTitle>
+                {translate("Histórico · ")}
+                {history.binding.name}
+              </DialogTitle>
               <DialogDescription>
-                Últimas 30 verificações desta fonte.
+                {translate(" Últimas 30 verificações desta fonte. ")}
               </DialogDescription>
             </DialogHeader>
             <div className="connection-history">
               {!history.runs.length ? (
-                <p>Nenhuma verificação realizada.</p>
+                <p>{translate("Nenhuma verificação realizada.")}</p>
               ) : (
                 history.runs.map((r) => (
                   <article key={r.id}>
@@ -553,7 +589,9 @@ export function CloudConnections({
                       <p>
                         {when(r.created_at)}
                         {r.rows_count !== null
-                          ? ` · ${r.rows_count.toLocaleString("pt-BR")} linhas`
+                          ? translate(" · {v0} linhas", {
+                              v0: r.rows_count.toLocaleString("pt-BR"),
+                            })
                           : ""}
                       </p>
                     </div>
@@ -570,12 +608,14 @@ export function CloudConnections({
             <DialogHeader>
               <DialogTitle>
                 {confirm.kind === "disconnect"
-                  ? "Desconectar conta?"
-                  : "Parar acompanhamento?"}
+                  ? translate("Desconectar conta?")
+                  : translate("Parar acompanhamento?")}
               </DialogTitle>
               <DialogDescription>
-                {confirm.name}. As atualizações serão interrompidas. Os dados e
-                dashboards já importados serão mantidos no workspace.
+                {confirm.name}
+                {translate(
+                  ". As atualizações serão interrompidas. Os dados e dashboards já importados serão mantidos no workspace. ",
+                )}
               </DialogDescription>
             </DialogHeader>
             <div className="watched-actions">
@@ -583,7 +623,7 @@ export function CloudConnections({
                 className="secondary-button"
                 onClick={() => setConfirm(null)}
               >
-                Cancelar
+                {translate(" Cancelar ")}
               </button>
               <button
                 className="primary-button"
@@ -598,7 +638,7 @@ export function CloudConnections({
                   })
                 }
               >
-                Confirmar
+                {translate(" Confirmar ")}
               </button>
             </div>
           </DialogContent>
@@ -728,18 +768,25 @@ function RemoteBrowser({
         <DialogHeader>
           <DialogTitle>
             {selection
-              ? "Defina o que acompanhar"
-              : `Escolher conteúdo · ${labels[connection.provider]}`}
+              ? translate("Defina o que acompanhar")
+              : translate("Escolher conteúdo · {v0}", {
+                  v0: labels[connection.provider],
+                })}
           </DialogTitle>
           <DialogDescription>
             {selection
-              ? "Revise a prévia. Esta seleção será repetida a cada atualização."
-              : `${connection.label} · Somente os arquivos selecionados serão importados.`}
+              ? translate(
+                  "Revise a prévia. Esta seleção será repetida a cada atualização.",
+                )
+              : translate(
+                  "{v0} · Somente os arquivos selecionados serão importados.",
+                  { v0: connection.label },
+                )}
           </DialogDescription>
         </DialogHeader>
         {error && (
           <div className="connection-alert" role="alert">
-            {error}
+            {translate(error)}
           </div>
         )}
         {!selection ? (
@@ -756,16 +803,18 @@ function RemoteBrowser({
                   })
                 }
               >
-                <ArrowLeft size={15} /> Voltar
+                <ArrowLeft size={15} /> {translate(" Voltar ")}
               </button>
-              <strong>{current?.name || "Escolha uma biblioteca"}</strong>
+              <strong>
+                {current?.name || translate("Escolha uma biblioteca")}
+              </strong>
               {current?.kind === "folder" && (
                 <button
                   className="primary-button"
                   disabled={busy}
                   onClick={() => run(() => inspect(current))}
                 >
-                  Acompanhar esta pasta
+                  {translate(" Acompanhar esta pasta ")}
                 </button>
               )}
             </div>
@@ -777,21 +826,27 @@ function RemoteBrowser({
                   run(() => list());
                 }}
               >
-                <label htmlFor="site-search">Buscar site SharePoint</label>
+                <label htmlFor="site-search">
+                  {translate("Buscar site SharePoint")}
+                </label>
                 <input
                   id="site-search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Nome do site"
+                  placeholder={translate("Nome do site")}
                 />
                 <button className="secondary-button" disabled={busy}>
-                  Buscar
+                  {translate(" Buscar ")}
                 </button>
               </form>
             )}
             <div className="remote-list" aria-busy={busy}>
               {!items.length && !busy ? (
-                <p>Nenhum arquivo compatível ou pasta nesta seleção.</p>
+                <p>
+                  {translate(
+                    "Nenhum arquivo compatível ou pasta nesta seleção.",
+                  )}
+                </p>
               ) : (
                 items.map((i) => (
                   <button
@@ -816,12 +871,12 @@ function RemoteBrowser({
                       {i.name}
                       <small>
                         {i.kind === "file"
-                          ? "Planilha"
+                          ? translate("Planilha")
                           : i.kind === "site"
-                            ? "Site"
+                            ? translate("Site")
                             : i.kind === "drive"
-                              ? "Biblioteca"
-                              : "Pasta"}
+                              ? translate("Biblioteca")
+                              : translate("Pasta")}
                       </small>
                     </span>
                     <ArrowRight size={16} />
@@ -835,7 +890,7 @@ function RemoteBrowser({
                 disabled={busy}
                 onClick={() => run(() => list(current, next))}
               >
-                Carregar mais
+                {translate(" Carregar mais ")}
               </button>
             )}
           </>
@@ -845,8 +900,8 @@ function RemoteBrowser({
               <div className="remote-selection">
                 <span className="connection-tag">
                   {selection.kind === "folder"
-                    ? "Pasta · arquivos diretamente dentro dela"
-                    : "Arquivo selecionado"}
+                    ? translate("Pasta · arquivos diretamente dentro dela")
+                    : translate("Arquivo selecionado")}
                 </span>
                 <strong>{selection.name}</strong>
                 {!binding && (
@@ -859,13 +914,13 @@ function RemoteBrowser({
                       setOptions(null);
                     }}
                   >
-                    Trocar seleção
+                    {translate(" Trocar seleção ")}
                   </button>
                 )}
               </div>
               <div className="remote-fields">
                 <label>
-                  Nome da fonte
+                  {translate(" Nome da fonte ")}
                   <input
                     value={name}
                     maxLength={300}
@@ -873,7 +928,7 @@ function RemoteBrowser({
                   />
                 </label>
                 <label>
-                  Aba
+                  {translate(" Aba ")}
                   <select
                     value={options.sheet}
                     onChange={(e) => change({ sheet: e.target.value })}
@@ -884,7 +939,7 @@ function RemoteBrowser({
                   </select>
                 </label>
                 <label>
-                  Linha do cabeçalho
+                  {translate(" Linha do cabeçalho ")}
                   <input
                     type="number"
                     min={1}
@@ -894,7 +949,7 @@ function RemoteBrowser({
                   />
                 </label>
                 <label>
-                  Primeira coluna (número)
+                  {translate(" Primeira coluna (número) ")}
                   <input
                     type="number"
                     min={1}
@@ -904,7 +959,7 @@ function RemoteBrowser({
                   />
                 </label>
                 <label>
-                  Última coluna (número)
+                  {translate(" Última coluna (número) ")}
                   <input
                     type="number"
                     min={options.left}
@@ -914,7 +969,7 @@ function RemoteBrowser({
                   />
                 </label>
                 <label>
-                  Última linha (vazio = automática)
+                  {translate(" Última linha (vazio = automática) ")}
                   <input
                     type="number"
                     min={options.header + 1}
@@ -928,14 +983,14 @@ function RemoteBrowser({
                   />
                 </label>
                 <label>
-                  Atualizar
+                  {translate(" Atualizar ")}
                   <select
                     value={interval}
                     onChange={(e) => setInterval(Number(e.target.value))}
                   >
                     {intervals.map((i) => (
                       <option key={i.value} value={i.value}>
-                        {i.label}
+                        {translate(i.label)}
                       </option>
                     ))}
                   </select>
@@ -943,18 +998,18 @@ function RemoteBrowser({
                 {interval === 1440 && (
                   <>
                     <label>
-                      Horário diário
+                      {translate(" Horário diário ")}
                       <input
-                        aria-label="Horário diário"
+                        aria-label={translate("Horário diário")}
                         type="time"
                         value={dailyTime}
                         onChange={(e) => setDailyTime(e.target.value)}
                       />
                     </label>
                     <label>
-                      Fuso horário
+                      {translate(" Fuso horário ")}
                       <select
-                        aria-label="Fuso horário"
+                        aria-label={translate("Fuso horário")}
                         value={timeZone}
                         onChange={(e) => setTimeZone(e.target.value)}
                       >
@@ -971,7 +1026,7 @@ function RemoteBrowser({
                         ].map((zone) => (
                           <option key={zone} value={zone}>
                             {zone === "America/Sao_Paulo"
-                              ? "Brasília · São Paulo"
+                              ? translate("Brasília · São Paulo")
                               : zone}
                           </option>
                         ))}
@@ -981,12 +1036,12 @@ function RemoteBrowser({
                 )}
                 {selection.kind === "folder" && (
                   <label>
-                    Nome dos arquivos contém
+                    {translate(" Nome dos arquivos contém ")}
                     <input
                       value={options.nameContains}
                       maxLength={100}
                       onChange={(e) => change({ nameContains: e.target.value })}
-                      placeholder="Ex.: vendas"
+                      placeholder={translate("Ex.: vendas")}
                     />
                   </label>
                 )}
@@ -997,18 +1052,21 @@ function RemoteBrowser({
                   checked={options.skipTotals}
                   onChange={(e) => change({ skipTotals: e.target.checked })}
                 />{" "}
-                Ignorar totais e subtotais da planilha
+                {translate(" Ignorar totais e subtotais da planilha ")}
               </label>
               <p className="connection-muted">
-                Até 10 arquivos por pasta, 10 MB por arquivo e 20 mil linhas
-                combinadas. Subpastas não são incluídas. Os arquivos da pasta
-                precisam ter a mesma aba e colunas.
+                {translate(
+                  " Até 10 arquivos por pasta, 10 MB por arquivo e 20 mil linhas combinadas. Subpastas não são incluídas. Os arquivos da pasta precisam ter a mesma aba e colunas. ",
+                )}
               </p>
               <div className="remote-toolbar">
                 <strong>
-                  Prévia{" "}
+                  {translate(" Prévia")}{" "}
                   {preview
-                    ? `· ${preview.rowCount.toLocaleString("pt-BR")} linhas no arquivo ${preview.sample}`
+                    ? translate("· {v0} linhas no arquivo {v1}", {
+                        v0: preview.rowCount.toLocaleString("pt-BR"),
+                        v1: preview.sample,
+                      })
                     : ""}
                 </strong>
                 <button
@@ -1016,12 +1074,12 @@ function RemoteBrowser({
                   disabled={busy}
                   onClick={() => run(() => inspect(selection, options))}
                 >
-                  <RefreshCw size={15} /> Revisar prévia
+                  <RefreshCw size={15} /> {translate(" Revisar prévia ")}
                 </button>
               </div>
               {!reviewed && (
                 <p className="connection-alert">
-                  Revise a prévia após alterar a seleção.
+                  {translate(" Revise a prévia após alterar a seleção. ")}
                 </p>
               )}
               {preview && (
@@ -1049,8 +1107,13 @@ function RemoteBrowser({
               <div className="remote-footer">
                 <span>
                   {interval === 1440
-                    ? `Atualização diária às ${dailyTime} (${timeZone}). A primeira carga é imediata; as seguintes dependem da ativação do agendamento. O horário é previsto e pode variar conforme a fila.`
-                    : "Os dashboards usarão esta fonte a cada atualização."}
+                    ? translate(
+                        "Atualização diária às {v0} ({v1}). A primeira carga é imediata; as seguintes dependem da ativação do agendamento. O horário é previsto e pode variar conforme a fila.",
+                        { v0: dailyTime, v1: timeZone },
+                      )
+                    : translate(
+                        "Os dashboards usarão esta fonte a cada atualização.",
+                      )}
                 </span>
                 <button
                   className="primary-button"
@@ -1093,10 +1156,10 @@ function RemoteBrowser({
                   }
                 >
                   {busy
-                    ? "Processando…"
+                    ? translate("Processando…")
                     : binding
-                      ? "Salvar seleção"
-                      : "Criar acompanhamento"}
+                      ? translate("Salvar seleção")
+                      : translate("Criar acompanhamento")}
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -1105,7 +1168,7 @@ function RemoteBrowser({
         )}
         {busy && (
           <p role="status" className="connection-muted">
-            Consultando o conteúdo…
+            {translate(" Consultando o conteúdo… ")}
           </p>
         )}
       </DialogContent>

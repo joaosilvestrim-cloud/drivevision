@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -77,18 +78,19 @@ export function Choice({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  items: { value: string; label: string }[];
+  items: { value: string; label: string; raw?: boolean }[];
   disabled?: boolean;
 }) {
+  const selected = items.find(i => i.value === value);
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger aria-label={label}>
-        <SelectValue />
+      <SelectTrigger aria-label={translate(label)}>
+        <SelectValue>{selected?.raw ? selected.label : translate(selected?.label)}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         {items.map((i) => (
           <SelectItem key={i.value} value={i.value}>
-            {i.label}
+            {i.raw ? i.label : translate(i.label)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -98,7 +100,7 @@ export function Choice({
 const shortDate = (value: string) => {
   const t = parseDate(value);
   return t !== null
-    ? new Intl.DateTimeFormat("pt-BR", {
+    ? new Intl.DateTimeFormat(locale(), {
         day: "2-digit",
         month: "short",
         timeZone: "UTC",
@@ -136,8 +138,10 @@ export function DataPreview({
         </TableBody>
       </Table>
       <p>
-        Prévia de {Math.min(limit, source.rows.length)} de{" "}
-        {source.rows.length.toLocaleString("pt-BR")} registros.
+        {translate(" Prévia de ")}
+        {Math.min(limit, source.rows.length)} {translate(" de")}{" "}
+        {source.rows.length.toLocaleString(locale())}{" "}
+        {translate(" registros. ")}
       </p>
     </div>
   );
@@ -239,24 +243,27 @@ export function AnalyticsStudio({
   );
   return (
     <div className="studio-layout">
-      <section className="dashboard-surface" aria-label="Painel de análise">
+      <section
+        className="dashboard-surface"
+        aria-label={translate("Painel de análise")}
+      >
         <div className="dashboard-toolbar">
           <span className="demo-label">
             <Database size={13} />
-            {source.demo ? "Dados de demonstração" : source.name}
+            {source.demo ? translate("Dados de demonstração") : source.name}
           </span>
           <div className="toolbar-actions">
             <button
               className="text-button"
-              aria-label="Personalizar análise"
+              aria-label={translate("Personalizar análise")}
               onClick={() => setSettings(true)}
             >
               <SlidersHorizontal size={16} />
-              <span>Personalizar</span>
+              <span>{translate("Personalizar")}</span>
             </button>
             <button
               className="text-button"
-              aria-label="Exportar CSV filtrado"
+              aria-label={translate("Exportar CSV filtrado")}
               onClick={() =>
                 downloadFile(
                   "drivedata-dados.csv",
@@ -266,34 +273,38 @@ export function AnalyticsStudio({
               }
             >
               <Download size={16} />
-              <span>CSV</span>
+              <span>{translate("CSV")}</span>
             </button>
           </div>
         </div>
         <div className="metrics">
           {[
             {
-              label: `Total · ${config.metric}`,
+              label: translate("Total · {v0}", { v0: config.metric }),
               value: formatValue(data.total, config.metric, true),
               caption: "Soma dos valores preenchidos",
             },
             {
               label: "Registros analisados",
-              value: data.rows.length.toLocaleString("pt-BR"),
+              value: data.rows.length.toLocaleString(locale()),
               caption:
                 config.period === "all"
-                  ? "Todos os registros da base"
-                  : `Últimos ${config.period} dias da base`,
+                  ? translate("Todos os registros da base")
+                  : translate("Últimos {v0} dias da base", {
+                      v0: config.period,
+                    }),
             },
             {
-              label: `Média · ${config.metric}`,
+              label: translate("Média · {v0}", { v0: config.metric }),
               value: formatValue(data.average, config.metric, true),
-              caption: `${data.valid.toLocaleString("pt-BR")} valores preenchidos`,
+              caption: translate("{v0} valores preenchidos", {
+                v0: data.valid.toLocaleString("pt-BR"),
+              }),
             },
           ].map(({ label, value, caption }, i) => (
             <article className="metric" key={i}>
               <div className="metric-label">
-                {label}
+                {translate(label)}
                 <ArrowUpRight size={16} />
               </div>
               <strong
@@ -307,7 +318,7 @@ export function AnalyticsStudio({
               >
                 {value}
               </strong>
-              <span>{caption}</span>
+              <span>{translate(caption)}</span>
               <div
                 className="metric-accent"
                 style={{ width: `${45 + i * 17}%` }}
@@ -321,10 +332,20 @@ export function AnalyticsStudio({
               <h2>{chartTitle}</h2>
               <p>
                 {config.chart === "bar"
-                  ? `Até 12 grupos · ${config.aggregation === "average" ? "média dos valores" : config.aggregation === "count" ? "contagem de linhas" : "soma dos valores"}`
+                  ? translate("Até 12 grupos · {v0}", {
+                      v0:
+                        config.aggregation === "average"
+                          ? translate("média dos valores")
+                          : config.aggregation === "count"
+                            ? "contagem de linhas"
+                            : "soma dos valores",
+                    })
                   : data.timeKey
-                    ? `Agrupado por ${data.timeKey} · ${mode.toLowerCase()}`
-                    : "Sem coluna de data · agrupado por categoria"}
+                    ? translate("Agrupado por {v0} · {v1}", {
+                        v0: data.timeKey,
+                        v1: mode.toLowerCase(),
+                      })
+                    : translate("Sem coluna de data · agrupado por categoria")}
               </p>
             </div>
             <Tabs
@@ -334,10 +355,16 @@ export function AnalyticsStudio({
               }
             >
               <TabsList>
-                <TabsTrigger value="area" aria-label="Gráfico de linha">
+                <TabsTrigger
+                  value="area"
+                  aria-label={translate("Gráfico de linha")}
+                >
                   <LineChart size={16} />
                 </TabsTrigger>
-                <TabsTrigger value="bar" aria-label="Gráfico de barras">
+                <TabsTrigger
+                  value="bar"
+                  aria-label={translate("Gráfico de barras")}
+                >
                   <BarChart3 size={16} />
                 </TabsTrigger>
               </TabsList>
@@ -346,7 +373,10 @@ export function AnalyticsStudio({
           <div
             className="main-chart"
             role="img"
-            aria-label={`${chartTitle}. ${data.series.length} grupos. Valores detalhados em Ver dados.`}
+            aria-label={translate(
+              "{v0}. {v1} grupos. Valores detalhados em Ver dados.",
+              { v0: chartTitle, v1: data.series.length },
+            )}
           >
             {mounted && data.series.length > 0 ? (
               <ResponsiveContainer
@@ -403,14 +433,14 @@ export function AnalyticsStudio({
             ) : (
               <div className="empty-chart">
                 {mounted
-                  ? "Nenhum registro neste período."
-                  : "Preparando gráfico…"}
+                  ? translate("Nenhum registro neste período.")
+                  : translate("Preparando gráfico…")}
               </div>
             )}
           </div>
           <div className="chart-footer">
             <Choice
-              label="Período da análise"
+              label={translate("Período da análise")}
               value={config.period}
               disabled={!source.dates.length}
               onChange={(v) =>
@@ -423,7 +453,7 @@ export function AnalyticsStudio({
               ]}
             />
             <button className="text-button" onClick={() => setTable(true)}>
-              <Table2 size={15} /> Ver dados
+              <Table2 size={15} /> {translate(" Ver dados ")}
             </button>
           </div>
         </article>
@@ -431,9 +461,10 @@ export function AnalyticsStudio({
           <article className="chart-card">
             <div className="card-heading">
               <h2>
-                {mode} por {config.dimension}
+                {translate(mode)} {translate(" por ")}
+                {config.dimension}
               </h2>
-              <span className="subtle">Top 5</span>
+              <span className="subtle">{translate("Top 5")}</span>
             </div>
             {data.ranked.slice(0, 5).map((row) => (
               <div className="rank-row" key={row.name}>
@@ -451,58 +482,70 @@ export function AnalyticsStudio({
               </div>
             ))}
             {data.ranked.length === 0 && (
-              <p className="subtle">Não há grupos neste período.</p>
+              <p className="subtle">
+                {translate("Não há grupos neste período.")}
+              </p>
             )}
           </article>
           <article className="insight-card">
             <span className="insight-icon">
               <Sparkles size={20} />
             </span>
-            <span className="eyebrow">DESTAQUE DA BASE</span>
-            <h2>{top?.name || "Sem resultados"}</h2>
+
+            <h2>{top?.name || translate("Sem resultados")}</h2>
             <p>
               {top ? (
                 <>
-                  Tem o maior resultado de{" "}
-                  <strong>{formatValue(top.value, unit)}</strong> entre os
-                  grupos de {config.dimension.toLowerCase()}, usando{" "}
-                  {mode.toLowerCase()}.
+                  {translate(" Tem o maior resultado de")}{" "}
+                  <strong>{formatValue(top.value, unit)}</strong>{" "}
+                  {translate(" entre os grupos de ")}
+                  {config.dimension.toLowerCase()}
+                  {translate(", usando")} {mode.toLowerCase()}.
                 </>
               ) : (
-                "Selecione outro período para continuar a análise."
+                translate("Selecione outro período para continuar a análise.")
               )}
             </p>
             <span className="insight-bottom">
-              Calculado com os dados selecionados
+              {translate(" Calculado com os dados selecionados ")}
             </span>
             {data.missing > 0 && (
-              <p>{data.missing} valores vazios excluídos da soma e da média.</p>
+              <p>
+                {data.missing}{" "}
+                {translate(" valores vazios excluídos da soma e da média.")}
+              </p>
             )}
           </article>
         </div>
       </section>
-      <aside className="assistant-panel" aria-label="Assistente de análises">
+      <aside
+        className="assistant-panel"
+        aria-label={translate("Assistente de análises")}
+      >
         <div className="assistant-header">
           <span className="assistant-icon">
             <Sparkles size={20} />
           </span>
           <div>
-            <h2>Assistente DriveData</h2>
-            <span>Seu próximo insight começa aqui</span>
+            <h2>{translate("Assistente DriveData")}</h2>
+            <span>{translate("Seu próximo insight começa aqui")}</span>
           </div>
         </div>
         <div className="assistant-body">
-          <span className="mode-label">PRÉVIA · COMANDOS GUIADOS</span>
+          <span className="mode-label">
+            {translate("PRÉVIA · COMANDOS GUIADOS")}
+          </span>
           {messages.length === 0 ? (
             <>
               <div className="assistant-greeting">
                 <h3>
-                  Vamos olhar para
-                  <br /> os seus dados?
+                  {translate(" Vamos olhar para ")}
+                  <br /> {translate(" os seus dados? ")}
                 </h3>
                 <p>
-                  Peça uma soma, uma média ou uma nova visão dos seus
-                  resultados.
+                  {translate(
+                    " Peça uma soma, uma média ou uma nova visão dos seus resultados. ",
+                  )}
                 </p>
               </div>
               <div className="context-pill">
@@ -510,14 +553,16 @@ export function AnalyticsStudio({
                 <span>{source.name}</span>
                 <Check size={14} />
               </div>
-              <span className="suggest-label">EXPERIMENTE UM PEDIDO</span>
+              <span className="suggest-label">
+                {translate("EXPERIMENTE UM PEDIDO")}
+              </span>
               {suggestion.map((t) => (
                 <button
                   key={t}
                   className="suggestion"
                   onClick={() => submit(t)}
                 >
-                  {t}
+                  {translate(t)}
                   <ArrowUpRight size={16} />
                 </button>
               ))}
@@ -531,7 +576,11 @@ export function AnalyticsStudio({
             >
               {messages.map((m, i) => (
                 <div className={`chat-message ${m.role}`} key={i}>
-                  <span>{m.role === "user" ? "Você" : "DriveData"}</span>
+                  <span>
+                    {m.role === "user"
+                      ? translate("Você")
+                      : translate("DriveData")}
+                  </span>
                   <p>{m.text}</p>
                 </div>
               ))}
@@ -549,7 +598,7 @@ export function AnalyticsStudio({
                 ]);
               }}
             >
-              <Undo2 size={14} /> Desfazer alteração
+              <Undo2 size={14} /> {translate(" Desfazer alteração ")}
             </button>
           )}
         </div>
@@ -561,8 +610,8 @@ export function AnalyticsStudio({
           }}
         >
           <textarea
-            aria-label="Descreva sua análise"
-            placeholder="O que você quer descobrir?"
+            aria-label={translate("Descreva sua análise")}
+            placeholder={translate("O que você quer descobrir?")}
             maxLength={1200}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -578,10 +627,10 @@ export function AnalyticsStudio({
             }}
           />
           <div>
-            <span>Enter para enviar</span>
+            <span>{translate("Enter para enviar")}</span>
             <button
               type="submit"
-              aria-label="Enviar pedido"
+              aria-label={translate("Enviar pedido")}
               disabled={!prompt.trim()}
             >
               <ArrowUp size={18} />
@@ -589,42 +638,50 @@ export function AnalyticsStudio({
           </div>
         </form>
         <p className="assistant-footnote">
-          IA generativa ainda não conectada.
+          {translate(" IA generativa ainda não conectada. ")}
           <br />
-          Seus dados ficam neste navegador.
+          {translate(" Seus dados ficam neste navegador. ")}
         </p>
       </aside>
       <Dialog open={settings} onOpenChange={setSettings}>
         <DialogContent className="app-dialog">
           <DialogHeader>
-            <DialogTitle>Personalizar análise</DialogTitle>
+            <DialogTitle>{translate("Personalizar análise")}</DialogTitle>
             <DialogDescription>
-              Escolha os campos que fazem parte do seu painel.
+              {translate(" Escolha os campos que fazem parte do seu painel. ")}
             </DialogDescription>
           </DialogHeader>
           <div className="form-fields">
             <label>
-              Indicador
+              {translate(" Indicador ")}
               <Choice
-                label="Indicador"
+                label={translate("Indicador")}
                 value={config.metric}
                 onChange={(v) => change({ ...config, metric: v })}
-                items={source.numeric.map((c) => ({ value: c, label: c }))}
+                items={source.numeric.map((c) => ({
+                  raw: true,
+                  value: c,
+                  label: c,
+                }))}
               />
             </label>
             <label>
-              Agrupar por
+              {translate(" Agrupar por ")}
               <Choice
-                label="Agrupar por"
+                label={translate("Agrupar por")}
                 value={config.dimension}
                 onChange={(v) => change({ ...config, dimension: v })}
-                items={source.columns.map((c) => ({ value: c, label: c }))}
+                items={source.columns.map((c) => ({
+                  raw: true,
+                  value: c,
+                  label: c,
+                }))}
               />
             </label>
             <label>
-              Cálculo
+              {translate(" Cálculo ")}
               <Choice
-                label="Cálculo"
+                label={translate("Cálculo")}
                 value={config.aggregation}
                 onChange={(v) =>
                   change({ ...config, aggregation: v as Config["aggregation"] })
@@ -638,21 +695,22 @@ export function AnalyticsStudio({
             </label>
           </div>
           <p className="subtle">
-            Os cartões mostram o total, a quantidade de registros e a média. O
-            cálculo selecionado se aplica aos gráficos.
+            {translate(
+              " Os cartões mostram o total, a quantidade de registros e a média. O cálculo selecionado se aplica aos gráficos. ",
+            )}
           </p>
           <button className="primary-button" onClick={() => setSettings(false)}>
-            Concluir
+            {translate(" Concluir ")}
           </button>
         </DialogContent>
       </Dialog>
       <Dialog open={table} onOpenChange={setTable}>
         <DialogContent className="app-dialog wide-dialog">
           <DialogHeader>
-            <DialogTitle>Dados da análise</DialogTitle>
+            <DialogTitle>{translate("Dados da análise")}</DialogTitle>
             <DialogDescription>
-              {source.name} · {data.rows.length} registros no período
-              selecionado.
+              {source.name} · {data.rows.length}{" "}
+              {translate(" registros no período selecionado. ")}
             </DialogDescription>
           </DialogHeader>
           <DataPreview source={{ ...source, rows: data.rows }} limit={50} />
@@ -666,7 +724,8 @@ export function AnalyticsStudio({
               )
             }
           >
-            <Download size={16} /> Exportar todos os registros filtrados
+            <Download size={16} />{" "}
+            {translate(" Exportar todos os registros filtrados ")}
           </button>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
@@ -74,7 +75,7 @@ type Listing = {
   counts: Record<string, number>;
 };
 const when = (s: string) =>
-  new Date(s).toLocaleString("pt-BR", {
+  new Date(s).toLocaleString(locale(), {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -89,14 +90,16 @@ export function HelpWidget({ account }: { account: Account | null }) {
         aria-haspopup="dialog"
       >
         <MessageCircle size={21} />
-        <span>Ajuda e contato</span>
+        <span>{translate("Ajuda e contato")}</span>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="help-dialog">
           <DialogHeader>
-            <DialogTitle>Como podemos ajudar?</DialogTitle>
+            <DialogTitle>{translate("Como podemos ajudar?")}</DialogTitle>
             <DialogDescription>
-              DriveVision · Guias práticos e contato com a DriveData
+              {translate(
+                " DriveVision · Guias práticos e contato com a DriveData ",
+              )}
             </DialogDescription>
           </DialogHeader>
           {open && (
@@ -129,7 +132,7 @@ function HelpCenter({ account }: { account: Account | null }) {
   }
   return (
     <div className="help-center">
-      <nav className="help-tabs" aria-label="Áreas de ajuda">
+      <nav className="help-tabs" aria-label={translate("Áreas de ajuda")}>
         {[
           ["chat", "Assistente"],
           ["guides", "Guias"],
@@ -137,7 +140,7 @@ function HelpCenter({ account }: { account: Account | null }) {
           ...(account ? [["tickets", "Meus chamados"]] : []),
         ].map(([id, label]) => (
           <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>
-            {label}
+            {translate(label)}
           </button>
         ))}
       </nav>
@@ -145,14 +148,17 @@ function HelpCenter({ account }: { account: Account | null }) {
         <>
           <div className="help-chat" role="log" aria-live="polite">
             <div className="help-bubble">
-              <span className="help-kicker">ASSISTENTE DRIVEVISION</span>
               <p>
-                Olá{account ? `, ${account.name.split(" ")[0]}` : ""}! Posso
-                orientar você sobre dados, gráficos, conexões e assinatura.
+                {translate(" Olá")}
+                {account ? `, ${account.name.split(" ")[0]}` : ""}
+                {translate(
+                  "! Posso orientar você sobre dados, gráficos, conexões e assinatura. ",
+                )}
               </p>
               <small>
-                Respostas automáticas baseadas nos nossos guias. Não acesso seus
-                arquivos nem sua conta.
+                {translate(
+                  " Respostas automáticas baseadas nos nossos guias. Não acesso seus arquivos nem sua conta. ",
+                )}
               </small>
             </div>
             {chat.map((item) => (
@@ -162,26 +168,27 @@ function HelpCenter({ account }: { account: Account | null }) {
                   {item.answers.length ? (
                     item.answers.map((t) => (
                       <section key={t.id}>
-                        <strong>{t.title}</strong>
-                        <p>{t.text}</p>
+                        <strong>{translate(t.title)}</strong>
+                        <p>{translate(t.text)}</p>
                         {t.href && (
                           <a href={t.href}>
-                            {t.action} <ArrowRight size={14} />
+                            {translate(t.action)} <ArrowRight size={14} />
                           </a>
                         )}
                       </section>
                     ))
                   ) : (
                     <p>
-                      Não encontrei uma orientação segura para essa dúvida. Use
-                      Falar conosco para a equipe analisar seu caso.
+                      {translate(
+                        " Não encontrei uma orientação segura para essa dúvida. Use Falar conosco para a equipe analisar seu caso. ",
+                      )}
                     </p>
                   )}
                   <button
                     className="help-inline"
                     onClick={() => setTab("contact")}
                   >
-                    Preciso falar com a equipe
+                    {translate(" Preciso falar com a equipe ")}
                   </button>
                 </div>
               </div>
@@ -195,8 +202,8 @@ function HelpCenter({ account }: { account: Account | null }) {
               "Conectar OneDrive",
               "Cancelar assinatura",
             ].map((q) => (
-              <button key={q} onClick={() => ask(q)}>
-                {q}
+              <button key={q} onClick={() => ask(translate(q))}>
+                {translate(q)}
               </button>
             ))}
           </div>
@@ -208,18 +215,23 @@ function HelpCenter({ account }: { account: Account | null }) {
             }}
           >
             <input
-              aria-label="Sua dúvida"
-              placeholder="Digite sua dúvida…"
+              aria-label={translate("Sua dúvida")}
+              placeholder={translate("Digite sua dúvida…")}
               maxLength={400}
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
-            <button disabled={!text.trim()} aria-label="Enviar dúvida">
+            <button
+              disabled={!text.trim()}
+              aria-label={translate("Enviar dúvida")}
+            >
               <Send size={18} />
             </button>
           </form>
           <small>
-            Não envie senhas, cartões ou dados de clientes neste chat.
+            {translate(
+              " Não envie senhas, cartões ou dados de clientes neste chat. ",
+            )}
           </small>
         </>
       )}
@@ -228,10 +240,10 @@ function HelpCenter({ account }: { account: Account | null }) {
           <label className="help-search">
             <Search size={17} />
             <input
-              aria-label="Buscar orientações"
+              aria-label={translate("Buscar orientações")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar: filtros, planilha, cobrança…"
+              placeholder={translate("Buscar: filtros, planilha, cobrança…")}
             />
           </label>
           {topics.map((t) => (
@@ -239,21 +251,23 @@ function HelpCenter({ account }: { account: Account | null }) {
               <summary>
                 <BookOpen size={17} />
                 <span>
-                  <small>{t.group}</small>
-                  {t.title}
+                  <small>{translate(t.group)}</small>
+                  {translate(t.title)}
                 </span>
               </summary>
-              <p>{t.text}</p>
-              {t.href && <a href={t.href}>{t.action} →</a>}
+              <p>{translate(t.text)}</p>
+              {t.href && <a href={t.href}>{translate(t.action)} →</a>}
             </details>
           ))}
           {!topics.length && (
             <p>
-              Nenhum guia encontrado. Nossa equipe pode ajudar pelo formulário.
+              {translate(
+                " Nenhum guia encontrado. Nossa equipe pode ajudar pelo formulário. ",
+              )}
             </p>
           )}
           <button className="help-primary" onClick={() => setTab("contact")}>
-            <Headphones size={18} /> Falar com a DriveData
+            <Headphones size={18} /> {translate(" Falar com a DriveData ")}
           </button>
         </div>
       )}
@@ -304,18 +318,23 @@ function ContactForm({
     return (
       <div className="help-success" role="status">
         <CheckCircle2 size={36} />
-        <h3>Recebemos seu chamado.</h3>
+        <h3>{translate("Recebemos seu chamado.")}</h3>
         <p>
-          Protocolo <strong>{receipt}</strong>
+          {translate(" Protocolo ")}
+          <strong>{receipt}</strong>
         </p>
         <p>
           {account
-            ? "Acompanhe a resposta e envie informações adicionais em Meus chamados."
-            : "A equipe entrará em contato pelo e-mail informado. Guarde seu protocolo."}
+            ? translate(
+                "Acompanhe a resposta e envie informações adicionais em Meus chamados.",
+              )
+            : translate(
+                "A equipe entrará em contato pelo e-mail informado. Guarde seu protocolo.",
+              )}
         </p>
         {account && (
           <button className="help-primary" onClick={onTickets}>
-            Ver meus chamados
+            {translate(" Ver meus chamados ")}
           </button>
         )}
         <button
@@ -325,7 +344,7 @@ function ContactForm({
             setRequestId(crypto.randomUUID());
           }}
         >
-          Abrir outro atendimento
+          {translate(" Abrir outro atendimento ")}
         </button>
       </div>
     );
@@ -334,16 +353,17 @@ function ContactForm({
       <div className="help-callout">
         <Headphones size={24} />
         <div>
-          <strong>Conte com a DriveData.</strong>
+          <strong>{translate("Conte com a DriveData.")}</strong>
           <p>
-            Descreva o que precisa. Sua solicitação será registrada para nossa
-            equipe. Campos com * são obrigatórios.
+            {translate(
+              " Descreva o que precisa. Sua solicitação será registrada para nossa equipe. Campos com * são obrigatórios. ",
+            )}
           </p>
         </div>
       </div>
       <div className="help-form-grid">
         <label>
-          Nome *
+          {translate(" Nome * ")}
           <input
             name="name"
             required
@@ -355,7 +375,7 @@ function ContactForm({
           />
         </label>
         <label>
-          E-mail de retorno *
+          {translate(" E-mail de retorno * ")}
           <input
             name="email"
             type="email"
@@ -367,95 +387,105 @@ function ContactForm({
           />
         </label>
         <label>
-          Empresa
+          {translate(" Empresa ")}
           <input name="company" maxLength={160} autoComplete="organization" />
         </label>
         <label>
-          Telefone (opcional)
+          {translate(" Telefone (opcional) ")}
           <input name="phone" type="tel" maxLength={32} autoComplete="tel" />
         </label>
         <label>
-          Assunto do atendimento *
+          {translate(" Assunto do atendimento * ")}
           <select name="category" required defaultValue="">
             <option value="" disabled>
-              Selecione
+              {translate(" Selecione ")}
             </option>
             {Object.entries(categories).map(([v, label]) => (
               <option key={v} value={v}>
-                {label}
+                {translate(label)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Impacto *
+          {translate(" Impacto * ")}
           <select name="priority" defaultValue="normal">
-            <option value="normal">Dúvida ou melhoria</option>
-            <option value="alta">Não consigo continuar meu trabalho</option>
+            <option value="normal">{translate("Dúvida ou melhoria")}</option>
+            <option value="alta">
+              {translate("Não consigo continuar meu trabalho")}
+            </option>
           </select>
         </label>
       </div>
       <label>
-        Título *
+        {translate(" Título * ")}
         <input
           name="subject"
-          placeholder="Ex.: não consigo importar minha planilha"
+          placeholder={translate("Ex.: não consigo importar minha planilha")}
           required
           minLength={5}
           maxLength={160}
         />
       </label>
       <label>
-        Como podemos ajudar? *
+        {translate(" Como podemos ajudar? * ")}
         <textarea
           name="description"
           rows={4}
           required
           minLength={20}
           maxLength={5000}
-          placeholder="Conte o contexto e descreva sua dúvida ou dificuldade (mínimo de 20 caracteres)."
+          placeholder={translate(
+            "Conte o contexto e descreva sua dúvida ou dificuldade (mínimo de 20 caracteres).",
+          )}
         />
       </label>
       <label>
-        O que você fez antes de acontecer? (opcional)
+        {translate(" O que você fez antes de acontecer? (opcional) ")}
         <textarea
           name="steps"
           rows={2}
           maxLength={2000}
-          placeholder="Informe os passos e a mensagem de erro, se houver."
+          placeholder={translate(
+            "Informe os passos e a mensagem de erro, se houver.",
+          )}
         />
       </label>
       <label>
-        Qual resultado você esperava? (opcional)
+        {translate(" Qual resultado você esperava? (opcional) ")}
         <textarea name="expected" rows={2} maxLength={1000} />
       </label>
       <label className="help-honey" aria-hidden="true">
-        Website
+        {translate(" Website ")}
         <input name="website" tabIndex={-1} autoComplete="off" />
       </label>
       <p className="help-safety">
-        Não inclua senhas, códigos de acesso, dados de cartão ou dados pessoais
-        dos seus clientes. O suporte não solicita essas informações.
+        {translate(
+          " Não inclua senhas, códigos de acesso, dados de cartão ou dados pessoais dos seus clientes. O suporte não solicita essas informações. ",
+        )}
       </p>
       <label className="help-consent">
         <input name="consent" type="checkbox" required />
         <span>
-          Autorizo o uso dos dados deste formulário para atender minha
-          solicitação, conforme a{" "}
+          {translate(
+            " Autorizo o uso dos dados deste formulário para atender minha solicitação, conforme a",
+          )}{" "}
           <a href="/?view=privacy" target="_blank" rel="noreferrer">
-            política de privacidade
+            {translate(" política de privacidade ")}
           </a>
           . *
         </span>
       </label>
       {error && (
         <p role="alert" className="help-error">
-          {error}
+          {translate(error)}
         </p>
       )}
       <button className="help-primary" disabled={busy}>
         <Send size={17} />
-        {busy ? "Registrando…" : "Enviar para a DriveData"}
+        {busy
+          ? translate("Registrando…")
+          : translate("Enviar para a DriveData")}
       </button>
     </form>
   );
@@ -542,13 +572,14 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
     >
       <div className="help-inbox-title">
         <div>
-          <span className="help-kicker">
-            {admin ? "RELACIONAMENTO COM CLIENTES" : "SEU ATENDIMENTO"}
-          </span>
-          <h2>{admin ? "Central de atendimento" : "Meus chamados"}</h2>
+          <h2>
+            {admin
+              ? translate("Central de atendimento")
+              : translate("Meus chamados")}
+          </h2>
         </div>
         <button
-          aria-label="Atualizar chamados"
+          aria-label={translate("Atualizar chamados")}
           onClick={() => setRevision((v) => v + 1)}
           disabled={busy || loading}
         >
@@ -557,77 +588,80 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
       </div>
       {admin && (
         <p>
-          Novos chamados e mensagens dos clientes notificam Tamires e João.
-          Respostas abaixo ficam disponíveis para clientes logados. Para
-          visitantes, use o e-mail informado.
+          {translate(
+            " Novos chamados e mensagens dos clientes notificam Tamires e João. Respostas abaixo ficam disponíveis para clientes logados. Para visitantes, use o e-mail informado. ",
+          )}
         </p>
       )}
       {error && (
         <p role="alert" className="help-error">
-          {error}
+          {translate(error)}
         </p>
       )}
       {selected ? (
         <>
           <button className="help-inline" onClick={() => setSelected(null)}>
-            ← Voltar à lista
+            {translate(" ← Voltar à lista ")}
           </button>
           {detail ? (
             <article className="support-detail">
               <span className={`support-status ${detail.ticket.status}`}>
-                {statuses[detail.ticket.status]}
+                {translate(statuses[detail.ticket.status])}
               </span>
               <h3>{detail.ticket.subject}</h3>
               <small>
-                Protocolo {detail.ticket.id} · {when(detail.ticket.createdAt)}
+                {translate(" Protocolo ")}
+                {detail.ticket.id} · {when(detail.ticket.createdAt)}
               </small>
               {admin && (
                 <dl className="support-contact">
-                  <dt>Contato</dt>
+                  <dt>{translate("Contato")}</dt>
                   <dd>
                     {detail.ticket.name} ·{" "}
                     <a href={`mailto:${detail.ticket.email}`}>
                       {detail.ticket.email}
                     </a>
                   </dd>
-                  <dt>Empresa / telefone</dt>
+                  <dt>{translate("Empresa / telefone")}</dt>
                   <dd>
-                    {detail.ticket.company || "Não informado"} ·{" "}
-                    {detail.ticket.phone || "Não informado"}
+                    {detail.ticket.company || translate("Não informado")} ·{" "}
+                    {detail.ticket.phone || translate("Não informado")}
                   </dd>
-                  <dt>Categoria / impacto</dt>
+                  <dt>{translate("Categoria / impacto")}</dt>
                   <dd>
-                    {categories[detail.ticket.category]} ·{" "}
+                    {translate(categories[detail.ticket.category])} ·{" "}
                     {detail.ticket.priority === "alta"
-                      ? "Trabalho interrompido"
-                      : "Normal"}
+                      ? translate("Trabalho interrompido")
+                      : translate("Normal")}
                   </dd>
-                  <dt>Origem</dt>
+                  <dt>{translate("Origem")}</dt>
                   <dd>
-                    {detail.ticket.ownerId ? "Cliente conectado" : "Visitante"}{" "}
+                    {detail.ticket.ownerId
+                      ? translate("Cliente conectado")
+                      : translate("Visitante")}{" "}
                     · {detail.ticket.page}
                   </dd>
-                  <dt>Notificações</dt>
+                  <dt>{translate("Notificações")}</dt>
                   <dd>
                     {detail.notifications
                       ?.map(
                         (n) =>
                           `${n.recipient || "Notificação"}: ${n.delivery === "delivered" || n.delivery === "opened" || n.delivery === "clicked" ? "Entrega confirmada" : n.delivery === "bounced" ? "Devolvida — confira o endereço" : n.delivery === "delivery_delayed" ? "Entrega atrasada" : ({ sent: "Enviada ao provedor", pending: "Na fila", sending: "Em envio", failed: "Falhou — confira o endereço" } as Record<string, string>)[n.state]}`,
                       )
-                      .join(" · ") || "Nenhuma"}
+                      .join(" · ") || translate("Nenhuma")}
                   </dd>
                 </dl>
               )}
               <p className="support-message">{detail.ticket.description}</p>
               {detail.ticket.steps && (
                 <>
-                  <strong>Passos realizados</strong>
+                  <strong>{translate("Passos realizados")}</strong>
                   <p className="support-message">{detail.ticket.steps}</p>
                 </>
               )}
               {detail.ticket.expected && (
                 <>
-                  <strong>Resultado esperado</strong>
+                  <strong>{translate("Resultado esperado")}</strong>
                   <p className="support-message">{detail.ticket.expected}</p>
                 </>
               )}
@@ -637,8 +671,10 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
                   className={`support-message ${m.staff ? "staff" : ""}`}
                 >
                   <small>
-                    {m.staff ? "Equipe DriveData" : "Cliente"} ·{" "}
-                    {when(m.createdAt)}
+                    {m.staff
+                      ? translate("Equipe DriveData")
+                      : translate("Cliente")}{" "}
+                    · {when(m.createdAt)}
                   </small>
                   <p>{m.body}</p>
                 </div>
@@ -646,14 +682,15 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
               <form className="help-form" onSubmit={save}>
                 {admin && !detail.ticket.ownerId ? (
                   <p>
-                    Este visitante não tem acesso a Meus chamados. Contate-o por
-                    e-mail; registre abaixo o retorno para o histórico interno.
+                    {translate(
+                      " Este visitante não tem acesso a Meus chamados. Contate-o por e-mail; registre abaixo o retorno para o histórico interno. ",
+                    )}
                   </p>
                 ) : null}
                 <label>
                   {admin
-                    ? "Resposta / registro do atendimento"
-                    : "Enviar mais informações"}
+                    ? translate("Resposta / registro do atendimento")
+                    : translate("Enviar mais informações")}
                   <textarea
                     rows={3}
                     value={body}
@@ -664,14 +701,14 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
                 </label>
                 {admin && (
                   <label>
-                    Situação
+                    {translate(" Situação ")}
                     <select
                       value={nextStatus}
                       onChange={(e) => setNextStatus(e.target.value)}
                     >
                       {Object.entries(statuses).map(([v, label]) => (
                         <option key={v} value={v}>
-                          {label}
+                          {translate(label)}
                         </option>
                       ))}
                     </select>
@@ -682,15 +719,15 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
                   disabled={busy || (!admin && !body.trim())}
                 >
                   {busy
-                    ? "Salvando…"
+                    ? translate("Salvando…")
                     : admin
-                      ? "Salvar atendimento"
-                      : "Enviar mensagem"}
+                      ? translate("Salvar atendimento")
+                      : translate("Enviar mensagem")}
                 </button>
               </form>
             </article>
           ) : (
-            <p role="status">Carregando atendimento…</p>
+            <p role="status">{translate("Carregando atendimento…")}</p>
           )}
         </>
       ) : (
@@ -704,46 +741,50 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
             }}
           >
             <input
-              aria-label="Buscar chamados"
-              placeholder="Buscar assunto ou protocolo"
+              aria-label={translate("Buscar chamados")}
+              placeholder={translate("Buscar assunto ou protocolo")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button aria-label="Buscar">
+            <button aria-label={translate("Buscar")}>
               <Search size={18} />
             </button>
             <select
-              aria-label="Situação do chamado"
+              aria-label={translate("Situação do chamado")}
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="all">Todas as situações</option>
+              <option value="all">{translate("Todas as situações")}</option>
               {Object.entries(statuses).map(([v, label]) => (
                 <option key={v} value={v}>
-                  {label}
+                  {translate(label)}
                 </option>
               ))}
             </select>
           </form>
           {loading ? (
-            <p role="status">Carregando chamados…</p>
+            <p role="status">{translate("Carregando chamados…")}</p>
           ) : listing?.tickets.length ? (
             <>
-              <p>{listing.counts.total} atendimento(s) encontrado(s)</p>
+              <p>
+                {listing.counts.total}{" "}
+                {translate(" atendimento(s) encontrado(s)")}
+              </p>
               <div className="support-list">
                 {listing.tickets.map((t) => (
                   <button key={t.id} onClick={() => setSelected(t.id)}>
                     <div>
                       <span className={`support-status ${t.status}`}>
-                        {statuses[t.status]}
+                        {translate(statuses[t.status])}
                       </span>
                       <strong>{t.subject}</strong>
                       <small>
                         {admin ? `${t.name} · ` : ""}
-                        {categories[t.category]} · {when(t.createdAt)}
+                        {translate(categories[t.category])} ·{" "}
+                        {when(t.createdAt)}
                       </small>
                     </div>
                     <ArrowRight size={18} />
@@ -755,23 +796,25 @@ export function SupportInbox({ admin = false }: { admin?: boolean }) {
                   disabled={listing.page <= 1}
                   onClick={() => setPage(listing.page - 1)}
                 >
-                  Anterior
+                  {translate(" Anterior ")}
                 </button>
                 <span>
-                  {listing.page} de {listing.pages}
+                  {listing.page} {translate(" de ")}
+                  {listing.pages}
                 </span>
                 <button
                   disabled={listing.page >= listing.pages}
                   onClick={() => setPage(listing.page + 1)}
                 >
-                  Próxima
+                  {translate(" Próxima ")}
                 </button>
               </div>
             </>
           ) : (
             <p>
-              Nenhum chamado encontrado. Use Falar conosco para abrir um
-              atendimento.
+              {translate(
+                " Nenhum chamado encontrado. Use Falar conosco para abrir um atendimento. ",
+              )}
             </p>
           )}
         </>

@@ -1,6 +1,6 @@
 # Administração de clientes
 
-Acesse **Administração** com uma conta de superadministrador. O painel cadastra empresas, busca e pagina clientes, altera a identificação comercial do plano, suspende/reativa o acesso e exibe as últimas 50 ações administrativas de cada cliente.
+Acesse **Administração** em `https://vision.drivedata.com.br/?view=admin` com uma conta de superadministrador. Se não houver sessão, o link abre o login e mantém o destino administrativo. O painel cadastra empresas, busca e pagina clientes, altera a identificação comercial do plano, suspende/reativa o acesso e exibe as últimas 50 ações administrativas de cada cliente.
 
 ## Jornada do cliente
 
@@ -24,7 +24,11 @@ O botão de novo convite aparece apenas para contas ainda não ativadas e invali
 
 ## Assinaturas online
 
-A página pública oferece DriveVision por **R$ 59,90/mês**, com checkout recorrente de cartão no Asaas. Novos cadastros públicos precisam aceitar os termos, confirmar o e-mail e concluir o pagamento. Contas existentes e as provisionadas pelo administrador continuam com acesso manual. Alterar o rótulo do plano ou reativar uma conta não substitui o pagamento de uma assinatura online.
+A página pública oferece DriveVision por **R$ 59,90/mês**, com checkout recorrente de cartão no Asaas. Novos cadastros públicos precisam aceitar os termos, confirmar o e-mail e cadastrar o cartão no checkout para iniciar os sete dias grátis elegíveis. A data da primeira cobrança é apresentada antes da confirmação. Contas existentes e as provisionadas pelo administrador continuam com acesso manual. Alterar o rótulo do plano ou reativar uma conta não substitui a ativação de uma assinatura online.
+
+Após confirmar o e-mail, uma sessão da mesma conta segue automaticamente para Minha assinatura quando ainda não tem acesso, ou para o workspace quando já está liberada. Sem sessão, ou com outra conta aberta, segue para o login. O link de confirmação não autentica silenciosamente outra conta.
+
+Cada cadastro público cria conta, workspace privado e registro de assinatura na mesma transação. As consultas usam a conta autenticada e RLS no schema `drivevision`. Uma aba antiga com sessão trocada em outra aba é impedida de operar sobre a nova conta. O isolamento é lógico, em infraestrutura compartilhada, e não corresponde a um banco ou servidor dedicado por cliente.
 
 O painel apresenta a situação financeira dos cadastros online, períodos pagos, renovações canceladas e confirmações que precisam de atenção. A suspensão administrativa prevalece sobre qualquer pagamento. O operador não visualiza as bases dos clientes.
 

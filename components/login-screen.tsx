@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -24,6 +25,7 @@ export function LoginScreen({
   onClearActivation,
   hasSession = false,
   initialRegister = false,
+  verifiedEmail = false,
 }: {
   onLogin: (user: Account) => void;
   onLocal: () => void;
@@ -32,6 +34,7 @@ export function LoginScreen({
   onClearActivation: () => void;
   hasSession?: boolean;
   initialRegister?: boolean;
+  verifiedEmail?: boolean;
 }) {
   const [register, setRegister] = useState(initialRegister),
     [email, setEmail] = useState(""),
@@ -49,7 +52,7 @@ export function LoginScreen({
     if (busy) return;
     setError("");
     if (creating && password !== confirmation) {
-      setError("As senhas precisam ser iguais.");
+      setError(translate("As senhas precisam ser iguais."));
       return;
     }
     setBusy(true);
@@ -75,33 +78,39 @@ export function LoginScreen({
   }
   return (
     <main className="login-world">
+      {verifiedEmail && (
+        <p className="email-notice" role="status">
+          {translate(
+            "E-mail confirmado. Entre com a conta que você acabou de confirmar para continuar a ativação.",
+          )}
+        </p>
+      )}
       <div className="login-noise" aria-hidden="true" />
       <header className="login-header">
-        <a className="drive-brand" href="/" aria-label="DriveData DriveVision">
+        <a
+          className="drive-brand"
+          href="/"
+          aria-label={translate("DriveData DriveVision")}
+        >
           <img src="/drivedata-logo.png" alt="" width={40} height={40} />
           <span>
-            drive<span>data</span>
-            <small>DRIVEVISION</small>
+            {translate(" drive")}
+            <span>{translate("data")}</span>
+            <small>{translate("DRIVEVISION")}</small>
           </span>
         </a>
-        <div className="login-edition">
-          <span /> WORKSPACE DE ANÁLISES
-        </div>
       </header>
       <div className="login-body">
-        <section className="login-story" aria-label="DriveVision">
-          <div className="login-kicker">
-            <span /> INTELIGÊNCIA PARA SUAS DECISÕES
-          </div>
+        <section className="login-story" aria-label={translate("DriveVision")}>
           <h1>
-            Enxergue além.
+            {translate(" Enxergue além. ")}
             <br />
-            <em>Decida melhor.</em>
+            <em>{translate("Decida melhor.")}</em>
           </h1>
           <p>
-            Seus dados têm uma história.
+            {translate(" Seus dados têm uma história. ")}
             <br />
-            Seu próximo grande insight começa aqui.
+            {translate(" Seu próximo grande insight começa aqui. ")}
           </p>
           <div className="login-orbit" aria-hidden="true">
             <div className="orbit-floor" />
@@ -114,7 +123,8 @@ export function LoginScreen({
             <div className="orbit-signal signal-one">
               <ChartNoAxesCombined size={19} />
               <span>
-                DADOS<strong>Novas perspectivas</strong>
+                {translate(" DADOS")}
+                <strong>{translate("Novas perspectivas")}</strong>
               </span>
               <svg viewBox="0 0 80 35">
                 <path
@@ -128,7 +138,8 @@ export function LoginScreen({
             <div className="orbit-signal signal-two">
               <Layers3 size={18} />
               <span>
-                SEU WORKSPACE<strong>Ideias em movimento</strong>
+                {translate(" SEU WORKSPACE")}
+                <strong>{translate("Ideias em movimento")}</strong>
               </span>
               <i />
               <i />
@@ -139,13 +150,13 @@ export function LoginScreen({
           </div>
           <div className="login-capabilities">
             <span>
-              01 <b>Conecte seus dados</b>
+              01 <b>{translate("Conecte seus dados")}</b>
             </span>
             <span>
-              02 <b>Crie suas visões</b>
+              02 <b>{translate("Crie suas visões")}</b>
             </span>
             <span>
-              03 <b>Encontre respostas</b>
+              03 <b>{translate("Encontre respostas")}</b>
             </span>
           </div>
         </section>
@@ -154,27 +165,27 @@ export function LoginScreen({
             <span className="login-access-icon">
               <Fingerprint size={27} />
             </span>
-            <span>SEU ESPAÇO. SUAS POSSIBILIDADES.</span>
+            <span>{translate("SEU ESPAÇO. SUAS POSSIBILIDADES.")}</span>
           </div>
           <h2 id="login-title">
             {activate
-              ? "Sua conta está pronta."
+              ? translate("Sua conta está pronta.")
               : register
-                ? "Vamos começar."
-                : "Bom ter você aqui."}
+                ? translate("Vamos começar.")
+                : translate("Bom ter você aqui.")}
           </h2>
           <p className="login-subtitle">
             {activate
-              ? "Defina sua senha para ativar seu workspace."
+              ? translate("Defina sua senha para ativar seu workspace.")
               : register
-                ? "Comece com 7 dias grátis. Depois, R$ 59,90/mês."
-                : "Entre para continuar de onde parou."}
+                ? translate("Comece com 7 dias grátis. Depois, R$ 59,90/mês.")
+                : translate("Entre para continuar de onde parou.")}
           </p>
           {!activate && (
             <div
               className="login-tabs"
               role="group"
-              aria-label="Acesso à conta"
+              aria-label={translate("Acesso à conta")}
             >
               <button
                 type="button"
@@ -185,7 +196,7 @@ export function LoginScreen({
                   setError("");
                 }}
               >
-                Entrar
+                {translate(" Entrar ")}
               </button>
               <button
                 type="button"
@@ -196,20 +207,20 @@ export function LoginScreen({
                   setError("");
                 }}
               >
-                Criar conta
+                {translate(" Criar conta ")}
               </button>
             </div>
           )}
           <form className="login-form" onSubmit={submit}>
             {register && !activate && (
               <label>
-                Seu nome
+                {translate(" Seu nome ")}
                 <div className="login-input">
                   <UserRound size={18} />
                   <input
                     name="name"
                     autoComplete="name"
-                    placeholder="Como podemos chamar você?"
+                    placeholder={translate("Como podemos chamar você?")}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -222,14 +233,14 @@ export function LoginScreen({
             )}
             {!activate && (
               <label>
-                E-mail
+                {translate(" E-mail ")}
                 <div className="login-input">
                   <Mail size={18} />
                   <input
                     name="email"
                     type="email"
                     autoComplete="username"
-                    placeholder="voce@empresa.com.br"
+                    placeholder={translate("voce@empresa.com.br")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -240,7 +251,7 @@ export function LoginScreen({
               </label>
             )}
             <label>
-              {creating ? "Crie sua senha" : "Senha"}
+              {creating ? translate("Crie sua senha") : translate("Senha")}
               <div className="login-input">
                 <LockKeyhole size={18} />
                 <input
@@ -249,8 +260,8 @@ export function LoginScreen({
                   autoComplete={creating ? "new-password" : "current-password"}
                   placeholder={
                     creating
-                      ? "Pelo menos 12 caracteres"
-                      : "Sua senha de acesso"
+                      ? translate("Pelo menos 12 caracteres")
+                      : translate("Sua senha de acesso")
                   }
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -262,7 +273,11 @@ export function LoginScreen({
                 />
                 <button
                   type="button"
-                  aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
+                  aria-label={
+                    visible
+                      ? translate("Ocultar senha")
+                      : translate("Mostrar senha")
+                  }
                   aria-pressed={visible}
                   onClick={() => setVisible(!visible)}
                 >
@@ -273,18 +288,19 @@ export function LoginScreen({
             {creating && (
               <>
                 <p className="login-password-help" id="password-guidance">
-                  Use 12 ou mais caracteres. Uma frase longa é mais fácil de
-                  lembrar.
+                  {translate(
+                    " Use 12 ou mais caracteres. Uma frase longa é mais fácil de lembrar. ",
+                  )}
                 </p>
                 <label>
-                  Confirme sua senha
+                  {translate(" Confirme sua senha ")}
                   <div className="login-input">
                     <ShieldCheck size={18} />
                     <input
                       name="confirmation"
                       type={visible ? "text" : "password"}
                       autoComplete="new-password"
-                      placeholder="Repita sua senha"
+                      placeholder={translate("Repita sua senha")}
                       value={confirmation}
                       onChange={(e) => setConfirmation(e.target.value)}
                       required
@@ -299,9 +315,12 @@ export function LoginScreen({
             {register && !activate && (
               <>
                 <p className="login-price-note">
-                  <strong>7 dias grátis · depois R$ 59,90/mês</strong>Cadastre o
-                  cartão na próxima etapa. Renovação automática após o teste.
-                  Cancele antes da primeira cobrança para não cobrar.
+                  <strong>
+                    {translate("7 dias grátis · depois R$ 59,90/mês")}
+                  </strong>
+                  {translate(
+                    "Cadastre o cartão na próxima etapa. Renovação automática após o teste. Cancele antes da primeira cobrança para não cobrar. ",
+                  )}
                 </p>
                 <label className="login-terms">
                   <input
@@ -312,13 +331,13 @@ export function LoginScreen({
                     disabled={busy}
                   />
                   <span>
-                    Li e aceito os{" "}
+                    {translate(" Li e aceito os")}{" "}
                     <a href="/?view=terms" target="_blank" rel="noreferrer">
-                      termos de uso
+                      {translate(" termos de uso ")}
                     </a>{" "}
-                    e a{" "}
+                    {translate(" e a")}{" "}
                     <a href="/?view=privacy" target="_blank" rel="noreferrer">
-                      política de privacidade
+                      {translate(" política de privacidade ")}
                     </a>
                     .
                   </span>
@@ -327,13 +346,14 @@ export function LoginScreen({
             )}
             {error && (
               <p className="login-error" role="alert">
-                {error}
+                {translate(error)}
               </p>
             )}
             {!configured && (
               <p className="login-error" role="status">
-                A conexão com o servidor de contas está indisponível. Você ainda
-                pode explorar o modo local.
+                {translate(
+                  " A conexão com o servidor de contas está indisponível. Você ainda pode explorar o modo local. ",
+                )}
               </p>
             )}
             <button
@@ -345,16 +365,16 @@ export function LoginScreen({
                 <>
                   <Loader2 className="spin" size={18} />{" "}
                   {activate
-                    ? "Ativando sua conta…"
-                    : "Conectando ao seu workspace…"}
+                    ? translate("Ativando sua conta…")
+                    : translate("Conectando ao seu workspace…")}
                 </>
               ) : (
                 <>
                   {activate
-                    ? "Ativar e entrar"
+                    ? translate("Ativar e entrar")
                     : register
-                      ? "Criar conta e continuar"
-                      : "Acessar meu workspace"}
+                      ? translate("Criar conta e continuar")
+                      : translate("Acessar meu workspace")}
                   <ArrowRight size={19} />
                 </>
               )}
@@ -362,11 +382,11 @@ export function LoginScreen({
           </form>
           <div className="login-trust">
             <ShieldCheck size={14} />
-            <span>Sessão protegida · workspace privado</span>
+            <span>{translate("Sessão protegida · workspace privado")}</span>
           </div>
           {!creating && (
             <a className="login-recovery" href="/?view=recover">
-              Esqueci minha senha
+              {translate(" Esqueci minha senha ")}
             </a>
           )}
           {activate && !hasSession && (
@@ -376,35 +396,38 @@ export function LoginScreen({
               disabled={busy}
               onClick={onClearActivation}
             >
-              Já ativei minha conta · voltar para o login
+              {translate(" Já ativei minha conta · voltar para o login ")}
             </button>
           )}
           <div className="login-local">
             <span>
               {hasSession
-                ? "Sua conta já está conectada."
-                : "Quer conhecer primeiro?"}
+                ? translate("Sua conta já está conectada.")
+                : translate("Quer conhecer primeiro?")}
             </span>
             <button type="button" disabled={busy} onClick={onLocal}>
               {hasSession
-                ? "Voltar ao meu workspace"
-                : "Explorar no modo local"}{" "}
+                ? translate("Voltar ao meu workspace")
+                : translate("Explorar no modo local")}{" "}
               <ChevronRight size={15} />
             </button>
             <small>
               {hasSession
-                ? "Seu acesso atual continua ativo."
-                : "As análises ficam apenas neste navegador."}
+                ? translate("Seu acesso atual continua ativo.")
+                : translate("As análises ficam apenas neste navegador.")}
             </small>
           </div>
         </section>
       </div>
       <footer className="login-footer">
-        <span>DriveData © {new Date().getFullYear()}</span>
-        <span>Transforme dados em próximos passos.</span>
         <span>
-          <a href="/?view=terms">Termos</a> <i>·</i>{" "}
-          <a href="/?view=privacy">Privacidade</a>
+          {translate("DriveData © ")}
+          {new Date().getFullYear()}
+        </span>
+        <span>{translate("Transforme dados em próximos passos.")}</span>
+        <span>
+          <a href="/?view=terms">{translate("Termos")}</a> <i>·</i>{" "}
+          <a href="/?view=privacy">{translate("Privacidade")}</a>
         </span>
       </footer>
     </main>
@@ -428,12 +451,21 @@ export function WorkspaceEntrance({
   return (
     <div className="workspace-entrance" role="status">
       <div className="entrance-halo" />
-      <img src="/drivedata-logo.png" width={100} height={100} alt="DriveData" />
-      <span>CONEXÃO ESTABELECIDA</span>
-      <h1>Bem-vindo, {name.split(" ")[0]}.</h1>
-      <p>Vamos transformar dados em possibilidades.</p>
+      <img
+        src="/drivedata-logo.png"
+        width={100}
+        height={100}
+        alt={translate("DriveData")}
+      />
+      <span>{translate("CONEXÃO ESTABELECIDA")}</span>
+      <h1>
+        {translate("Bem-vindo, ")}
+        {name.split(" ")[0]}.
+      </h1>
+      <p>{translate("Vamos transformar dados em possibilidades.")}</p>
       <button onClick={onDone}>
-        Continuar <ArrowRight size={15} />
+        {translate(" Continuar ")}
+        <ArrowRight size={15} />
       </button>
     </div>
   );

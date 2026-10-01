@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useBoardPointer } from "@/hooks/use-board-pointer";
 import { useVisualResize } from "@/hooks/use-visual-resize";
 import {
@@ -292,35 +293,35 @@ export function VisualEditor({
       className="inspector-tabs"
     >
       <TabsList>
-        <TabsTrigger value="visual">Visual</TabsTrigger>
-        <TabsTrigger value="design">Painel</TabsTrigger>
+        <TabsTrigger value="visual">{translate("Visual")}</TabsTrigger>
+        <TabsTrigger value="design">{translate("Painel")}</TabsTrigger>
         <TabsTrigger value="assistant">
-          <Sparkles size={13} /> Assistente
+          <Sparkles size={13} /> {translate(" Assistente ")}
         </TabsTrigger>
       </TabsList>
       <TabsContent value="visual">
         {selected ? (
           <div className="property-fields">
             <div className="inspector-label">
-              <span>EDITANDO VISUAL</span>
+              <span>{translate("EDITANDO VISUAL")}</span>
               <span>
                 {visuals.findIndex((v) => v.id === selected.id) + 1} /{" "}
                 {visuals.length}
               </span>
             </div>
             <label>
-              Título
+              {translate(" Título ")}
               <Input
-                aria-label="Título do visual"
+                aria-label={translate("Título do visual")}
                 value={selected.title}
                 maxLength={90}
                 onChange={(e) => updateVisual({ title: e.target.value })}
               />
             </label>
             <label>
-              Tipo de visual
+              {translate(" Tipo de visual ")}
               <Choice
-                label="Tipo de visual"
+                label={translate("Tipo de visual")}
                 value={selected.type}
                 onChange={(v) =>
                   updateVisual({
@@ -343,21 +344,23 @@ export function VisualEditor({
               className="primary-button"
               onClick={() => setChartId(selected.id)}
             >
-              <SlidersHorizontal size={16} /> Configurar dados e gráfico
+              <SlidersHorizontal size={16} />{" "}
+              {translate(" Configurar dados e gráfico ")}
             </button>
             <p className="property-hint">
-              Compare medidas, crie séries, defina agregações, eixos, formatos e
-              filtros próprios no construtor com prévia.
+              {translate(
+                " Compare medidas, crie séries, defina agregações, eixos, formatos e filtros próprios no construtor com prévia. ",
+              )}
             </p>{" "}
-            <div className="property-divider">APARÊNCIA</div>
+            <div className="property-divider">{translate("APARÊNCIA")}</div>
             <label>
-              Cor do visual
+              {translate(" Cor do visual ")}
               <div className="swatch-row">
                 <button
                   className={`inherit-color ${!selected.color ? "active" : ""}`}
                   onClick={() => updateVisual({ color: undefined })}
-                  title="Usar cor do painel"
-                  aria-label="Usar cor do painel"
+                  title={translate("Usar cor do painel")}
+                  aria-label={translate("Usar cor do painel")}
                 >
                   <Palette size={16} />
                 </button>
@@ -366,7 +369,7 @@ export function VisualEditor({
                     key={p.color}
                     className="color-swatch"
                     style={{ background: p.color }}
-                    aria-label={`Cor ${p.name}`}
+                    aria-label={translate("Cor {v0}", { v0: p.name })}
                     aria-pressed={selected.color === p.color}
                     onClick={() => updateVisual({ color: p.color })}
                   >
@@ -375,16 +378,16 @@ export function VisualEditor({
                 ))}
                 <input
                   type="color"
-                  aria-label="Cor personalizada do visual"
+                  aria-label={translate("Cor personalizada do visual")}
                   value={selected.color || appearance.accent}
                   onChange={(e) => updateVisual({ color: e.target.value })}
                 />
               </div>
             </label>
             <label>
-              Largura
+              {translate(" Largura ")}
               <Choice
-                label="Largura do visual"
+                label={translate("Largura do visual")}
                 value={String(selected.span)}
                 onChange={(v) =>
                   updateVisual({ span: Number(v) as Visual["span"] })
@@ -398,9 +401,12 @@ export function VisualEditor({
               />
             </label>
             <label>
-              Altura <span className="field-value">{selected.height} px</span>
+              {translate(" Altura ")}
+              <span className="field-value">
+                {selected.height} {translate(" px")}
+              </span>
               <Slider
-                aria-label="Altura do visual"
+                aria-label={translate("Altura do visual")}
                 min={160}
                 max={520}
                 step={40}
@@ -411,18 +417,18 @@ export function VisualEditor({
             {!["kpi", "text", "table"].includes(selected.type) && (
               <>
                 <label className="toggle-field">
-                  Exibir legenda
+                  {translate(" Exibir legenda ")}
                   <Switch
-                    aria-label="Exibir legenda"
+                    aria-label={translate("Exibir legenda")}
                     checked={selected.legend}
                     onCheckedChange={(v) => updateVisual({ legend: v })}
                   />
                 </label>
                 {selected.type !== "donut" && (
                   <label className="toggle-field">
-                    Linhas de referência
+                    {translate(" Linhas de referência ")}
                     <Switch
-                      aria-label="Linhas de referência"
+                      aria-label={translate("Linhas de referência")}
                       checked={selected.grid}
                       onCheckedChange={(v) => updateVisual({ grid: v })}
                     />
@@ -430,21 +436,21 @@ export function VisualEditor({
                 )}
               </>
             )}
-            <div className="property-divider">ORGANIZAÇÃO</div>
+            <div className="property-divider">{translate("ORGANIZAÇÃO")}</div>
             <div className="inspector-actions">
               <button
                 className="secondary-button"
                 disabled={visuals[0]?.id === selected.id}
                 onClick={() => move(selected.id, -1)}
               >
-                <ArrowUp size={14} /> Antes
+                <ArrowUp size={14} /> {translate(" Antes ")}
               </button>
               <button
                 className="secondary-button"
                 disabled={visuals.at(-1)?.id === selected.id}
                 onClick={() => move(selected.id, 1)}
               >
-                <ArrowDown size={14} /> Depois
+                <ArrowDown size={14} /> {translate(" Depois ")}
               </button>
             </div>
             <button
@@ -452,7 +458,7 @@ export function VisualEditor({
               disabled={visuals.length >= 24}
               onClick={() => duplicate(selected)}
             >
-              <Copy size={14} /> Duplicar visual
+              <Copy size={14} /> {translate(" Duplicar visual ")}
             </button>
             <button
               className="remove-visual"
@@ -462,26 +468,31 @@ export function VisualEditor({
                 setPanelOpen(false);
               }}
             >
-              <Trash2 size={14} /> Remover visual
+              <Trash2 size={14} /> {translate(" Remover visual ")}
             </button>
           </div>
         ) : (
           <div className="inspector-empty">
             <SlidersHorizontal size={28} />
-            <h3>O painel é seu.</h3>
-            <p>Selecione um bloco para mudar os dados, o formato e o estilo.</p>
+            <h3>{translate("O painel é seu.")}</h3>
+            <p>
+              {translate(
+                "Selecione um bloco para mudar os dados, o formato e o estilo.",
+              )}
+            </p>
             <button className="primary-button" onClick={() => setGallery(true)}>
-              <Plus size={16} /> Adicionar visual
+              <Plus size={16} /> {translate(" Adicionar visual ")}
             </button>
             <div className="editor-tips">
               <span>
-                <GripVertical size={15} /> Arraste os blocos para organizar
+                <GripVertical size={15} />{" "}
+                {translate(" Arraste os blocos para organizar ")}
               </span>
               <span>
-                <Palette size={15} /> Personalize cada visual
+                <Palette size={15} /> {translate(" Personalize cada visual ")}
               </span>
               <span>
-                <Eye size={15} /> Veja como sua equipe verá
+                <Eye size={15} /> {translate(" Veja como sua equipe verá ")}
               </span>
             </div>
           </div>
@@ -489,23 +500,25 @@ export function VisualEditor({
       </TabsContent>
       <TabsContent value="design">
         <div className="property-fields">
-          <div className="inspector-label">IDENTIDADE DO PAINEL</div>
+          <div className="inspector-label">
+            {translate("IDENTIDADE DO PAINEL")}
+          </div>
           <label>
-            Título do dashboard
+            {translate(" Título do dashboard ")}
             <Input
-              aria-label="Título do painel"
+              aria-label={translate("Título do painel")}
               value={config.title}
               maxLength={80}
               onChange={(e) => commit({ ...config, title: e.target.value })}
             />
           </label>
           <label>
-            Paleta de cores
+            {translate(" Paleta de cores ")}
             <div className="theme-options">
               {PALETTES.map((p) => (
                 <button
                   key={p.color}
-                  aria-label={`Paleta ${p.name}`}
+                  aria-label={translate("Paleta {v0}", { v0: p.name })}
                   aria-pressed={appearance.accent === p.color}
                   className={appearance.accent === p.color ? "chosen" : ""}
                   onClick={() =>
@@ -523,11 +536,11 @@ export function VisualEditor({
             </div>
           </label>
           <label>
-            Cor da sua marca
+            {translate(" Cor da sua marca ")}
             <input
               className="brand-color"
               type="color"
-              aria-label="Cor da marca"
+              aria-label={translate("Cor da marca")}
               value={appearance.accent}
               onChange={(e) =>
                 commit({
@@ -538,9 +551,9 @@ export function VisualEditor({
             />
           </label>
           <label>
-            Fundo do painel
+            {translate(" Fundo do painel ")}
             <Choice
-              label="Fundo do painel"
+              label={translate("Fundo do painel")}
               value={appearance.mode}
               onChange={(v) =>
                 commit({
@@ -555,9 +568,9 @@ export function VisualEditor({
             />
           </label>
           <label>
-            Espaçamento
+            {translate(" Espaçamento ")}
             <Choice
-              label="Espaçamento"
+              label={translate("Espaçamento")}
               value={appearance.spacing}
               onChange={(v) =>
                 commit({
@@ -575,9 +588,9 @@ export function VisualEditor({
             />
           </label>
           <label className="toggle-field">
-            Cantos arredondados
+            {translate(" Cantos arredondados ")}
             <Switch
-              aria-label="Cantos arredondados"
+              aria-label={translate("Cantos arredondados")}
               checked={appearance.rounded}
               onCheckedChange={(v) =>
                 commit({ ...config, appearance: { ...appearance, rounded: v } })
@@ -588,32 +601,43 @@ export function VisualEditor({
             className="secondary-button"
             onClick={() => setTemplates(true)}
           >
-            <LayoutTemplate size={16} /> Trocar modelo do painel
+            <LayoutTemplate size={16} />{" "}
+            {translate(" Trocar modelo do painel ")}
           </button>
           <p className="property-hint">
-            A paleta é aplicada aos visuais sem uma cor individual. Todas as
-            alterações são guardadas ao salvar o dashboard.
+            {translate(
+              " A paleta é aplicada aos visuais sem uma cor individual. Todas as alterações são guardadas ao salvar o dashboard. ",
+            )}
           </p>
         </div>
       </TabsContent>
       <TabsContent value="assistant">
         <div className="property-fields assistant-builder">
-          <span className="mode-label">COMANDOS GUIADOS</span>
-          <h3>Dê forma à sua ideia.</h3>
-          <p>Peça um novo visual e continue personalizando no editor.</p>
+          <span className="mode-label">{translate("COMANDOS GUIADOS")}</span>
+          <h3>{translate("Dê forma à sua ideia.")}</h3>
+          <p>
+            {translate(
+              "Peça um novo visual e continue personalizando no editor.",
+            )}
+          </p>
           {[
-            `Adicione uma rosca de ${config.metric} por ${config.dimension}`,
-            `Adicione um indicador de média de ${config.metric}`,
+            translate("Adicione uma rosca de {v0} por {v1}", {
+              v0: config.metric,
+              v1: config.dimension,
+            }),
+            translate("Adicione um indicador de média de {v0}", {
+              v0: config.metric,
+            }),
             "Adicione uma tabela",
           ].map((t) => (
             <button key={t} className="suggestion" onClick={() => ask(t)}>
-              {t}
+              {translate(t)}
               <ArrowRight size={14} />
             </button>
           ))}
           {answer && (
             <div className="builder-answer" role="status">
-              {answer}
+              {translate(answer)}
             </div>
           )}
           <form
@@ -623,10 +647,10 @@ export function VisualEditor({
             }}
           >
             <textarea
-              aria-label="Pedido ao assistente"
+              aria-label={translate("Pedido ao assistente")}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Adicione um gráfico de…"
+              placeholder={translate("Adicione um gráfico de…")}
               maxLength={1200}
               rows={4}
             />
@@ -635,26 +659,33 @@ export function VisualEditor({
               disabled={!prompt.trim()}
               type="submit"
             >
-              Aplicar pedido <ArrowUp size={15} />
+              {translate(" Aplicar pedido ")}
+              <ArrowUp size={15} />
             </button>
           </form>
           <p className="property-hint">
-            IA generativa ainda não conectada. O editor visual funciona
-            independentemente dela.
+            {translate(
+              " IA generativa ainda não conectada. O editor visual funciona independentemente dela. ",
+            )}
           </p>
         </div>
       </TabsContent>
     </Tabs>
   );
   return (
-    <section className="editor-shell" aria-label="Editor de dashboards">
+    <section
+      className="editor-shell"
+      aria-label={translate("Editor de dashboards")}
+    >
       <div className="editor-topbar">
         <div className="editor-state">
           <span className="editor-mode">
             {editing ? <Pencil size={13} /> : <Eye size={13} />}{" "}
-            {editing ? "MODO DE EDIÇÃO" : "VISUALIZAÇÃO"}
+            {editing ? translate("MODO DE EDIÇÃO") : translate("VISUALIZAÇÃO")}
           </span>
-          <span>{visuals.length} visuais</span>
+          <span>
+            {visuals.length} {translate(" visuais")}
+          </span>
         </div>
         <div className="editor-top-actions">
           {editing && (
@@ -663,11 +694,11 @@ export function VisualEditor({
                 className="secondary-button prepare-data-button"
                 onClick={() => setDataOpen(true)}
               >
-                <Database size={16} /> Preparar dados
+                <Database size={16} /> {translate(" Preparar dados ")}
               </button>
               <button
                 className="editor-icon"
-                aria-label="Desfazer"
+                aria-label={translate("Desfazer")}
                 disabled={!past.length}
                 onClick={undo}
               >
@@ -675,7 +706,7 @@ export function VisualEditor({
               </button>
               <button
                 className="editor-icon"
-                aria-label="Refazer"
+                aria-label={translate("Refazer")}
                 disabled={!future.length}
                 onClick={redo}
               >
@@ -684,19 +715,19 @@ export function VisualEditor({
               <span className="toolbar-separator" />
               <button
                 className="secondary-button"
-                aria-label="Modelos"
+                aria-label={translate("Modelos")}
                 onClick={() => setTemplates(true)}
               >
                 <LayoutTemplate size={16} />
-                <span>Modelos</span>
+                <span>{translate("Modelos")}</span>
               </button>
               <button
                 className="secondary-button"
-                aria-label="Estilo"
+                aria-label={translate("Estilo")}
                 onClick={() => openPanel("design")}
               >
                 <Palette size={16} />
-                <span>Estilo</span>
+                <span>{translate("Estilo")}</span>
               </button>
             </>
           )}
@@ -708,7 +739,7 @@ export function VisualEditor({
             }}
           >
             {editing ? <Eye size={16} /> : <Pencil size={16} />}{" "}
-            {editing ? "Visualizar" : "Editar painel"}
+            {editing ? translate("Visualizar") : translate("Editar painel")}
           </button>
           {editing && (
             <button
@@ -716,7 +747,7 @@ export function VisualEditor({
               disabled={visuals.length >= 24}
               onClick={() => setGallery(true)}
             >
-              <Plus size={16} /> Adicionar visual
+              <Plus size={16} /> {translate(" Adicionar visual ")}
             </button>
           )}
         </div>
@@ -725,23 +756,29 @@ export function VisualEditor({
         <button onClick={() => setHubOpen(true)}>
           <Microscope size={18} />
           <span>
-            <strong>Explorar e analisar</strong>
-            <small>Tabela dinâmica, destaques e qualidade dos dados</small>
+            <strong>{translate("Explorar e analisar")}</strong>
+            <small>
+              {translate("Tabela dinâmica, destaques e qualidade dos dados")}
+            </small>
           </span>
           <ArrowRight size={18} />
         </button>
         <span>
-          Clique em Explorar nos visuais para investigar os registros.
+          {translate(
+            " Clique em Explorar nos visuais para investigar os registros. ",
+          )}
         </span>
       </div>
       <BookmarkBar config={config} onChange={commit} />
       <div className="editor-filterbar">
         <div className="source-chip">
           <Database size={14} />
-          <span>{source.demo ? "Base de demonstração" : source.name}</span>
+          <span>
+            {source.demo ? translate("Base de demonstração") : source.name}
+          </span>
         </div>
         <Choice
-          label="Período do painel"
+          label={translate("Período do painel")}
           value={config.period}
           onChange={(v) => commit({ ...config, period: v as Config["period"] })}
           disabled={!source.dates.length}
@@ -754,16 +791,16 @@ export function VisualEditor({
         {dimensions.length > 0 && (
           <>
             <Choice
-              label="Campo do filtro"
+              label={translate("Campo do filtro")}
               value={filterField}
               onChange={(v) => {
                 setFilterField(v);
                 if (config.filter) commit({ ...config, filter: undefined });
               }}
-              items={dimensions.map((c) => ({ value: c, label: c }))}
+              items={dimensions.map((c) => ({ raw: true, value: c, label: c }))}
             />
             <Choice
-              label="Valor do filtro"
+              label={translate("Valor do filtro")}
               value={
                 config.filter && config.filter.field === filterField
                   ? `value:${config.filter.value}`
@@ -780,7 +817,7 @@ export function VisualEditor({
               }
               items={[
                 { value: "all", label: "Todos" },
-                ...filterValues.map((v) => ({ value: `value:${v}`, label: v })),
+                ...filterValues.map((v) => ({ raw: true, value: `value:${v}`, label: v })),
               ]}
             />
           </>
@@ -789,36 +826,39 @@ export function VisualEditor({
           className="secondary-button"
           onClick={() => setFiltersOpen(true)}
         >
-          <SlidersHorizontal size={15} /> Filtros avançados{" "}
+          <SlidersHorizontal size={15} /> {translate(" Filtros avançados")}{" "}
           {config.filters?.rules.length
             ? `(${config.filters.rules.length})`
             : ""}
         </button>
         <button className="text-button" onClick={() => setTable(true)}>
-          <Table2 size={15} /> Dados
+          <Table2 size={15} /> {translate(" Dados ")}
         </button>
         <span className="row-count">
-          {rows.length.toLocaleString("pt-BR")} registros
+          {rows.length.toLocaleString(locale())} {translate(" registros ")}
         </span>
       </div>
       {prepared.error && (
         <div className="model-error" role="alert">
-          {prepared.error}
+          {translate(prepared.error)}
         </div>
       )}
       {config.dataSteps?.length ? (
         <div className="model-applied-banner">
           <Database size={14} />
-          {config.dataSteps.length} etapas de preparação aplicadas ·{" "}
-          {source.columns.length} colunas disponíveis
-          <button onClick={() => setDataOpen(true)}>Ver preparação</button>
+          {config.dataSteps.length}{" "}
+          {translate(" etapas de preparação aplicadas ·")}{" "}
+          {source.columns.length} {translate(" colunas disponíveis ")}
+          <button onClick={() => setDataOpen(true)}>
+            {translate("Ver preparação")}
+          </button>
         </div>
       ) : null}
       {config.filter && (
         <div className="active-filter">
           {config.filter.field}: <strong>{config.filter.value}</strong>
           <button
-            aria-label="Limpar filtro"
+            aria-label={translate("Limpar filtro")}
             onClick={() => commit({ ...config, filter: undefined })}
           >
             <X size={14} />
@@ -833,23 +873,31 @@ export function VisualEditor({
           style={{ "--board-accent": appearance.accent } as React.CSSProperties}
         >
           <div className="canvas-heading">
-            <span>{editing ? "ÁREA DO DASHBOARD" : config.title}</span>
             <span>
-              {source.demo ? "DADOS DE EXEMPLO" : "DADOS DA SUA EMPRESA"}
+              {editing ? translate("ÁREA DO DASHBOARD") : config.title}
+            </span>
+            <span>
+              {source.demo
+                ? translate("DADOS DE EXEMPLO")
+                : translate("DADOS DA SUA EMPRESA")}
             </span>
           </div>
           {editing && (
             <div className="layout-feedback">
               <span>
-                Arraste pela alça para reorganizar. Use o canto para
-                redimensionar.
+                {translate(
+                  " Arraste pela alça para reorganizar. Use o canto para redimensionar. ",
+                )}
               </span>
               <b role="status">
                 {resize.preview
-                  ? `${resize.preview.span}/12 colunas · ${resize.preview.height}px`
+                  ? translate("{v0}/12 colunas · {v1}px", {
+                      v0: resize.preview.span,
+                      v1: resize.preview.height,
+                    })
                   : drag.state
-                    ? "Solte sobre outro gráfico · Esc cancela"
-                    : "Teclado: setas nos controles"}
+                    ? translate("Solte sobre outro gráfico · Esc cancela")
+                    : translate("Teclado: setas nos controles")}
               </b>
             </div>
           )}
@@ -878,8 +926,10 @@ export function VisualEditor({
                     {editing && (
                       <button
                         className="drag-handle"
-                        aria-label={`Arrastar ${v.title}`}
-                        title="Arraste ou use as setas para reorganizar"
+                        aria-label={translate("Arrastar {v0}", { v0: v.title })}
+                        title={translate(
+                          "Arraste ou use as setas para reorganizar",
+                        )}
                         {...drag.handle(v.id)}
                         onKeyDown={(e) => {
                           if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
@@ -898,7 +948,7 @@ export function VisualEditor({
                       </button>
                     )}
                     <div>
-                      <h3>{v.title || "Visual sem título"}</h3>
+                      <h3>{v.title || translate("Visual sem título")}</h3>
                       {v.subtitle && (
                         <p className="visual-subtitle">{v.subtitle}</p>
                       )}
@@ -907,8 +957,8 @@ export function VisualEditor({
                   {v.type !== "text" && (
                     <button
                       className="visual-edit"
-                      aria-label={`Explorar ${v.title}`}
-                      title="Explorar registros"
+                      aria-label={translate("Explorar {v0}", { v0: v.title })}
+                      title={translate("Explorar registros")}
                       onClick={() => setDrill({ visual: v, selections: [] })}
                     >
                       <Search size={15} />
@@ -917,11 +967,13 @@ export function VisualEditor({
                   {editing && (
                     <button
                       className={`visual-edit ${selectedId === v.id ? "active" : ""}`}
-                      aria-label={`Editar ${v.title}`}
+                      aria-label={translate("Editar {v0}", { v0: v.title })}
                       onClick={() => select(v.id)}
                     >
                       <SlidersHorizontal size={15} />
-                      <span className="configure-label">Configurar</span>
+                      <span className="configure-label">
+                        {translate("Configurar")}
+                      </span>
                     </button>
                   )}
                 </div>
@@ -963,26 +1015,33 @@ export function VisualEditor({
                 {editing && (
                   <div className="visual-card-footer">
                     <span>
-                      {VISUAL_TYPES.find((t) => t.type === v.type)?.label}{" "}
+                      {translate(
+                        VISUAL_TYPES.find((t) => t.type === v.type)?.label ||
+                          "",
+                      )}{" "}
                       {v.type !== "text" && `· ${v.metric}`}
                     </span>
                     <div>
                       <button
-                        aria-label={`Mover ${v.title} antes`}
+                        aria-label={translate("Mover {v0} antes", {
+                          v0: v.title,
+                        })}
                         disabled={index === 0}
                         onClick={() => move(v.id, -1)}
                       >
                         <ArrowUp size={13} />
                       </button>
                       <button
-                        aria-label={`Mover ${v.title} depois`}
+                        aria-label={translate("Mover {v0} depois", {
+                          v0: v.title,
+                        })}
                         disabled={index === visuals.length - 1}
                         onClick={() => move(v.id, 1)}
                       >
                         <ArrowDown size={13} />
                       </button>
                       <button
-                        aria-label={`Duplicar ${v.title}`}
+                        aria-label={translate("Duplicar {v0}", { v0: v.title })}
                         disabled={visuals.length >= 24}
                         onClick={() => duplicate(v)}
                       >
@@ -994,8 +1053,12 @@ export function VisualEditor({
                 {editing && (
                   <button
                     className="visual-resize"
-                    aria-label={`Redimensionar ${v.title}`}
-                    title="Arraste para ajustar largura e altura; ou use as setas"
+                    aria-label={translate("Redimensionar {v0}", {
+                      v0: v.title,
+                    })}
+                    title={translate(
+                      "Arraste para ajustar largura e altura; ou use as setas",
+                    )}
                     {...resize.handle(v)}
                   >
                     <MoveDiagonal2 size={15} />
@@ -1009,30 +1072,34 @@ export function VisualEditor({
               <span>
                 <LayoutTemplate size={34} />
               </span>
-              <h2>Comece com uma ideia.</h2>
+              <h2>{translate("Comece com uma ideia.")}</h2>
               <p>
-                Adicione os indicadores e gráficos que fazem sentido para o seu
-                negócio.
+                {translate(
+                  " Adicione os indicadores e gráficos que fazem sentido para o seu negócio. ",
+                )}
               </p>
               {editing && (
                 <button
                   className="primary-button"
                   onClick={() => setGallery(true)}
                 >
-                  <Plus size={17} /> Escolher meu primeiro visual
+                  <Plus size={17} />{" "}
+                  {translate(" Escolher meu primeiro visual ")}
                 </button>
               )}
             </div>
           )}
           {editing && visuals.length > 0 && visuals.length < 24 && (
             <button className="add-block" onClick={() => setGallery(true)}>
-              <Plus size={18} /> Adicionar um novo visual ao painel
+              <Plus size={18} />{" "}
+              {translate(" Adicionar um novo visual ao painel ")}
             </button>
           )}
           {!editing && (
             <p className="presentation-hint">
-              Clique em um gráfico para explorar os registros e aplicar o
-              recorte ao painel.
+              {translate(
+                " Clique em um gráfico para explorar os registros e aplicar o recorte ao painel. ",
+              )}
             </p>
           )}
         </div>
@@ -1040,7 +1107,7 @@ export function VisualEditor({
           <aside className="visual-inspector">
             <div className="inspector-heading">
               <SlidersHorizontal size={17} />
-              <strong>Personalização</strong>
+              <strong>{translate("Personalização")}</strong>
             </div>
             {inspector}
           </aside>
@@ -1049,9 +1116,11 @@ export function VisualEditor({
       <Sheet open={small && panelOpen && editing} onOpenChange={setPanelOpen}>
         <SheetContent className="editor-sheet">
           <SheetHeader>
-            <SheetTitle>Personalizar dashboard</SheetTitle>
+            <SheetTitle>{translate("Personalizar dashboard")}</SheetTitle>
             <SheetDescription>
-              Altere o visual selecionado ou o estilo do painel.
+              {translate(
+                " Altere o visual selecionado ou o estilo do painel. ",
+              )}
             </SheetDescription>
           </SheetHeader>
           {inspector}
@@ -1059,7 +1128,8 @@ export function VisualEditor({
             className="primary-button sheet-done"
             onClick={() => setPanelOpen(false)}
           >
-            Voltar ao painel <Check size={16} />
+            {translate(" Voltar ao painel ")}
+            <Check size={16} />
           </button>
         </SheetContent>
       </Sheet>
@@ -1128,9 +1198,13 @@ export function VisualEditor({
       <Dialog open={gallery} onOpenChange={setGallery}>
         <DialogContent className="app-dialog visual-gallery">
           <DialogHeader>
-            <DialogTitle>Qual história seus dados contam?</DialogTitle>
+            <DialogTitle>
+              {translate("Qual história seus dados contam?")}
+            </DialogTitle>
             <DialogDescription>
-              Escolha um visual. Depois, ajuste os dados e deixe com a sua cara.
+              {translate(
+                " Escolha um visual. Depois, ajuste os dados e deixe com a sua cara. ",
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="visual-type-grid">
@@ -1146,25 +1220,30 @@ export function VisualEditor({
                   <span className={`type-preview ${t.type}`}>
                     <Icon size={35} strokeWidth={1.4} />
                   </span>
-                  <strong>{t.label}</strong>
-                  <small>{t.description}</small>
+                  <strong>{translate(t.label)}</strong>
+                  <small>{translate(t.description)}</small>
                   <Plus size={15} className="type-plus" />
                 </button>
               );
             })}
           </div>
           <p className="property-hint">
-            Cada visual pode usar um indicador, um cálculo e um agrupamento
-            diferente.
+            {translate(
+              " Cada visual pode usar um indicador, um cálculo e um agrupamento diferente. ",
+            )}
           </p>
         </DialogContent>
       </Dialog>
       <Dialog open={templates} onOpenChange={setTemplates}>
         <DialogContent className="app-dialog template-dialog">
           <DialogHeader>
-            <DialogTitle>Um ponto de partida para sua análise</DialogTitle>
+            <DialogTitle>
+              {translate("Um ponto de partida para sua análise")}
+            </DialogTitle>
             <DialogDescription>
-              O modelo substitui os blocos atuais. Você pode desfazer a troca.
+              {translate(
+                " O modelo substitui os blocos atuais. Você pode desfazer a troca. ",
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="template-grid">
@@ -1203,8 +1282,8 @@ export function VisualEditor({
                     <Plus size={25} />
                   )}
                 </div>
-                <strong>{t.title}</strong>
-                <span>{t.desc}</span>
+                <strong>{translate(t.title)}</strong>
+                <span>{translate(t.desc)}</span>
                 <ArrowRight size={16} />
               </button>
             ))}
@@ -1214,9 +1293,10 @@ export function VisualEditor({
       <Dialog open={table} onOpenChange={setTable}>
         <DialogContent className="app-dialog wide-dialog">
           <DialogHeader>
-            <DialogTitle>Dados deste painel</DialogTitle>
+            <DialogTitle>{translate("Dados deste painel")}</DialogTitle>
             <DialogDescription>
-              {rows.length} registros após os filtros de período e categoria.
+              {rows.length}{" "}
+              {translate(" registros após os filtros de período e categoria. ")}
             </DialogDescription>
           </DialogHeader>
           <DataPreview source={{ ...source, rows }} limit={50} />
@@ -1230,7 +1310,7 @@ export function VisualEditor({
               )
             }
           >
-            <Download size={16} /> Exportar dados filtrados
+            <Download size={16} /> {translate(" Exportar dados filtrados ")}
           </button>
         </DialogContent>
       </Dialog>

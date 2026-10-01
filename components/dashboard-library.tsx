@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -111,8 +112,10 @@ export function DashboardLibrary({
         <div className="desk-card-top">
           <button
             className="desk-grip"
-            aria-label={`Arrastar ${d.config.title} para uma pasta`}
-            title="Arraste para uma pasta; ou use Organizar"
+            aria-label={translate("Arrastar {v0} para uma pasta", {
+              v0: d.config.title,
+            })}
+            title={translate("Arraste para uma pasta; ou use Organizar")}
             disabled={busy}
             {...drag.handle(d.id)}
           >
@@ -121,7 +124,7 @@ export function DashboardLibrary({
           <span>{dashboardFolder(d)}</span>
           <button
             className={`desk-star ${d.starred ? "is-starred" : ""}`}
-            aria-label={`${d.starred ? "Desfavoritar" : "Favoritar"} ${d.config.title}`}
+            aria-label={`${d.starred ? translate("Desfavoritar") : translate("Favoritar")} ${d.config.title}`}
             aria-pressed={!!d.starred}
             disabled={busy}
             onClick={() => void onUpdate(d, { starred: !d.starred })}
@@ -173,39 +176,41 @@ export function DashboardLibrary({
                   )}
                 </span>
               ))}
-            {visuals?.length === 0 && <small>Painel em branco</small>}
+            {visuals?.length === 0 && (
+              <small>{translate("Painel em branco")}</small>
+            )}
           </div>
           <div className="desk-card-title">
             <h2>{d.config.title}</h2>
             <ArrowRight size={18} />
           </div>
-          <p>{source?.name || "Fonte indisponível"}</p>
+          <p>{source?.name || translate("Fonte indisponível")}</p>
         </button>
         <div className="desk-card-bottom">
           <span>
-            {new Date(d.updatedAt).toLocaleDateString("pt-BR")} ·{" "}
-            {visuals?.length ?? 5} visuais
+            {new Date(d.updatedAt).toLocaleDateString(locale())} ·{" "}
+            {visuals?.length ?? 5} {translate(" visuais ")}
           </span>
           <div>
             <button
-              aria-label={`Organizar ${d.config.title}`}
-              title="Renomear e mover"
+              aria-label={translate("Organizar {v0}", { v0: d.config.title })}
+              title={translate("Renomear e mover")}
               disabled={busy}
               onClick={() => organize(d)}
             >
               <Pencil size={15} />
             </button>
             <button
-              aria-label={`Duplicar ${d.config.title}`}
-              title="Duplicar dashboard"
+              aria-label={translate("Duplicar {v0}", { v0: d.config.title })}
+              title={translate("Duplicar dashboard")}
               disabled={busy}
               onClick={() => onDuplicate(d)}
             >
               <Copy size={15} />
             </button>
             <button
-              aria-label={`Excluir ${d.config.title}`}
-              title="Excluir"
+              aria-label={translate("Excluir {v0}", { v0: d.config.title })}
+              title={translate("Excluir")}
               disabled={busy}
               onClick={() => onDelete(d)}
             >
@@ -220,36 +225,39 @@ export function DashboardLibrary({
     <section className="desk">
       <div className="desk-overview">
         <div className="desk-welcome">
-          <span className="eyebrow">DO DADO À DECISÃO</span>
-          <h2>Um espaço para cada pergunta.</h2>
+          <h2>{translate("Um espaço para cada pergunta.")}</h2>
           <p>
-            Crie painéis independentes, organize suas análises e explore os
-            dados do seu jeito.
+            {translate(
+              " Crie painéis independentes, organize suas análises e explore os dados do seu jeito. ",
+            )}
           </p>
           <button className="text-button" onClick={onImport}>
-            <Upload size={16} /> Começar com uma planilha{" "}
+            <Upload size={16} /> {translate(" Começar com uma planilha")}{" "}
             <ArrowRight size={16} />
           </button>
         </div>
         <div className="desk-stat">
           <LayoutDashboard size={20} />
           <strong>{dashboards.length}</strong>
-          <span>Dashboards</span>
+          <span>{translate("Dashboards")}</span>
         </div>
         <div className="desk-stat">
           <Database size={20} />
           <strong>{sources.filter((s) => !s.demo).length}</strong>
-          <span>Fontes conectadas</span>
+          <span>{translate("Fontes conectadas")}</span>
         </div>
         <div className="desk-stat">
           <Star size={20} />
           <strong>{dashboards.filter((d) => d.starred).length}</strong>
-          <span>Favoritos</span>
+          <span>{translate("Favoritos")}</span>
         </div>
       </div>
       <div className="desk-layout">
-        <aside className="desk-sidebar" aria-label="Pastas de dashboards">
-          <span className="desk-label">BIBLIOTECA</span>
+        <aside
+          className="desk-sidebar"
+          aria-label={translate("Pastas de dashboards")}
+        >
+          <span className="desk-label">{translate("BIBLIOTECA")}</span>
           <button
             className={!folder && !starred ? "active" : ""}
             onClick={() => {
@@ -257,7 +265,8 @@ export function DashboardLibrary({
               setStarred(false);
             }}
           >
-            <LayoutGrid size={16} /> Todos os painéis <b>{dashboards.length}</b>
+            <LayoutGrid size={16} /> {translate(" Todos os painéis ")}
+            <b>{dashboards.length}</b>
           </button>
           <button
             className={starred ? "active" : ""}
@@ -266,9 +275,11 @@ export function DashboardLibrary({
               pickFolder("");
             }}
           >
-            <Star size={16} /> Favoritos
+            <Star size={16} /> {translate(" Favoritos ")}
           </button>
-          <span className="desk-label">PASTAS · ARRASTE PARA MOVER</span>
+          <span className="desk-label">
+            {translate("PASTAS · ARRASTE PARA MOVER")}
+          </span>
           {folders.map((f) => (
             <button
               key={f}
@@ -278,17 +289,21 @@ export function DashboardLibrary({
               onClick={() => pickFolder(f)}
             >
               <Folder size={16} />
-              <span>{f}</span>
+              <span>{f === DEFAULT_FOLDER ? translate(f) : f}</span>
               <b>{dashboards.filter((d) => dashboardFolder(d) === f).length}</b>
             </button>
           ))}
           <p className="desk-folder-help">
-            Crie uma pasta em “Organizar” de qualquer dashboard.
+            {translate(
+              " Crie uma pasta em “Organizar” de qualquer dashboard. ",
+            )}
           </p>
           <div className="desk-storage">
             {cloud ? <Cloud size={17} /> : <HardDrive size={17} />}
             <span>
-              {cloud ? "Salvo na sua conta" : "Salvo neste navegador"}
+              {cloud
+                ? translate("Salvo na sua conta")
+                : translate("Salvo neste navegador")}
             </span>
           </div>
         </aside>
@@ -297,8 +312,8 @@ export function DashboardLibrary({
             <label className="desk-search">
               <Search size={17} />
               <input
-                aria-label="Buscar dashboards"
-                placeholder="Buscar nome ou pasta…"
+                aria-label={translate("Buscar dashboards")}
+                placeholder={translate("Buscar nome ou pasta…")}
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -307,21 +322,21 @@ export function DashboardLibrary({
               />
             </label>
             <select
-              aria-label="Ordenar dashboards"
+              aria-label={translate("Ordenar dashboards")}
               value={sort}
               onChange={(e) => {
                 setSort(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="recent">Mais recentes</option>
-              <option value="name">Nome A–Z</option>
-              <option value="oldest">Mais antigos</option>
+              <option value="recent">{translate("Mais recentes")}</option>
+              <option value="name">{translate("Nome A–Z")}</option>
+              <option value="oldest">{translate("Mais antigos")}</option>
             </select>
             <div
               className="desk-view-switch"
               role="group"
-              aria-label="Visão da biblioteca"
+              aria-label={translate("Visão da biblioteca")}
             >
               {(
                 [
@@ -332,8 +347,8 @@ export function DashboardLibrary({
               ).map(({ id, label, Icon }) => (
                 <button
                   key={id}
-                  aria-label={label}
-                  title={label}
+                  aria-label={translate(label)}
+                  title={translate(label)}
                   aria-pressed={view === id}
                   onClick={() => setView(id)}
                 >
@@ -344,39 +359,47 @@ export function DashboardLibrary({
           </div>
           <div className="desk-results">
             <strong>
-              {starred ? "Favoritos" : folder || "Todos os dashboards"}
+              {starred
+                ? translate("Favoritos")
+                : folder || translate("Todos os dashboards")}
             </strong>
             <span>
-              {filtered.length} resultado{filtered.length === 1 ? "" : "s"}
+              {filtered.length} {translate(" resultado")}
+              {filtered.length === 1 ? "" : "s"}
             </span>
           </div>
           {!loaded ? (
             <div className="empty-state" role="status">
-              Carregando suas análises…
+              {translate(" Carregando suas análises… ")}
             </div>
           ) : !filtered.length ? (
             <div className="desk-empty">
               <LayoutDashboard size={38} />
               <h2>
                 {dashboards.length
-                  ? "Nenhum painel encontrado"
-                  : "Sua próxima decisão começa aqui"}
+                  ? translate("Nenhum painel encontrado")
+                  : translate("Sua próxima decisão começa aqui")}
               </h2>
               <p>
                 {dashboards.length
-                  ? "Tente outro nome, pasta ou filtro."
-                  : "Comece em branco ou use um modelo com seus próprios dados."}
+                  ? translate("Tente outro nome, pasta ou filtro.")
+                  : translate(
+                      "Comece em branco ou use um modelo com seus próprios dados.",
+                    )}
               </p>
               <button
                 className="primary-button"
                 onClick={onNew}
                 disabled={busy}
               >
-                <Plus size={17} /> Novo dashboard
+                <Plus size={17} /> {translate(" Novo dashboard ")}
               </button>
             </div>
           ) : view === "board" ? (
-            <div className="desk-board" aria-label="Dashboards por pasta">
+            <div
+              className="desk-board"
+              aria-label={translate("Dashboards por pasta")}
+            >
               {folders
                 .filter((f) => !folder || f === folder)
                 .map((f) => (
@@ -388,7 +411,7 @@ export function DashboardLibrary({
                   >
                     <header>
                       <Folder size={15} />
-                      {f}
+                      {f === DEFAULT_FOLDER ? translate(f) : f}
                       <b>
                         {
                           filtered.filter((d) => dashboardFolder(d) === f)
@@ -397,7 +420,9 @@ export function DashboardLibrary({
                       </b>
                     </header>
                     {shown.filter((d) => dashboardFolder(d) === f).map(tile)}
-                    <p className="desk-drop-hint">Solte um painel aqui</p>
+                    <p className="desk-drop-hint">
+                      {translate("Solte um painel aqui")}
+                    </p>
                   </section>
                 ))}
             </div>
@@ -405,33 +430,43 @@ export function DashboardLibrary({
             <div className={`desk-items ${view}`}>{shown.map(tile)}</div>
           )}
           {pages > 1 && (
-            <nav className="desk-pagination" aria-label="Páginas de dashboards">
+            <nav
+              className="desk-pagination"
+              aria-label={translate("Páginas de dashboards")}
+            >
               <button
                 disabled={activePage === 1}
                 onClick={() => setPage(activePage - 1)}
               >
-                Anterior
+                {translate(" Anterior ")}
               </button>
               <span>
-                Página {activePage} de {pages}
+                {translate(" Página ")}
+                {activePage} {translate(" de ")}
+                {pages}
               </span>
               <button
                 disabled={activePage === pages}
                 onClick={() => setPage(activePage + 1)}
               >
-                Próxima
+                {translate(" Próxima ")}
               </button>
             </nav>
           )}
           <p className="desk-footnote">
-            Miniaturas representam a composição do painel. Abra uma análise para
-            ver os valores atualizados.
+            {translate(
+              " Miniaturas representam a composição do painel. Abra uma análise para ver os valores atualizados. ",
+            )}
           </p>
         </div>
       </div>
       <div className="sr-only" role="status">
         {drag.state
-          ? `Movendo dashboard. ${drag.state.target ? `Destino: ${drag.state.target}` : "Escolha uma pasta"}`
+          ? translate("Movendo dashboard. {v0}", {
+              v0: drag.state.target
+                ? `Destino: ${drag.state.target}`
+                : translate("Escolha uma pasta"),
+            })
           : ""}
       </div>
       <Dialog
@@ -440,9 +475,11 @@ export function DashboardLibrary({
       >
         <DialogContent className="app-dialog">
           <DialogHeader>
-            <DialogTitle>Organizar dashboard</DialogTitle>
+            <DialogTitle>{translate("Organizar dashboard")}</DialogTitle>
             <DialogDescription>
-              Altere o nome e escolha uma pasta existente ou crie uma nova.
+              {translate(
+                " Altere o nome e escolha uma pasta existente ou crie uma nova. ",
+              )}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -461,7 +498,7 @@ export function DashboardLibrary({
             }}
           >
             <label>
-              Nome
+              {translate(" Nome ")}
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -470,12 +507,12 @@ export function DashboardLibrary({
               />
             </label>
             <label>
-              Pasta
+              {translate(" Pasta ")}
               <input
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 list="dashboard-folders"
-                placeholder="Sem pasta"
+                placeholder={translate("Sem pasta")}
                 maxLength={80}
               />
             </label>
@@ -487,7 +524,7 @@ export function DashboardLibrary({
                 ))}
             </datalist>
             <button className="primary-button" disabled={busy || !name.trim()}>
-              Salvar organização
+              {translate(" Salvar organização ")}
             </button>
           </form>
         </DialogContent>

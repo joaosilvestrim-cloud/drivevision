@@ -125,7 +125,7 @@ try {
       .slice(-2)
       .map((m) => m.body.to[0])
       .sort(),
-    ["joaosilvestrim@drivedata.com", "tamirescavani@drivedata.com"],
+    ["joaosilvestrim@drivedata.com.br", "tamirescavani@drivedata.com.br"],
   );
   assert.ok(sent.every((m) => !m.body.text.includes(form.description)));
   assert.equal((await req("/api/support", form)).status, 409);

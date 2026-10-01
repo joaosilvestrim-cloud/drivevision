@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import {
@@ -43,13 +44,11 @@ export function FiltersDialog({
     >
       <DialogContent className="model-dialog filters-dialog">
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">
-            <Filter size={16} /> RECORTE DA ANÁLISE
-          </div>
-          <DialogTitle>Filtros do dashboard</DialogTitle>
+          <DialogTitle>{translate("Filtros do dashboard")}</DialogTitle>
           <DialogDescription>
-            Combine condições para controlar quais registros entram em todos os
-            gráficos.
+            {translate(
+              " Combine condições para controlar quais registros entram em todos os gráficos. ",
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="settings-stack">
@@ -62,12 +61,15 @@ export function FiltersDialog({
             }}
           />
           <p className="filter-preview-count">
-            {count} de {source.rows.length} linhas atendem às condições na base
-            preparada. Os filtros de período e categoria também se aplicam.
+            {count} {translate(" de ")}
+            {source.rows.length}{" "}
+            {translate(
+              " linhas atendem às condições na base preparada. Os filtros de período e categoria também se aplicam. ",
+            )}
           </p>
           {error && (
             <div className="model-error" role="alert">
-              {error}
+              {translate(error)}
             </div>
           )}
         </div>
@@ -76,7 +78,7 @@ export function FiltersDialog({
             className="secondary-button"
             onClick={() => setDraft({ mode: "and", rules: [] })}
           >
-            Limpar condições
+            {translate(" Limpar condições ")}
           </button>
           <button
             className="primary-button"
@@ -89,7 +91,7 @@ export function FiltersDialog({
               }
             }}
           >
-            Aplicar filtros
+            {translate(" Aplicar filtros ")}
           </button>
         </div>
       </DialogContent>

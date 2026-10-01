@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useState } from "react";
 import { BookmarkPlus, X, RotateCcw } from "lucide-react";
 import type { Config } from "@/lib/analytics";
@@ -38,7 +39,7 @@ export function BookmarkBar({
   }
   return (
     <div className="bookmark-bar">
-      <span className="bookmark-label">RECORTES</span>
+      <span className="bookmark-label">{translate("RECORTES")}</span>
       {bookmarks.map((b) => (
         <div className="bookmark-chip" key={b.id}>
           <button
@@ -51,12 +52,12 @@ export function BookmarkBar({
                 selections: b.selections,
               })
             }
-            title="Restaurar filtros deste recorte"
+            title={translate("Restaurar filtros deste recorte")}
           >
             {b.name}
           </button>
           <button
-            aria-label={`Remover recorte ${b.name}`}
+            aria-label={translate("Remover recorte {v0}", { v0: b.name })}
             onClick={() =>
               onChange({
                 ...config,
@@ -74,7 +75,7 @@ export function BookmarkBar({
         onClick={() => setAdding(!adding)}
       >
         <BookmarkPlus size={15} />
-        Guardar recorte
+        {translate(" Guardar recorte ")}
       </button>
       {hasFilters && (
         <button
@@ -90,7 +91,7 @@ export function BookmarkBar({
           }
         >
           <RotateCcw size={14} />
-          Limpar filtros do painel
+          {translate(" Limpar filtros do painel ")}
         </button>
       )}
       {adding && (
@@ -104,22 +105,22 @@ export function BookmarkBar({
           <input
             autoFocus
             maxLength={60}
-            aria-label="Nome do recorte"
-            placeholder="Ex.: Sul · últimos 30 dias"
+            aria-label={translate("Nome do recorte")}
+            placeholder={translate("Ex.: Sul · últimos 30 dias")}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <button className="primary-button" disabled={!name.trim()}>
-            Guardar
+            {translate(" Guardar ")}
           </button>
-          <span>Incluído ao salvar o dashboard.</span>
+          <span>{translate("Incluído ao salvar o dashboard.")}</span>
         </form>
       )}
       {config.selections?.map((s, i) => (
         <span className="selection-chip" key={`${s.field}-${i}`}>
           {s.field}: {s.value}
           <button
-            aria-label={`Remover seleção ${s.field}`}
+            aria-label={translate("Remover seleção {v0}", { v0: s.field })}
             onClick={() =>
               onChange({
                 ...config,

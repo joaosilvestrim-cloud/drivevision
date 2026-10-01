@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { SupportInbox } from "./help-center";
 import { EmailAdmin } from "./email-access";
 ("use client");
@@ -62,7 +63,7 @@ type Audit = {
   };
 };
 const date = (value: string) =>
-  new Date(value).toLocaleString("pt-BR", {
+  new Date(value).toLocaleString(locale(), {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -214,24 +215,25 @@ export function AdminPanel() {
     }
   }
   return (
-    <section className="client-admin" aria-label="Administração de clientes">
+    <section
+      className="client-admin"
+      aria-label={translate("Administração de clientes")}
+    >
       <div className="admin-banner">
         <div>
-          <span className="admin-kicker">
-            <ShieldCheck size={15} /> ADMINISTRAÇÃO DRIVEDATA
-          </span>
           <h2>
-            Cada cliente.
+            {translate(" Cada cliente. ")}
             <br />
-            Seu próprio espaço.
+            {translate(" Seu próprio espaço. ")}
           </h2>
           <p>
-            Ambientes separados, gestão centralizada. Você controla quem entra e
-            quando.
+            {translate(
+              " Ambientes separados, gestão centralizada. Você controla quem entra e quando. ",
+            )}
           </p>
         </div>
         <button className="primary-button" onClick={() => edit("new")}>
-          <Plus size={18} /> Novo cliente
+          <Plus size={18} /> {translate(" Novo cliente ")}
         </button>
       </div>
       <SupportInbox admin />
@@ -239,7 +241,7 @@ export function AdminPanel() {
       <EmailAdmin />
       <div
         className="admin-metrics"
-        aria-label="Resumo dos resultados filtrados"
+        aria-label={translate("Resumo dos resultados filtrados")}
       >
         {[
           ["Clientes", listing?.counts.total, Users],
@@ -262,15 +264,19 @@ export function AdminPanel() {
       <div className="admin-clients">
         <div className="admin-toolbar">
           <div>
-            <h2>Seus clientes</h2>
-            <p>Cadastre novos ambientes conforme seu negócio cresce.</p>
+            <h2>{translate("Seus clientes")}</h2>
+            <p>
+              {translate(
+                "Cadastre novos ambientes conforme seu negócio cresce.",
+              )}
+            </p>
           </div>
           <button
             className="secondary-button"
             disabled={loading || busy}
             onClick={() => void load()}
           >
-            <RefreshCw size={15} /> Atualizar lista
+            <RefreshCw size={15} /> {translate(" Atualizar lista ")}
           </button>
         </div>
         <form
@@ -284,72 +290,79 @@ export function AdminPanel() {
           <label className="admin-search">
             <Search size={18} />
             <input
-              aria-label="Buscar clientes"
-              placeholder="Empresa, responsável ou e-mail"
+              aria-label={translate("Buscar clientes")}
+              placeholder={translate("Empresa, responsável ou e-mail")}
               value={query}
               maxLength={120}
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
           <button className="secondary-button" type="submit" disabled={loading}>
-            Buscar
+            {translate(" Buscar ")}
           </button>
           <label className="admin-filter-status">
-            <span>Situação da conta</span>
+            <span>{translate("Situação da conta")}</span>
             <select
-              aria-label="Filtrar por situação da conta"
+              aria-label={translate("Filtrar por situação da conta")}
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="all">Todos</option>
-              <option value="active">Contas ativas</option>
-              <option value="suspended">Suspensos</option>
-              <option value="pending">Aguardando ativação</option>
+              <option value="all">{translate("Todos")}</option>
+              <option value="active">{translate("Contas ativas")}</option>
+              <option value="suspended">{translate("Suspensos")}</option>
+              <option value="pending">
+                {translate("Aguardando ativação")}
+              </option>
             </select>
           </label>
         </form>
         {error && (
           <div className="inline-error" role="alert">
-            {error}
+            {translate(error)}
           </div>
         )}
         {notice && (
           <p className="admin-notice" role="status">
-            {notice}
+            {translate(notice)}
           </p>
         )}
         {loading ? (
           <div className="admin-empty" role="status">
-            <Loader2 className="animate-spin" size={22} /> Carregando clientes…
+            <Loader2 className="animate-spin" size={22} />{" "}
+            {translate(" Carregando clientes… ")}
           </div>
         ) : !listing?.clients.length ? (
           <div className="admin-empty">
             <Building2 size={30} />
             <h3>
-              {error ? "Lista indisponível" : "Nenhum cliente encontrado"}
+              {error
+                ? translate("Lista indisponível")
+                : translate("Nenhum cliente encontrado")}
             </h3>
             <p>
               {error
-                ? "Tente atualizar a lista novamente."
-                : "Ajuste os filtros ou cadastre o primeiro cliente."}
+                ? translate("Tente atualizar a lista novamente.")
+                : translate(
+                    "Ajuste os filtros ou cadastre o primeiro cliente.",
+                  )}
             </p>
           </div>
         ) : (
           <div className="admin-table-wrap">
             <table>
               <caption className="sr-only">
-                Clientes cadastrados e controle de acesso
+                {translate(" Clientes cadastrados e controle de acesso ")}
               </caption>
               <thead>
                 <tr>
-                  <th>Cliente / responsável</th>
-                  <th>Plano</th>
-                  <th>Acesso</th>
-                  <th>Cadastro</th>
-                  <th>Ações</th>
+                  <th>{translate("Cliente / responsável")}</th>
+                  <th>{translate("Plano")}</th>
+                  <th>{translate("Acesso")}</th>
+                  <th>{translate("Cadastro")}</th>
+                  <th>{translate("Ações")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -366,14 +379,14 @@ export function AdminPanel() {
                     <td>
                       <span className={`admin-status ${client.status}`}>
                         {client.status === "suspended"
-                          ? "Suspenso"
+                          ? translate("Suspenso")
                           : client.pending
-                            ? "Aguardando ativação"
+                            ? translate("Aguardando ativação")
                             : !client.confirmed
-                              ? "Confirmar e-mail"
+                              ? translate("Confirmar e-mail")
                               : client.access
-                                ? "Liberado"
-                                : "Pagamento pendente"}
+                                ? translate("Liberado")
+                                : translate("Pagamento pendente")}
                       </span>
                     </td>
                     <td>{date(client.createdAt)}</td>
@@ -383,13 +396,17 @@ export function AdminPanel() {
                           className="secondary-button"
                           disabled={busy}
                           onClick={() => edit(client)}
-                          aria-label={`Gerenciar ${client.name}`}
+                          aria-label={translate("Gerenciar {v0}", {
+                            v0: client.name,
+                          })}
                         >
-                          Gerenciar
+                          {translate(" Gerenciar ")}
                         </button>
                         <button
                           className="admin-icon"
-                          aria-label={`Histórico de ${client.name}`}
+                          aria-label={translate("Histórico de {v0}", {
+                            v0: client.name,
+                          })}
                           onClick={() => void showHistory(client)}
                         >
                           <History size={18} />
@@ -400,7 +417,7 @@ export function AdminPanel() {
                             disabled={busy}
                             onClick={() => void invite(client)}
                           >
-                            Gerar novo convite
+                            {translate(" Gerar novo convite ")}
                           </button>
                         )}
                       </div>
@@ -414,8 +431,8 @@ export function AdminPanel() {
         {listing && !loading && (
           <div className="admin-pagination">
             <span>
-              {listing.counts.total} cliente(s) · Página {listing.page} de{" "}
-              {listing.pages}
+              {listing.counts.total} {translate(" cliente(s) · Página ")}
+              {listing.page} {translate(" de")} {listing.pages}
             </span>
             <div>
               <button
@@ -423,22 +440,23 @@ export function AdminPanel() {
                 disabled={listing.page <= 1}
                 onClick={() => setPage(listing.page - 1)}
               >
-                Anterior
+                {translate(" Anterior ")}
               </button>
               <button
                 className="secondary-button"
                 disabled={listing.page >= listing.pages}
                 onClick={() => setPage(listing.page + 1)}
               >
-                Próxima
+                {translate(" Próxima ")}
               </button>
             </div>
           </div>
         )}
       </div>
       <p className="admin-footnote">
-        Contas criadas aqui têm acesso manual. Compras pela página pública são
-        liberadas automaticamente pelo Asaas após o pagamento.
+        {translate(
+          " Contas criadas aqui têm acesso manual. Compras pela página pública são liberadas automaticamente pelo Asaas após o pagamento. ",
+        )}
       </p>
       <Dialog
         open={editor !== null}
@@ -449,17 +467,23 @@ export function AdminPanel() {
         <DialogContent className="admin-dialog">
           <DialogHeader>
             <DialogTitle>
-              {editor === "new" ? "Novo cliente" : "Gerenciar cliente"}
+              {editor === "new"
+                ? translate("Novo cliente")
+                : translate("Gerenciar cliente")}
             </DialogTitle>
             <DialogDescription>
               {editor === "new"
-                ? "Crie um ambiente exclusivo. O responsável recebe um link para definir a própria senha."
-                : "Atualize o cadastro ou controle o acesso. Os dados são preservados ao suspender."}
+                ? translate(
+                    "Crie um ambiente exclusivo. O responsável recebe um link para definir a própria senha.",
+                  )
+                : translate(
+                    "Atualize o cadastro ou controle o acesso. Os dados são preservados ao suspender.",
+                  )}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={save} className="admin-form">
             <label>
-              Nome da empresa
+              {translate(" Nome da empresa ")}
               <input
                 required
                 minLength={2}
@@ -469,7 +493,7 @@ export function AdminPanel() {
               />
             </label>
             <label>
-              Responsável
+              {translate(" Responsável ")}
               <input
                 required
                 disabled={editor !== "new"}
@@ -480,7 +504,7 @@ export function AdminPanel() {
               />
             </label>
             <label>
-              E-mail de acesso
+              {translate(" E-mail de acesso ")}
               <input
                 required
                 type="email"
@@ -491,7 +515,7 @@ export function AdminPanel() {
               />
             </label>
             <label>
-              Plano / identificação comercial
+              {translate(" Plano / identificação comercial ")}
               <input
                 required
                 maxLength={80}
@@ -501,7 +525,7 @@ export function AdminPanel() {
             </label>
             {editor !== "new" && (
               <label>
-                Acesso ao ambiente
+                {translate(" Acesso ao ambiente ")}
                 <select
                   value={form.status}
                   onChange={(e) =>
@@ -511,21 +535,21 @@ export function AdminPanel() {
                     })
                   }
                 >
-                  <option value="active">Conta ativa</option>
-                  <option value="suspended">Suspenso</option>
+                  <option value="active">{translate("Conta ativa")}</option>
+                  <option value="suspended">{translate("Suspenso")}</option>
                 </select>
               </label>
             )}
             {form.status === "suspended" && (
               <p className="admin-warning">
-                Ao salvar, as sessões serão encerradas e as atualizações
-                automáticas ficarão bloqueadas. As bases e dashboards continuam
-                armazenados.
+                {translate(
+                  " Ao salvar, as sessões serão encerradas e as atualizações automáticas ficarão bloqueadas. As bases e dashboards continuam armazenados. ",
+                )}
               </p>
             )}
             {formError && (
               <p className="inline-error" role="alert">
-                {formError}
+                {translate(formError)}
               </p>
             )}
             <div className="admin-dialog-actions">
@@ -535,7 +559,7 @@ export function AdminPanel() {
                 disabled={busy}
                 onClick={() => setEditor(null)}
               >
-                Cancelar
+                {translate(" Cancelar ")}
               </button>
               <button type="submit" className="primary-button" disabled={busy}>
                 {busy ? (
@@ -544,8 +568,8 @@ export function AdminPanel() {
                   <Check size={17} />
                 )}
                 {editor === "new"
-                  ? "Criar cliente e convite"
-                  : "Salvar alterações"}
+                  ? translate("Criar cliente e convite")
+                  : translate("Salvar alterações")}
               </button>
             </div>
           </form>
@@ -559,16 +583,17 @@ export function AdminPanel() {
       >
         <DialogContent className="admin-dialog">
           <DialogHeader>
-            <DialogTitle>Convite de acesso pronto</DialogTitle>
+            <DialogTitle>{translate("Convite de acesso pronto")}</DialogTitle>
             <DialogDescription>
-              Compartilhe este link somente com o responsável. Ele poderá
-              definir sua senha e acessar o ambiente.
+              {translate(
+                " Compartilhe este link somente com o responsável. Ele poderá definir sua senha e acessar o ambiente. ",
+              )}
             </DialogDescription>
           </DialogHeader>
           {invitation && (
             <>
               <label className="admin-invitation">
-                Link de ativação
+                {translate(" Link de ativação ")}
                 <input
                   readOnly
                   value={invitation.invitationUrl}
@@ -576,8 +601,11 @@ export function AdminPanel() {
                 />
               </label>
               <p>
-                Válido até {date(invitation.expiresAt)}. Uso único. Um novo
-                convite invalida o anterior.
+                {translate(" Válido até ")}
+                {date(invitation.expiresAt)}
+                {translate(
+                  ". Uso único. Um novo convite invalida o anterior. ",
+                )}
               </p>
               <button
                 className="primary-button"
@@ -594,11 +622,14 @@ export function AdminPanel() {
                 }}
               >
                 {copied ? <Check size={17} /> : <Copy size={17} />}
-                {copied ? "Link copiado" : "Copiar convite"}
+                {copied
+                  ? translate("Link copiado")
+                  : translate("Copiar convite")}
               </button>
               <p className="admin-footnote">
-                O link é exibido apenas agora. Nenhum e-mail é enviado
-                automaticamente.
+                {translate(
+                  " O link é exibido apenas agora. Nenhum e-mail é enviado automaticamente. ",
+                )}
               </p>
             </>
           )}
@@ -612,17 +643,18 @@ export function AdminPanel() {
       >
         <DialogContent className="admin-dialog">
           <DialogHeader>
-            <DialogTitle>Histórico administrativo</DialogTitle>
+            <DialogTitle>{translate("Histórico administrativo")}</DialogTitle>
             <DialogDescription>
-              {history?.client.name} · Últimas 50 ações
+              {history?.client.name} {translate(" · Últimas 50 ações ")}
             </DialogDescription>
           </DialogHeader>
           {historyLoading ? (
-            <p role="status">Carregando histórico…</p>
+            <p role="status">{translate("Carregando histórico…")}</p>
           ) : !history?.events.length ? (
             <p>
-              Nenhuma ação registrada. Cadastros anteriores à administração
-              podem não ter histórico.
+              {translate(
+                " Nenhuma ação registrada. Cadastros anteriores à administração podem não ter histórico. ",
+              )}
             </p>
           ) : (
             <ol className="admin-history">
@@ -638,11 +670,13 @@ export function AdminPanel() {
                     )[e.action] || e.action}
                   </strong>
                   <span>
-                    {e.actor || "Administrador"} · {date(e.createdAt)}
+                    {e.actor || translate("Administrador")} ·{" "}
+                    {date(e.createdAt)}
                   </span>
                   {e.details.after && (
                     <p>
-                      {e.details.after.name} · Plano: {e.details.after.plan} ·{" "}
+                      {e.details.after.name} {translate(" · Plano: ")}
+                      {e.details.after.plan} ·{" "}
                       {statusName(e.details.after.status)}
                     </p>
                   )}

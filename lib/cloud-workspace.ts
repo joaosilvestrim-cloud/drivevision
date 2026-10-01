@@ -22,13 +22,23 @@ export const localPersistence: Persistence = {
   load: loadWorkspace,
   save: saveWorkspace,
 };
-export async function apiJson<T>(path: string, body?: unknown): Promise<T> {
+let activeAccountId: string | null = null;
+export function setApiAccount(id: string | null) {
+  activeAccountId = id;
+}
+export async function apiJson<T>(
+  path: string,
+  body?: unknown,
+  expectedAccount = activeAccountId,
+): Promise<T> {
   const response = await fetch(`/api/${path}`, {
     method: body === undefined ? "GET" : "POST",
     credentials: "same-origin",
     cache: "no-store",
-    headers:
-      body === undefined ? undefined : { "Content-Type": "application/json" },
+    headers: {
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(expectedAccount ? { "X-Drivevision-Account": expectedAccount } : {}),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(
       path.startsWith("connectors/") ? 115000 : 30000,
@@ -41,16 +51,21 @@ export async function apiJson<T>(path: string, body?: unknown): Promise<T> {
     throw new Error(result.error || "Não foi possível concluir a solicitação.");
   return result;
 }
-export function cloudPersistence(): Persistence {
+export function cloudPersistence(accountId: string): Persistence {
   let revision: number | null = null;
   return {
     cloud: true,
     async hasRemoteChanges() {
-      const current = await apiJson<{ revision: number }>("workspace/revision");
+      const current = await apiJson<{ revision: number }>(
+        "workspace/revision",
+        undefined,
+        accountId,
+      );
       return revision !== null && current.revision !== revision;
     },
     async load() {
       const response = await fetch("/api/workspace", {
+        headers: { "X-Drivevision-Account": accountId },
         credentials: "same-origin",
         cache: "no-store",
         signal: AbortSignal.timeout(30000),
@@ -92,6 +107,7 @@ export function cloudPersistence(): Persistence {
         headers: {
           "Content-Type": "application/octet-stream",
           "X-Drivevision-Encoding": "gzip",
+          "X-Drivevision-Account": accountId,
         },
         body: compressed,
         signal: AbortSignal.timeout(30000),

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { GitMerge } from "lucide-react";
 import {
@@ -82,20 +83,17 @@ export function CombineSources({
         onPointerDownOutside={(e) => busy && e.preventDefault()}
       >
         <DialogHeader className="model-header">
-          <div className="model-eyebrow">
-            <GitMerge size={16} /> COMBINAR FONTES
-          </div>
-          <DialogTitle>Conecte as peças.</DialogTitle>
+          <DialogTitle>{translate("Conecte as peças.")}</DialogTitle>
           <DialogDescription>
-            Junte vendas ao cadastro de clientes ou acrescente novos meses. Uma
-            nova base será criada e acompanhará as atualizações das origens. As
-            originais ficam preservadas.
+            {translate(
+              " Junte vendas ao cadastro de clientes ou acrescente novos meses. Uma nova base será criada e acompanhará as atualizações das origens. As originais ficam preservadas. ",
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="hub-content">
           <div className="model-two">
             <Field
-              label="Primeira base"
+              label={translate("Primeira base")}
               value={leftId}
               onChange={(id) => {
                 setLeftId(id);
@@ -107,7 +105,7 @@ export function CombineSources({
               options={sourceOptions}
             />
             <Field
-              label="Segunda base"
+              label={translate("Segunda base")}
               value={rightId}
               onChange={(id) => {
                 setRightId(id);
@@ -120,7 +118,7 @@ export function CombineSources({
             />
           </div>
           <Field
-            label="Como combinar"
+            label={translate("Como combinar")}
             value={options.mode}
             onChange={(mode) =>
               setOptions({ ...options, mode: mode as CombineOptions["mode"] })
@@ -144,16 +142,24 @@ export function CombineSources({
             <>
               <div className="model-two">
                 <Field
-                  label="Chave da primeira base"
+                  label={translate("Chave da primeira base")}
                   value={options.leftKey}
                   onChange={(leftKey) => setOptions({ ...options, leftKey })}
-                  options={left.columns.map((c) => ({ value: c, label: c }))}
+                  options={left.columns.map((c) => ({
+                    raw: true,
+                    value: c,
+                    label: c,
+                  }))}
                 />
                 <Field
-                  label="Chave da segunda base"
+                  label={translate("Chave da segunda base")}
                   value={options.rightKey}
                   onChange={(rightKey) => setOptions({ ...options, rightKey })}
-                  options={right.columns.map((c) => ({ value: c, label: c }))}
+                  options={right.columns.map((c) => ({
+                    raw: true,
+                    value: c,
+                    label: c,
+                  }))}
                 />
               </div>
               <label className="model-toggle">
@@ -164,56 +170,61 @@ export function CombineSources({
                     setOptions({ ...options, trim: e.target.checked })
                   }
                 />
-                Ignorar espaços no início e no fim das chaves
+                {translate(" Ignorar espaços no início e no fim das chaves ")}
               </label>
             </>
           )}
           <TextField
-            label="Nome da nova base"
+            label={translate("Nome da nova base")}
             value={name}
             onChange={setName}
           />
           {preview.error ? (
             <p className="model-error" role="alert">
-              {preview.error}
+              {translate(preview.error)}
             </p>
           ) : (
             preview.result && (
               <>
                 <div className="analysis-stats">
                   <article>
-                    <span>Resultado</span>
+                    <span>{translate("Resultado")}</span>
                     <strong>{preview.result.source.rows.length}</strong>
                     <small>
-                      {preview.result.source.columns.length} colunas
+                      {preview.result.source.columns.length}{" "}
+                      {translate(" colunas ")}
                     </small>
                   </article>
                   {options.mode !== "append" && (
                     <>
                       <article>
-                        <span>Linhas com correspondência</span>
+                        <span>{translate("Linhas com correspondência")}</span>
                         <strong>{preview.result.matched}</strong>
-                        <small>Da primeira base</small>
+                        <small>{translate("Da primeira base")}</small>
                       </article>
                       <article>
-                        <span>Sem correspondência</span>
+                        <span>{translate("Sem correspondência")}</span>
                         <strong>{preview.result.unmatched}</strong>
                         <small>
                           {options.mode === "left"
-                            ? "Mantidas com campos vazios"
-                            : "Excluídas do resultado"}
+                            ? translate("Mantidas com campos vazios")
+                            : translate("Excluídas do resultado")}
                         </small>
                       </article>
                     </>
                   )}
                 </div>
                 <p className="model-note">
-                  {preview.result.note} Este resultado é uma cópia; não
-                  sincroniza futuras alterações nas fontes.
+                  {preview.result.note}{" "}
+                  {translate(
+                    " Este resultado é uma cópia; não sincroniza futuras alterações nas fontes. ",
+                  )}
                 </p>
                 <div className="pivot-scroll">
                   <table className="result-table">
-                    <caption>Prévia das primeiras 8 linhas</caption>
+                    <caption>
+                      {translate("Prévia das primeiras 8 linhas")}
+                    </caption>
                     <thead>
                       <tr>
                         {preview.result.source.columns.map((c) => (
@@ -237,25 +248,27 @@ export function CombineSources({
           )}
           {saveError && (
             <p className="model-error" role="alert">
-              {saveError}
+              {translate(saveError)}
             </p>
           )}
         </div>
         <footer className="model-footer">
-          <span>Até 20 mil linhas e 60 colunas no resultado.</span>
+          <span>
+            {translate("Até 20 mil linhas e 60 colunas no resultado.")}
+          </span>
           <button
             className="secondary-button"
             onClick={onClose}
             disabled={busy}
           >
-            Cancelar
+            {translate(" Cancelar ")}
           </button>
           <button
             className="primary-button"
             disabled={busy || !preview.result || !name.trim()}
             onClick={save}
           >
-            {busy ? "Salvando…" : "Criar nova base"}
+            {busy ? translate("Salvando…") : translate("Criar nova base")}
           </button>
         </footer>
       </DialogContent>

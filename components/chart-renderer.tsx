@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { PivotTable } from "./pivot-table";
 import type { Selection } from "@/lib/exploration";
 
@@ -69,7 +70,7 @@ export function VisualChart({
       if (visual.grain === "year") return String(d.getUTCFullYear());
       if (visual.grain === "quarter")
         return `T${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`;
-      return new Intl.DateTimeFormat("pt-BR", {
+      return new Intl.DateTimeFormat(locale(), {
         month: "short",
         year: "2-digit",
         ...(visual.grain === "day" ? { day: "2-digit" as const } : {}),
@@ -86,14 +87,16 @@ export function VisualChart({
   if (visual.type === "text")
     return (
       <div className="visual-note">
-        {visual.text || "Adicione uma observação nas configurações do bloco."}
+        {visual.text ||
+          translate("Adicione uma observação nas configurações do bloco.")}
       </div>
     );
   if (unknown)
     return (
       <div className="visual-empty">
-        Uma coluna usada por este visual não está disponível. Abra Configurar
-        gráfico e selecione os campos do resultado atual.
+        {translate(
+          " Uma coluna usada por este visual não está disponível. Abra Configurar gráfico e selecione os campos do resultado atual. ",
+        )}
       </div>
     );
   if (visual.type === "kpi")
@@ -113,7 +116,7 @@ export function VisualChart({
         </strong>
         <p>
           {primary.label || primary.field} ·{" "}
-          {
+          {translate(
             {
               sum: "Soma",
               average: "Média",
@@ -122,20 +125,24 @@ export function VisualChart({
               min: "Mínimo",
               max: "Máximo",
               median: "Mediana",
-            }[primary.aggregation]
-          }
+            }[primary.aggregation],
+          )}
         </p>
         {result.missing > 0 &&
           !["count", "distinct"].includes(primary.aggregation) && (
             <small>
-              {result.missing} valores vazios ou inválidos desconsiderados
+              {result.missing}{" "}
+              {translate(" valores vazios ou inválidos desconsiderados ")}
             </small>
           )}
         {visual.target !== undefined && (
           <small>
-            Meta: {format(visual.target)}
+            {translate(" Meta: ")}
+            {format(visual.target)}
             {result.value !== null
-              ? ` · diferença: ${format(result.value - visual.target)}`
+              ? translate(" · diferença: {v0}", {
+                  v0: format(result.value - visual.target),
+                })
               : ""}
           </small>
         )}
@@ -144,7 +151,7 @@ export function VisualChart({
   if (!result.rows.length)
     return (
       <div className="visual-empty">
-        Nenhum registro atende aos filtros deste visual.
+        {translate(" Nenhum registro atende aos filtros deste visual. ")}
       </div>
     );
   if (visual.type === "gauge") {
@@ -152,8 +159,9 @@ export function VisualChart({
     if (!progress)
       return (
         <div className="visual-empty">
-          Configure uma meta maior que zero na aba Formato. O medidor precisa de
-          um resultado não negativo.
+          {translate(
+            " Configure uma meta maior que zero na aba Formato. O medidor precisa de um resultado não negativo. ",
+          )}
         </div>
       );
     return (
@@ -161,7 +169,13 @@ export function VisualChart({
         <svg
           viewBox="0 0 240 140"
           role="img"
-          aria-label={`${format(result.value)} de ${format(visual.target!)}: ${(progress.ratio * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% da meta`}
+          aria-label={translate("{v0} de {v1}: {v2}% da meta", {
+            v0: format(result.value),
+            v1: format(visual.target!),
+            v2: (progress.ratio * 100).toLocaleString(locale(), {
+              maximumFractionDigits: 1,
+            }),
+          })}
         >
           <path
             d="M25 120 A95 95 0 0 1 215 120"
@@ -187,7 +201,7 @@ export function VisualChart({
             fontSize="29"
             fontWeight="600"
           >
-            {(progress.ratio * 100).toLocaleString("pt-BR", {
+            {(progress.ratio * 100).toLocaleString(locale(), {
               maximumFractionDigits: 1,
             })}
             %
@@ -195,11 +209,12 @@ export function VisualChart({
         </svg>
         <strong>{format(result.value)}</strong>
         <span>
-          {visual.targetLabel || "Meta"}: {format(visual.target!)}
+          {visual.targetLabel || translate("Meta")}: {format(visual.target!)}
         </span>
         {progress.ratio > 1 && (
           <small>
-            Meta superada em {format(result.value! - visual.target!)}
+            {translate(" Meta superada em ")}
+            {format(result.value! - visual.target!)}
           </small>
         )}
       </div>
@@ -209,8 +224,9 @@ export function VisualChart({
     if (result.negative || !data.some((g) => Number(g.s0) > 0))
       return (
         <div className="visual-empty">
-          O funil precisa de valores não negativos e pelo menos um valor
-          positivo.
+          {translate(
+            " O funil precisa de valores não negativos e pelo menos um valor positivo. ",
+          )}
         </div>
       );
     const max = Math.max(...data.map((g) => Number(g.s0)));
@@ -237,10 +253,14 @@ export function VisualChart({
           </button>
         ))}
         <p className="visual-caption">
-          Largura proporcional ao maior valor. Ordenação configurada no visual;
-          não representa taxa de conversão.
+          {translate(
+            " Largura proporcional ao maior valor. Ordenação configurada no visual; não representa taxa de conversão. ",
+          )}
           {result.totalGroups > data.length
-            ? ` Exibindo ${data.length} de ${result.totalGroups} grupos.`
+            ? translate(" Exibindo {v0} de {v1} grupos.", {
+                v0: data.length,
+                v1: result.totalGroups,
+              })
             : ""}
         </p>
       </div>
@@ -249,8 +269,9 @@ export function VisualChart({
   if (visual.type === "radar" && (result.negative || data.length < 3))
     return (
       <div className="visual-empty">
-        O radar precisa de pelo menos três categorias e valores não negativos.
-        Ajuste os filtros ou use barras.
+        {translate(
+          " O radar precisa de pelo menos três categorias e valores não negativos. Ajuste os filtros ou use barras. ",
+        )}
       </div>
     );
   if (visual.type === "pivot")
@@ -277,7 +298,9 @@ export function VisualChart({
       />
     ) : (
       <p className="visual-empty">
-        Escolha uma coluna para a tabela dinâmica em Configurar.
+        {translate(
+          " Escolha uma coluna para a tabela dinâmica em Configurar. ",
+        )}
       </p>
     );
   if (visual.type === "table")
@@ -290,7 +313,7 @@ export function VisualChart({
               {series.map((s) => (
                 <th key={s.key}>{s.label}</th>
               ))}
-              <th>Linhas</th>
+              <th>{translate("Linhas")}</th>
             </tr>
           </thead>
           <tbody>
@@ -302,7 +325,7 @@ export function VisualChart({
                     {formatChartNumber(
                       g[s.key] as number | null,
                       ["count", "distinct"].includes(s.aggregation)
-                        ? "Registros"
+                        ? translate("Registros")
                         : s.field,
                       visual.numberStyle,
                     )}
@@ -315,7 +338,8 @@ export function VisualChart({
         </table>
         {result.totalGroups > data.length && (
           <p className="visual-caption">
-            {data.length} de {result.totalGroups} grupos
+            {data.length} {translate(" de ")}
+            {result.totalGroups} {translate(" grupos ")}
           </p>
         )}
       </div>
@@ -326,8 +350,9 @@ export function VisualChart({
   )
     return (
       <div className="visual-empty">
-        Este visual exige valores positivos. Use barras para apresentar valores
-        negativos ou nulos.
+        {translate(
+          " Este visual exige valores positivos. Use barras para apresentar valores negativos ou nulos. ",
+        )}
       </div>
     );
   const tip = (
@@ -565,7 +590,7 @@ export function VisualChart({
             stroke={dark ? "#f1b969" : "#b57222"}
             strokeDasharray="5 4"
             label={{
-              value: visual.targetLabel || "Meta",
+              value: visual.targetLabel || translate("Meta"),
               fill: ink,
               fontSize: 11,
             }}
@@ -662,7 +687,11 @@ export function VisualChart({
       <div
         className="visual-chart"
         role="img"
-        aria-label={`${visual.title}: ${data.length} grupos, ${series.length} séries`}
+        aria-label={translate("{v0}: {v1} grupos, {v2} séries", {
+          v0: visual.title,
+          v1: data.length,
+          v2: series.length,
+        })}
       >
         <ResponsiveContainer
           width="100%"
@@ -676,12 +705,15 @@ export function VisualChart({
       </div>
       {(result.totalGroups > data.length || result.omittedSeries > 0) && (
         <p className="visual-caption">
-          {data.length} de {result.totalGroups} grupos
+          {data.length} {translate(" de ")}
+          {result.totalGroups} {translate(" grupos ")}
           {result.omittedSeries
-            ? ` · ${result.omittedSeries} séries adicionais não exibidas`
+            ? translate(" · {v0} séries adicionais não exibidas", {
+                v0: result.omittedSeries,
+              })
             : ""}
           {["donut", "treemap"].includes(visual.type)
-            ? " · participação somente entre grupos exibidos"
+            ? translate(" · participação somente entre grupos exibidos")
             : ""}
         </p>
       )}

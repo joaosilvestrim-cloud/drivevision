@@ -1,4 +1,5 @@
 "use client";
+import { t as translate, locale } from "@/lib/i18n";
 import { useMemo } from "react";
 import { pivotData, type PivotSpec } from "@/lib/exploration";
 import { formatChartNumber, type NumberStyle } from "@/lib/chart-model";
@@ -25,13 +26,18 @@ export function PivotTable({
       format,
     );
   if (!rows.length)
-    return <p className="model-note">Nenhum registro neste recorte.</p>;
+    return (
+      <p className="model-note">
+        {translate("Nenhum registro neste recorte.")}
+      </p>
+    );
   return (
     <div className="pivot-container">
       <div className="pivot-scroll">
         <table className="pivot-table">
           <caption>
-            {spec.row} × {spec.column} · {spec.metric}
+            {spec.row} {translate(" × ")}
+            {spec.column} · {spec.metric}
           </caption>
           <thead>
             <tr>
@@ -40,16 +46,16 @@ export function PivotTable({
               </th>
               {data.colKeys.map((c) => (
                 <th scope="col" key={c}>
-                  {c || "(Vazio)"}
+                  {c || translate("(Vazio)")}
                 </th>
               ))}
-              <th scope="col">Total</th>
+              <th scope="col">{translate("Total")}</th>
             </tr>
           </thead>
           <tbody>
             {data.rowKeys.map((r, i) => (
               <tr key={r}>
-                <th scope="row">{r || "(Vazio)"}</th>
+                <th scope="row">{r || translate("(Vazio)")}</th>
                 {data.colKeys.map((c, j) => {
                   const v = data.values[i][j],
                     strength =
@@ -71,7 +77,10 @@ export function PivotTable({
                       {onCell ? (
                         <button
                           onClick={() => onCell(r, c)}
-                          aria-label={`Ver registros: ${r || "vazio"}, ${c || "vazio"}`}
+                          aria-label={translate("Ver registros: {v0}, {v1}", {
+                            v0: r || "vazio",
+                            v1: c || "vazio",
+                          })}
                         >
                           {number(v)}
                         </button>
@@ -87,7 +96,7 @@ export function PivotTable({
           </tbody>
           <tfoot>
             <tr>
-              <th>Total</th>
+              <th>{translate("Total")}</th>
               {data.colTotals.map((v, i) => (
                 <td key={data.colKeys[i]}>{number(v)}</td>
               ))}
@@ -97,10 +106,14 @@ export function PivotTable({
         </table>
       </div>
       <p className="model-note">
-        Totais recalculados sobre os registros, inclusive para média e contagem
-        distinta.
+        {translate(
+          " Totais recalculados sobre os registros, inclusive para média e contagem distinta. ",
+        )}
         {data.omittedRows > 0 || data.omittedCols > 0
-          ? ` Exibição limitada: ${data.omittedRows} grupos de linha e ${data.omittedCols} de coluna omitidos; totais incluem todos.`
+          ? translate(
+              " Exibição limitada: {v0} grupos de linha e {v1} de coluna omitidos; totais incluem todos.",
+              { v0: data.omittedRows, v1: data.omittedCols },
+            )
           : ""}
       </p>
     </div>

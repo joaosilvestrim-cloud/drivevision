@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 export const helpTopics = [
   {
     id: "inicio",
@@ -131,6 +132,22 @@ export function findHelp(question: string) {
           "isso",
           "voce",
           "tem",
+          "how",
+          "the",
+          "can",
+          "with",
+          "want",
+          "what",
+          "this",
+          "for",
+          "como",
+          "con",
+          "que",
+          "quiero",
+          "una",
+          "mis",
+          "los",
+          "las",
         ].includes(w),
     );
   return helpTopics
@@ -139,7 +156,17 @@ export function findHelp(question: string) {
       score: words.reduce(
         (n, w) =>
           n +
-          (normalize(topic.title + " " + topic.keywords).includes(w) ? 1 : 0),
+          (normalize(
+            topic.title +
+              " " +
+              topic.keywords +
+              " " +
+              t(topic.title) +
+              " " +
+              t(topic.keywords),
+          ).includes(w)
+            ? 1
+            : 0),
         0,
       ),
     }))
