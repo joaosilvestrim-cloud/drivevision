@@ -23,4 +23,19 @@ test('sum, median, min, max, distinct and no-data semantics',()=>{assert.equal(c
 test('multiple measures, local filters, series split and totals',()=>{const v={...makeVisual('bar',source,config,'v'),measures:[{id:'a',field:'Receita',label:'Receita',color:'#000000',aggregation:'sum'},{id:'b',field:'Custo',label:'Custo',color:'#ffffff',aggregation:'average'}]};const d=chartData(source.rows,source,v);assert.equal(d.series.length,2);assert.equal(d.data.find(g=>g.name==='Sul').s1,70);assert.equal(chartData(source.rows,source,{...v,filters:rules}).rows.length,1);assert.equal(chartData(source.rows,source,{...v,splitBy:'Pessoa'}).series.length,3);assert.equal(boardRows(source,{...config,period:'30',filters:rules}).length,1);});
 test('quarterly grouping, top-N and percent format',()=>{const v={...makeVisual('line',source,config,'v'),dimension:'Data',grain:'quarter',limit:0};assert.equal(chartData(source.rows,source,v).data.length,1);assert.equal(chartData(source.rows,source,{...v,grain:'day',limit:2}).data.length,2);assert.match(formatChartNumber(.25,'m',{kind:'percent',decimals:1,compact:false,prefix:'',suffix:''}),/25,0/);});
 test('prepared data survives serialization and yields accurate chart totals',()=>{const cfg={...defaultConfig(DEMO),dataSteps:[step('calculate','Lucro','[Receita]-[Custo]')]};const p=prepareSource(DEMO,JSON.parse(JSON.stringify(cfg)).dataSteps);const v={...makeVisual('bar',p.source,cfg,'profit'),metric:'Lucro'};const expected=DEMO.rows.reduce((sum,r)=>sum+Number(r.Receita)-Number(r.Custo),0);assert.ok(Math.abs(chartData(p.source.rows,p.source,v).value-expected)<.00001);});
+test('formatting changes display without changing source values or aggregates',()=>{
+ const style={kind:'percent',decimals:1,compact:false,prefix:'',suffix:''};
+ assert.equal(formatChartNumber(25,'m',{...style,percentInput:'whole'}),formatChartNumber(.25,'m',style));
+ assert.match(formatChartNumber(-25,'m',{...style,percentInput:'whole'}),/-25,0/);
+ for(const currency of ['BRL','USD','EUR']) {
+  assert.equal(formatChartNumber(1250,'m',{...style,kind:'currency',currency}),new Intl.NumberFormat('pt-BR',{style:'currency',currency,minimumFractionDigits:1,maximumFractionDigits:1}).format(1250));
+ }
+ assert.equal(formatChartNumber(null,'m',style),'—');
+ const v=makeVisual('donut',source,config,'formatted');
+ const customized=JSON.parse(JSON.stringify({...v,numberStyle:{...style,percentInput:'whole'},labelSize:16,labelColor:'#123456',labelBold:true,donutLabel:'category-percent',categoryLabelLength:40}));
+ assert.deepEqual(chartData(source.rows,source,customized).data,chartData(source.rows,source,v).data);
+ assert.equal(customized.numberStyle.percentInput,'whole');
+ assert.equal(customized.labelSize,16);
+ assert.equal(source.rows[0].Receita,'100');
+});
 console.log(`${count} data and chart model checks passed.`);

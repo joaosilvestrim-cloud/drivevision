@@ -30,6 +30,8 @@ export type NumberStyle = {
   compact: boolean;
   prefix: string;
   suffix: string;
+  currency?: "BRL" | "USD" | "EUR";
+  percentInput?: "fraction" | "whole";
 };
 export const AGGREGATIONS = [
   { value: "sum", label: "Soma" },
@@ -102,11 +104,11 @@ export function formatChartNumber(
         : style.kind === "percent"
           ? "percent"
           : "decimal",
-    ...(style.kind === "currency" ? { currency: "BRL" } : {}),
+    ...(style.kind === "currency" ? { currency: style.currency ?? "BRL" } : {}),
     minimumFractionDigits: style.decimals,
     maximumFractionDigits: style.decimals,
     notation: style.compact ? "compact" : "standard",
-  }).format(value);
+  }).format(style.kind === "percent" && style.percentInput === "whole" ? value / 100 : value);
   return `${style.prefix}${text}${style.suffix}`;
 }
 export function chartData(

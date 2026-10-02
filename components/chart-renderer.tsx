@@ -77,7 +77,8 @@ export function VisualChart({
         timeZone: "UTC",
       }).format(d);
     }
-    return value.length > 22 ? value.slice(0, 20) + "…" : value;
+    const length = visual.categoryLabelLength ?? 22;
+    return length > 0 && value.length > length ? value.slice(0, length - 2) + "…" : value;
   };
   const unknown =
     measuresFor(visual).some((m) => !source.columns.includes(m.field)) ||
@@ -491,8 +492,17 @@ export function VisualChart({
           isAnimationActive={false}
           label={
             visual.labels
-              ? (entry) =>
-                  `${label(String(entry.name))}: ${format(Number(entry.value))}`
+              ? (entry) => {
+                  const content = visual.donutLabel ?? "category-value";
+                  const value = content.includes("percent")
+                    ? new Intl.NumberFormat(locale(), { style: "percent", maximumFractionDigits: 1 }).format(entry.percent ?? 0)
+                    : format(Number(entry.value));
+                  return <text x={entry.x} y={entry.y} textAnchor={entry.textAnchor}
+                    dominantBaseline="central" fill={visual.labelColor || ink}
+                    fontSize={visual.labelSize ?? 11} fontWeight={visual.labelBold ? 700 : 400}>
+                    {content.startsWith("category") ? `${label(String(entry.name))}: ${value}` : value}
+                  </text>;
+                }
               : false
           }
           onClick={(g) => onFilter?.(String(g.name))}
@@ -600,30 +610,29 @@ export function VisualChart({
           const labels = visual.labels ? (
             <LabelList
               dataKey={s.key}
-              position={horizontal ? "right" : "top"}
+              position={visual.labelPosition === "inside" ? "insideEnd" : horizontal ? "right" : "top"}
               formatter={(v) =>
                 formatChartNumber(
                   Number(v),
                   ["count", "distinct"].includes(s.aggregation)
                     ? "Registros"
                     : s.field,
-                  chartWidth < 420
+                  chartWidth < 420 && (!visual.numberStyle || visual.numberStyle.kind === "auto")
                     ? {
-                        kind:
-                          visual.numberStyle?.kind === "percent"
-                            ? "percent"
-                            : "number",
+                        kind: "number",
                         decimals: 0,
                         compact: true,
                         prefix: "",
                         suffix: "",
+                        percentInput: visual.numberStyle?.percentInput,
                       }
                     : visual.numberStyle,
                 )
               }
               style={{
-                fontSize: 11,
-                fill: dark ? "#e3eef5" : "#334d5d",
+                fontSize: visual.labelSize ?? 11,
+                fontWeight: visual.labelBold ? 700 : 400,
+                fill: visual.labelColor || (dark ? "#e3eef5" : "#334d5d"),
                 paintOrder: "stroke",
                 stroke: dark ? "#182c3b" : "#ffffff",
                 strokeWidth: 3,

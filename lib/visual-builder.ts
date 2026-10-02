@@ -52,6 +52,12 @@ export type Visual = {
   numberStyle?: NumberStyle;
   stacking?: "grouped" | "stacked";
   labels?: boolean;
+  labelSize?: number;
+  labelColor?: string;
+  labelBold?: boolean;
+  labelPosition?: "outside" | "inside";
+  donutLabel?: "category-value" | "value" | "percent" | "category-percent";
+  categoryLabelLength?: number;
   axisX?: boolean;
   axisY?: boolean;
   xTitle?: string;

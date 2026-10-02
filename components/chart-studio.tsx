@@ -25,6 +25,7 @@ import {
   SERIES_COLORS,
   measuresFor,
   chartData,
+  formatChartNumber,
   type Measure,
   type NumberStyle,
 } from "@/lib/chart-model";
@@ -613,10 +614,21 @@ export function ChartStudio({
                     options={[
                       { value: "auto", label: "Automático pelo campo" },
                       { value: "number", label: "Número" },
-                      { value: "currency", label: "Moeda · R$" },
-                      { value: "percent", label: "Percentual · 0,25 = 25%" },
+                      { value: "currency", label: "Moeda" },
+                      { value: "percent", label: "Percentual" },
                     ]}
                   />
+                  {format.kind === "currency" && (
+                    <Field label={translate("Moeda dos valores")} value={format.currency ?? "BRL"}
+                      onChange={(currency) => updateFormat({ currency: currency as NumberStyle["currency"] })}
+                      options={[{ value: "BRL", label: "BRL · Real brasileiro", raw: true }, { value: "USD", label: "USD · US dollar", raw: true }, { value: "EUR", label: "EUR · Euro", raw: true }]} />
+                  )}
+                  {format.kind === "currency" && <p className="model-note">{translate("Altera a exibição da moeda, sem converter os valores por câmbio.")}</p>}
+                  {format.kind === "percent" && (
+                    <Field label={translate("Como o percentual está nos dados?")} value={format.percentInput ?? "fraction"}
+                      onChange={(percentInput) => updateFormat({ percentInput: percentInput as NumberStyle["percentInput"] })}
+                      options={[{ value: "fraction", label: "Fração · 0,25 vira 25%" }, { value: "whole", label: "Inteiro · 25 vira 25%" }]} />
+                  )}
                   {format.kind !== "auto" && (
                     <>
                       <Field
@@ -656,8 +668,37 @@ export function ChartStudio({
                   <div className="model-section-label">
                     {translate("LEITURA DO GRÁFICO")}
                   </div>
+                  <p className="model-note" aria-live="polite">
+                    {translate("Prévia do valor agregado")}: <strong>{formatChartNumber(calculated.value, ["count", "distinct"].includes(measures[0].aggregation) ? "Registros" : measures[0].field, format)}</strong>
+                  </p>
                   {(cartesian || draft.type === "donut") &&
                     toggle("Exibir valores sobre o gráfico", "labels")}
+                  {(cartesian || draft.type === "donut") && draft.labels && <>
+                    <div className="model-two">
+                      <Field label={translate("Tamanho dos rótulos")} value={String(draft.labelSize ?? 11)}
+                        onChange={(v) => patch({ labelSize: Number(v) })}
+                        options={[10, 11, 12, 14, 16, 18].map((v) => ({ value: String(v), label: `${v} px`, raw: true }))} />
+                      <label className="model-field"><span>{translate("Cor dos rótulos")}</span>
+                        <input type="color" aria-label={translate("Cor dos rótulos")} value={draft.labelColor ?? "#334d5d"}
+                          onChange={(e) => patch({ labelColor: e.target.value })} />
+                      </label>
+                    </div>
+                    <label className="model-toggle"><input type="checkbox" checked={!!draft.labelBold}
+                      onChange={(e) => patch({ labelBold: e.target.checked })} />{translate("Rótulos em negrito")}</label>
+                    {cartesian && <Field label={translate("Posição dos rótulos")} value={draft.labelPosition ?? "outside"}
+                      onChange={(v) => patch({ labelPosition: v as Visual["labelPosition"] })}
+                      options={[{ value: "outside", label: "Fora do gráfico" }, { value: "inside", label: "Dentro do gráfico" }]} />}
+                    {draft.type === "donut" && <>
+                      <Field label={translate("Conteúdo dos rótulos")} value={draft.donutLabel ?? "category-value"}
+                        onChange={(v) => patch({ donutLabel: v as Visual["donutLabel"] })}
+                        options={[{ value: "category-value", label: "Categoria e valor" }, { value: "value", label: "Somente valor" }, { value: "percent", label: "Participação percentual" }, { value: "category-percent", label: "Categoria e percentual" }]} />
+                      <p className="model-note">{translate("A participação considera apenas os grupos exibidos, após os filtros e o limite de categorias.")}</p>
+                    </>}
+                    <button className="text-button" onClick={() => patch({ labelSize: undefined, labelColor: undefined, labelBold: undefined, labelPosition: undefined, donutLabel: undefined })}>{translate("Restaurar estilo dos rótulos")}</button>
+                  </>}
+                  {!isText && !["kpi", "gauge"].includes(draft.type) && <Field label={translate("Comprimento dos nomes das categorias")}
+                    value={String(draft.categoryLabelLength ?? 22)} onChange={(v) => patch({ categoryLabelLength: Number(v) })}
+                    options={[{ value: "12", label: "Curto · 12 caracteres" }, { value: "22", label: "Padrão · 22 caracteres" }, { value: "40", label: "Longo · 40 caracteres" }, { value: "0", label: "Nome completo" }]} />}
                   {hasLegend && toggle("Exibir legenda", "legend")}
                   {hasLegend && draft.legend && (
                     <Field
