@@ -12,3 +12,33 @@
 @media(max-width:420px){.login-edition{display:none}.login-header{margin:12px;padding:14px 20px}.login-story h1{font-size:60px}.login-body{padding:22px 16px 30px}.login-panel{padding:25px 22px}.login-kicker{font-size:7px}.login-panel h2{font-size:36px}}
 @media(max-width:360px){.login-story h1{font-size:52px}.login-panel{padding:23px 18px}.login-panel-top>span:last-child{font-size:8px}.login-submit{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.orbit-core,.workspace-entrance,.entrance-halo{animation:none}.login-submit{transition:none}}
+
+/* Give headline lines their own boxes so the highlight never covers the line above. */
+.login-story h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: clamp(60px, 6.8vw, 100px);
+  line-height: 1.08;
+  letter-spacing: -.02em;
+}
+.login-story h1 em {
+  display: block;
+  padding: .08em .12em .12em;
+  max-width: 100%;
+}
+.login-story > p { margin-top: 30px; line-height: 1.85; }
+.login-panel h2 { line-height: 1.15; margin-bottom: 18px; }
+.login-subtitle { margin-bottom: 30px; }
+.login-form { gap: 24px; }
+.login-form > label { gap: 12px; }
+.login-trust { line-height: 1.7; }
+@media (min-width: 761px) and (max-width: 1050px) {
+  .login-story h1 { font-size: clamp(44px, 6vw, 63px); gap: 14px; }
+}
+@media (max-width: 760px) {
+  .login-story h1 { align-items: center; font-size: clamp(42px, 10.5vw, 64px); gap: 12px; }
+  .login-story > p { margin: 22px auto 0; line-height: 1.8; }
+  .login-body { gap: 36px; }
+}

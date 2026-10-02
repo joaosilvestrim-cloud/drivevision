@@ -103,8 +103,7 @@ export function LoginScreen({
       <div className="login-body">
         <section className="login-story" aria-label={translate("DriveVision")}>
           <h1>
-            {translate(" Enxergue além. ")}
-            <br />
+            <span>{translate(" Enxergue além. ")}</span>
             <em>{translate("Decida melhor.")}</em>
           </h1>
           <p>
