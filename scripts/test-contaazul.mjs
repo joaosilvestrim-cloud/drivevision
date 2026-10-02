@@ -42,6 +42,8 @@ globalThis.fetch = async (input, init) => {
   assert.equal(u.origin, "https://api-v2.contaazul.com");
   if (u.pathname === "/oauth/token") {
     tokenCalls++;
+    if (mode.startsWith("oauth:")) return Response.json({ error: mode.slice(6), error_description: "fixture-secret must never reach a redirect" }, { status: 400 });
+    if (mode === "oauth-response") return Response.json(null);
     assert.equal(
       init.headers.Authorization,
       "Basic " +
@@ -264,7 +266,9 @@ try {
     403,
   );
   const callback = await connect(a);
-  assert.equal((await req(callback, b)).status, 303);
+  const wrongOwner = await req(callback, b);
+  assert.equal(wrongOwner.status, 303);
+  assert.match(wrongOwner.location, /reason=ca_state/);
   assert.equal(tokenCalls, 0, "Cross-owner state never reaches token endpoint");
   const done = await req(callback, a);
   assert.equal(done.status, 303);
@@ -424,6 +428,17 @@ try {
   console.log(
     "PASS cron advances unfinished loads without browser; paused jobs do not call provider",
   );
+  for (const [failure, diagnostic] of [["oauth:invalid_client", "ca_credentials"], ["oauth:invalid_grant", "ca_grant"], ["oauth:invalid_request", "ca_token"], ["oauth-response", "ca_response"]]) {
+    mode = failure;
+    const failed = await req(await connect(a), a);
+    assert.equal(failed.status, 303);
+    assert.match(failed.location, new RegExp("reason=" + diagnostic));
+    assert.match(failed.location, /provider=contaazul/);
+    assert.ok(!failed.location.includes("fixture-secret"));
+    assert.equal((await req("connectors", a)).data.connections.length, 1);
+  }
+  mode = "ok";
+  console.log("PASS safe OAuth failure reasons; provider secrets hidden and existing connection preserved");
   if (browser) {
     writeFileSync(
       "work/contaazul-qa-session.json",

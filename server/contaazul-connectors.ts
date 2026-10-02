@@ -56,7 +56,7 @@ export async function contaAzulRoute(
   if (path === "/api/connectors/callback/contaazul" && method === "GET") {
     const state = url.searchParams.get("state") || "";
     if (!/^[\w-]{43}$/.test(state))
-      throw new ConnectorError(400, "Autorização inválida. Conecte novamente.");
+      throw new ConnectorError(400, "Autorização inválida. Conecte novamente.", "ca_state");
     const pending = await transaction(
       owner,
       async (c) =>
@@ -71,6 +71,7 @@ export async function contaAzulRoute(
       throw new ConnectorError(
         400,
         "A autorização expirou ou pertence a outra sessão.",
+        "ca_state",
       );
     if (url.searchParams.has("error"))
       return { redirect: "/?view=connections&connection=cancelled" };
@@ -79,6 +80,7 @@ export async function contaAzulRoute(
       throw new ConnectorError(
         400,
         "A Conta Azul não retornou uma autorização válida.",
+        "ca_grant",
       );
     const tokens = await contaAzulExchange({
       grant_type: "authorization_code",
@@ -97,6 +99,7 @@ export async function contaAzulRoute(
       throw new ConnectorError(
         502,
         "Não foi possível identificar a empresa autorizada.",
+        "ca_identity",
       );
     const ref = createHash("sha256").update(identity).digest("hex");
     const id = await transaction(owner, async (c) => {
@@ -132,6 +135,8 @@ export async function contaAzulRoute(
         ],
       );
       return id;
+    }).catch(() => {
+      throw new ConnectorError(503, "Não foi possível salvar a conexão Conta Azul.", "ca_storage");
     });
     return {
       redirect: "/?view=connections&connection=contaazul&account=" + id,

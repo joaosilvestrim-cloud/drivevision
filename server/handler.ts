@@ -25,6 +25,7 @@ import { database, databaseConfigured, transaction } from "./database.ts";
 import { databaseFailureCode } from "./database-errors.ts";
 import { ConnectorError, secretMatches } from "./connector-security.ts";
 import { connectorsRoute } from "./connectors.ts";
+import { CONNECTION_ERRORS } from "../lib/connection-errors.ts";
 import { syncDue } from "./cloud-sync.ts";
 import {
   historyRoute,
@@ -550,8 +551,14 @@ export default async function handler(
         } else json(res, 200, result.data);
       } catch (error) {
         if (path.startsWith("/api/connectors/callback/")) {
+          const diagnostic = error instanceof ConnectorError && error.diagnostic &&
+            Object.hasOwn(CONNECTION_ERRORS, error.diagnostic) ? error.diagnostic : "connection_failed";
+          const provider = path === "/api/connectors/callback/contaazul" ? "contaazul" : "cloud";
+          console.error("DriveVision OAuth callback failed", { provider, diagnostic,
+            status: error instanceof ConnectorError ? error.status : 500 });
           res.statusCode = 303;
-          res.setHeader("Location", "/?view=connections&connection=error");
+          res.setHeader("Location", `/?view=connections&connection=error&provider=${provider}&reason=${diagnostic}`);
+          res.setHeader("Referrer-Policy", "no-referrer");
           res.end();
         } else throw error;
       }

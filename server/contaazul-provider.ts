@@ -75,14 +75,25 @@ export async function contaAzulExchange(
     body: new URLSearchParams(values),
     signal: AbortSignal.timeout(12000),
     redirect: "error",
+  }).catch(() => {
+    throw new ConnectorError(502, "Não foi possível acessar a autorização Conta Azul.", "ca_unavailable");
   });
-  if (!r.ok)
+  if (!r.ok) {
+    // Do not log provider descriptions: they may contain codes or credentials.
+    const body = await boundedBody(r, 100000).catch(() => new Uint8Array());
+    let reason = "";
+    try { reason = JSON.parse(Buffer.from(body).toString()).error; } catch {}
     throw new ConnectorError(
       r.status === 400 || r.status === 401 ? 401 : 502,
       "Não foi possível renovar a autorização Conta Azul. Reconecte a empresa ou tente novamente.",
+      reason === "invalid_client" ? "ca_credentials" : reason === "invalid_grant" ? "ca_grant" : r.status >= 500 ? "ca_unavailable" : "ca_token",
     );
-  const d = JSON.parse(Buffer.from(await boundedBody(r, 100000)).toString());
+  }
+  let d;
+  try { d = JSON.parse(Buffer.from(await boundedBody(r, 100000)).toString()); }
+  catch { throw new ConnectorError(502, "A Conta Azul retornou uma autorização incompleta.", "ca_response"); }
   if (
+    !d || typeof d !== "object" ||
     typeof d.access_token !== "string" ||
     !d.access_token ||
     typeof d.refresh_token !== "string" ||
@@ -93,6 +104,7 @@ export async function contaAzulExchange(
     throw new ConnectorError(
       502,
       "A Conta Azul retornou uma autorização incompleta. Conecte novamente.",
+      "ca_response",
     );
   return {
     access_token: d.access_token,

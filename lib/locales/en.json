@@ -2220,5 +2220,13 @@
   "Curto · 12 caracteres": "Short · 12 characters",
   "Padrão · 22 caracteres": "Default · 22 characters",
   "Longo · 40 caracteres": "Long · 40 characters",
-  "Nome completo": "Full name"
+  "Nome completo": "Full name",
+  "A autorização Conta Azul expirou ou já foi utilizada. Inicie uma nova conexão nesta mesma sessão.": "The Conta Azul authorization expired or was already used. Start a new connection in this same session.",
+  "O Conta Azul recusou as credenciais do aplicativo DriveVision. O administrador precisa revisar a configuração da integração.": "Conta Azul rejected the DriveVision app credentials. The administrator must review the integration settings.",
+  "O Conta Azul recusou o código de autorização. Ele pode ter expirado ou já ter sido utilizado. Inicie uma nova conexão.": "Conta Azul rejected the authorization code. It may have expired or already been used. Start a new connection.",
+  "O Conta Azul recusou a troca da autorização por acesso. O administrador precisa conferir as credenciais do aplicativo e a URL de retorno.": "Conta Azul rejected the authorization exchange. The administrator must check the app credentials and callback URL.",
+  "O Conta Azul não respondeu à troca da autorização. Inicie uma nova conexão em alguns instantes.": "Conta Azul did not respond to the authorization exchange. Start a new connection in a few moments.",
+  "O Conta Azul retornou uma autorização em formato inesperado. Informe este erro ao suporte DriveData.": "Conta Azul returned an unexpected authorization format. Report this error to DriveData support.",
+  "A autorização foi recebida, mas não foi possível identificar a conta Conta Azul. Informe este erro ao suporte DriveData.": "Authorization was received, but the Conta Azul account could not be identified. Report this error to DriveData support.",
+  "A autorização foi recebida, mas não foi possível salvar a conexão no DriveVision. Informe este erro ao suporte DriveData.": "Authorization was received, but the connection could not be saved in DriveVision. Report this error to DriveData support."
 }

@@ -6,9 +6,11 @@ import {
 } from "node:crypto";
 export class ConnectorError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  diagnostic?: string;
+  constructor(status: number, message: string, diagnostic?: string) {
     super(message);
     this.status = status;
+    this.diagnostic = diagnostic;
   }
 }
 export function encryptionKey() {

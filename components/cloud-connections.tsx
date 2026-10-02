@@ -19,6 +19,7 @@ import {
   Plus,
 } from "lucide-react";
 import { apiJson } from "@/lib/cloud-workspace";
+import { CONNECTION_ERRORS } from "@/lib/connection-errors";
 import { validTimeZone } from "@/lib/refresh-schedule";
 import { OmieConnection } from "./omie-connection";
 import { ContaAzulConnection } from "./contaazul-connection";
@@ -69,7 +70,11 @@ const overdue = (b: CloudBinding) =>
   Date.parse(b.next_due_at) < Date.now() - 5 * 60000;
 function callbackMessage() {
   if (typeof location === "undefined") return "";
-  const value = new URLSearchParams(location.search).get("connection");
+  const params = new URLSearchParams(location.search);
+  const value = params.get("connection");
+  const reason = params.get("reason") || "";
+  if (value === "error" && Object.hasOwn(CONNECTION_ERRORS, reason))
+    return CONNECTION_ERRORS[reason];
   if (value === "error")
     return "Não foi possível concluir a autorização. Tente conectar novamente e confira as permissões.";
   if (value === "cancelled")
@@ -100,6 +105,10 @@ export function CloudConnections({
   const [state, setState] = useState<ConnectorState | null>(null),
     [error, setError] = useState(callbackMessage),
     [busy, setBusy] = useState("");
+  const [retryContaAzul, setRetryContaAzul] = useState(() => {
+    const p = new URLSearchParams(location.search);
+    return p.get("connection") === "error" && p.get("provider") === "contaazul";
+  });
   const [omie, setOmie] = useState<{
     connection?: CloudConnection;
     binding?: CloudBinding;
@@ -238,7 +247,10 @@ export function CloudConnections({
           <span>{translate(error)}</span>
           <button
             className="text-button"
-            onClick={() => action("reload", load)}
+            disabled={!!busy || (retryContaAzul && unavailable)}
+            onClick={() => retryContaAzul
+              ? onConfigure(() => { setRetryContaAzul(false); setError(""); setContaAzul({}); })
+              : action("reload", load)}
           >
             {translate(" Tentar novamente ")}
           </button>
@@ -866,6 +878,8 @@ export function CloudConnections({
 function historyReplace() {
   const url = new URL(location.href);
   url.searchParams.delete("connection");
+  url.searchParams.delete("reason");
+  url.searchParams.delete("provider");
   window.history.replaceState(null, "", url.pathname + url.search);
 }
 function RemoteBrowser({

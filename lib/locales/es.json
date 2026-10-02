@@ -2220,5 +2220,13 @@
   "Curto · 12 caracteres": "Corto · 12 caracteres",
   "Padrão · 22 caracteres": "Predeterminado · 22 caracteres",
   "Longo · 40 caracteres": "Largo · 40 caracteres",
-  "Nome completo": "Nombre completo"
+  "Nome completo": "Nombre completo",
+  "A autorização Conta Azul expirou ou já foi utilizada. Inicie uma nova conexão nesta mesma sessão.": "La autorización de Conta Azul caducó o ya fue utilizada. Inicia una nueva conexión en esta misma sesión.",
+  "O Conta Azul recusou as credenciais do aplicativo DriveVision. O administrador precisa revisar a configuração da integração.": "Conta Azul rechazó las credenciales de la aplicación DriveVision. El administrador debe revisar la configuración de la integración.",
+  "O Conta Azul recusou o código de autorização. Ele pode ter expirado ou já ter sido utilizado. Inicie uma nova conexão.": "Conta Azul rechazó el código de autorización. Puede haber caducado o ya haberse utilizado. Inicia una nueva conexión.",
+  "O Conta Azul recusou a troca da autorização por acesso. O administrador precisa conferir as credenciais do aplicativo e a URL de retorno.": "Conta Azul rechazó el intercambio de autorización. El administrador debe revisar las credenciales de la aplicación y la URL de retorno.",
+  "O Conta Azul não respondeu à troca da autorização. Inicie uma nova conexão em alguns instantes.": "Conta Azul no respondió al intercambio de autorización. Inicia una nueva conexión en unos momentos.",
+  "O Conta Azul retornou uma autorização em formato inesperado. Informe este erro ao suporte DriveData.": "Conta Azul devolvió un formato de autorización inesperado. Informa de este error al soporte de DriveData.",
+  "A autorização foi recebida, mas não foi possível identificar a conta Conta Azul. Informe este erro ao suporte DriveData.": "Se recibió la autorización, pero no se pudo identificar la cuenta de Conta Azul. Informa de este error al soporte de DriveData.",
+  "A autorização foi recebida, mas não foi possível salvar a conexão no DriveVision. Informe este erro ao suporte DriveData.": "Se recibió la autorización, pero no se pudo guardar la conexión en DriveVision. Informa de este error al soporte de DriveData."
 }
