@@ -71,13 +71,17 @@ import {
 
 import { DashboardLibrary } from "./dashboard-library";
 import { duplicateDashboard } from "@/lib/dashboard-library";
-import { makeVisual } from "@/lib/visual-builder";
+import { buildBusinessDashboard } from "@/lib/business-onboarding";
+import { DashboardStart } from "./dashboard-start";
 import { CloudConnections } from "./cloud-connections";
 import { refreshDerived } from "@/lib/source-lifecycle";
 import { AdminPanel } from "./admin-panel";
 import { SourceHistory } from "./source-history";
 import { WorkspaceTour } from "./workspace-tour";
-import { GuidedDashboard } from "./business-onboarding";
+import {
+  GuidedDashboard,
+  translateBusinessVisuals,
+} from "./business-onboarding";
 import { Compass } from "lucide-react";
 
 type View = "studio" | "library" | "sources" | "connections" | "admin";
@@ -200,7 +204,7 @@ export default function Workspace({
   const busyRef = useRef(false);
   const [remoteChanged, setRemoteChanged] = useState(false);
   const [modal, setModal] = useState<
-    "new" | "save" | "import" | "help" | "source" | null
+    "new" | "blank" | "save" | "import" | "help" | "source" | null
   >(null);
   const [title, setTitle] = useState(""),
     [newSource, setNewSource] = useState(DEMO.id);
@@ -214,7 +218,6 @@ export default function Workspace({
     pending = useRef<(() => void) | null>(null);
   const [combineOpen, setCombineOpen] = useState(false);
   const [historySource, setHistorySource] = useState<Source | null>(null);
-  const [template, setTemplate] = useState("overview");
   const [guidedSource, setGuidedSource] = useState<Source | null>(null);
   const lastBusinessContext = workspace.dashboards.find(
     (d) => d.config.businessContext?.version === 1,
@@ -306,7 +309,10 @@ export default function Workspace({
     storage
       .load()
       .then((w) => {
-        if (live) setWorkspace(w);
+        if (live) {
+          setWorkspace(w);
+          if (!account && !w.sources.length && !w.dashboards.length) openDemo();
+        }
       })
       .catch((error) => {
         if (live) {
@@ -418,9 +424,26 @@ export default function Workspace({
     } else action();
   }
   function openNew() {
-    setTitle("");
-    setNewSource(source.id);
-    setModal("new");
+    guard(() => setModal("new"));
+  }
+  function openDemo() {
+    guard(() => {
+      setModal(null);
+      const demo = buildBusinessDashboard(
+        DEMO,
+        { segment: "mixed", operation: "", objective: "sales" },
+        {
+          value: "Receita",
+          date: "Data",
+          product: "Produto",
+          seller: "Vendedor",
+        },
+        true,
+      );
+      demo.title = translate("Seu painel de exemplo");
+      switchDraft(DEMO, translateBusinessVisuals(demo));
+      setDirty(false);
+    });
   }
   function openSave() {
     setTitle(config.title);
@@ -629,7 +652,7 @@ export default function Workspace({
             ? "Conexões"
             : "Fontes de dados";
   return (
-    <div className="product-shell">
+    <div className={`product-shell ${view === "studio" ? "studio-view" : ""}`}>
       <Nav
         view={view}
         onNavigate={setView}
@@ -713,7 +736,7 @@ export default function Workspace({
                 <button
                   data-tour={view === "sources" ? "import" : "new-dashboard"}
                   className="primary-button"
-                  disabled={!loaded || busy}
+                  disabled={!loaded || busy || storageError}
                   onClick={view === "sources" ? openImport : openNew}
                 >
                   <Plus size={17} />
@@ -801,6 +824,7 @@ export default function Workspace({
                 source={source}
                 config={config}
                 onChange={changed}
+                onUseOwnData={openImport}
               />
             </>
           )}
@@ -813,6 +837,7 @@ export default function Workspace({
               cloud={storage.cloud}
               onNew={openNew}
               onImport={openImport}
+              onDemo={openDemo}
               onOpen={(d) => {
                 const s = sources.find((s) => s.id === d.sourceId);
                 if (s) guard(() => switchDraft(s, d.config, d.id));
@@ -1011,82 +1036,79 @@ export default function Workspace({
           }}
         />
       )}
+      {modal === "new" && (
+        <DashboardStart
+          sources={sources}
+          onClose={() => setModal(null)}
+          onImport={openImport}
+          onConnect={() => {
+            setModal(null);
+            setView("connections");
+          }}
+          onGuided={(s) => {
+            setModal(null);
+            setGuidedSource(s);
+          }}
+          onDemo={openDemo}
+          onBlank={() => {
+            setTitle("");
+            setNewSource(workspace.sources[0]?.id || DEMO.id);
+            setModal("blank");
+          }}
+        />
+      )}
       <Dialog
-        open={modal === "new"}
+        open={modal === "blank"}
         onOpenChange={(v) => {
-          if (!v) setModal(null);
+          if (!v && !busy) setModal(null);
         }}
       >
-        <DialogContent className="app-dialog">
+        <DialogContent
+          className="app-dialog"
+          onEscapeKeyDown={(e) => busy && e.preventDefault()}
+          onPointerDownOutside={(e) => busy && e.preventDefault()}
+        >
           <DialogHeader>
-            <DialogTitle>{translate("Vamos criar seu dashboard")}</DialogTitle>
+            <DialogTitle>{translate("Montar um painel em branco")}</DialogTitle>
             <DialogDescription>
               {translate(
-                " Dê um nome à sua análise e escolha os dados para começar. ",
+                "Você escolhe os gráficos, as medidas e o layout. Para receber sugestões com seus dados, volte e escolha o caminho guiado.",
               )}
             </DialogDescription>
           </DialogHeader>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               const s = sources.find((s) => s.id === newSource);
-              if (!s || !title.trim()) return;
+              if (!s || !title.trim() || busy) return;
               const nextConfig: Config = {
                 ...defaultConfig(s),
                 title: title.trim(),
-                ...(template === "blank"
-                  ? { visuals: [] }
-                  : template === "comparison"
-                    ? {
-                        visuals: ["bar", "horizontal", "table"].map((type) =>
-                          makeVisual(
-                            type as "bar" | "horizontal" | "table",
-                            s,
-                            defaultConfig(s),
-                            crypto.randomUUID(),
-                          ),
-                        ),
-                      }
-                    : template === "trends"
-                      ? {
-                          visuals: ["line", "area", "kpi"].map((type) =>
-                            makeVisual(
-                              type as "line" | "area" | "kpi",
-                              s,
-                              defaultConfig(s),
-                              crypto.randomUUID(),
-                            ),
-                          ),
-                        }
-                      : {}),
+                visuals: [],
               };
-              setModal(null);
-              guard(() => {
-                void (async () => {
-                  const dashboard: SavedDashboard = {
-                    id: crypto.randomUUID(),
-                    sourceId: s.id,
-                    config: nextConfig,
-                    updatedAt: new Date().toISOString(),
-                  };
-                  if (
-                    await persist({
-                      ...workspace,
-                      dashboards: [dashboard, ...workspace.dashboards],
-                    })
-                  ) {
-                    switchDraft(s, nextConfig, dashboard.id);
-                    toast.success(
-                      "Dashboard criado e salvo. Personalize seus visuais.",
-                    );
-                  } else if (dirty) setDirty(true);
-                })();
-              });
+              const dashboard: SavedDashboard = {
+                id: crypto.randomUUID(),
+                sourceId: s.id,
+                config: nextConfig,
+                updatedAt: new Date().toISOString(),
+              };
+              if (
+                await persist({
+                  ...workspace,
+                  dashboards: [dashboard, ...workspace.dashboards],
+                })
+              ) {
+                setModal(null);
+                switchDraft(s, nextConfig, dashboard.id);
+                toast.success(
+                  "Dashboard criado e salvo. Personalize seus visuais.",
+                );
+              }
             }}
           >
             <div className="form-fields">
               <label htmlFor="dashboard-name">
-                {translate(" Nome do dashboard ")}
+                {translate("Nome do dashboard")}
                 <Input
                   id="dashboard-name"
                   placeholder={translate("Ex.: Acompanhamento comercial")}
@@ -1095,57 +1117,42 @@ export default function Workspace({
                   maxLength={80}
                   required
                   autoFocus
+                  disabled={busy}
                 />
               </label>
               <label>
-                {translate(" Ponto de partida ")}
-                <Choice
-                  label={translate("Modelo inicial")}
-                  value={template}
-                  onChange={setTemplate}
-                  items={[
-                    {
-                      value: "overview",
-                      label: "Visão executiva · indicadores e evolução",
-                    },
-                    {
-                      value: "comparison",
-                      label: "Comparativo · categorias e ranking",
-                    },
-                    {
-                      value: "trends",
-                      label: "Tendências · séries ao longo do tempo",
-                    },
-                    {
-                      value: "blank",
-                      label: "Em branco · construa do seu jeito",
-                    },
-                  ]}
-                />
-              </label>
-              <label>
-                {translate(" Fonte de dados ")}
+                {translate("Fonte de dados")}
                 <Choice
                   label={translate("Fonte de dados")}
                   value={newSource}
                   onChange={setNewSource}
-                  items={sources.map((s) => ({ value: s.id, label: s.name }))}
+                  items={sources.map((s) => ({
+                    value: s.id,
+                    label: s.demo
+                      ? translate("Dados fictícios de demonstração")
+                      : s.name,
+                    raw: true,
+                  }))}
+                  disabled={busy}
                 />
               </label>
             </div>
             <button
               type="button"
               className="text-button import-link"
-              onClick={openImport}
+              onClick={() => setModal("new")}
+              disabled={busy}
             >
-              <Upload size={15} /> {translate(" Importar outra planilha ")}
+              {translate("Voltar às opções")}
             </button>
             <button
               className="primary-button full-button"
-              disabled={!title.trim()}
+              disabled={!title.trim() || busy}
               type="submit"
             >
-              <Sparkles size={16} /> {translate(" Criar dashboard ")}
+              {busy
+                ? translate("Salvando…")
+                : translate("Criar painel em branco")}
             </button>
           </form>
         </DialogContent>
@@ -1333,7 +1340,7 @@ export default function Workspace({
             className="primary-button"
             onClick={() => {
               setModal(null);
-              guard(() => switchDraft(inspected, defaultConfig(inspected)));
+              guard(() => setGuidedSource(inspected));
             }}
           >
             {translate(" Criar análise com esta fonte ")}

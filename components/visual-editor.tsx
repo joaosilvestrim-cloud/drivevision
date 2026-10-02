@@ -1,7 +1,7 @@
 "use client";
 import { t as translate, locale } from "@/lib/i18n";
 import { useVisualDrag } from "@/hooks/use-visual-drag";
-import { BusinessSummary } from './business-onboarding';
+import { BusinessSummary } from "./business-onboarding";
 import { useVisualResize } from "@/hooks/use-visual-resize";
 import {
   MoveDiagonal2,
@@ -120,10 +120,12 @@ export function VisualEditor({
   source: original,
   config,
   onChange,
+  onUseOwnData,
 }: {
   source: Source;
   config: Config;
   onChange: (c: Config) => void;
+  onUseOwnData?: () => void;
 }) {
   const prepared = useMemo(
     () => prepareSource(original, config.dataSteps),
@@ -682,7 +684,7 @@ export function VisualEditor({
   );
   return (
     <section
-      className="editor-shell"
+      className={`editor-shell ${editing ? "is-editing" : "is-reading"}`}
       aria-label={translate("Editor de dashboards")}
     >
       <div className="editor-topbar" data-tour="editor-tools">
@@ -760,24 +762,94 @@ export function VisualEditor({
           )}
         </div>
       </div>
-      <div className="analysis-launch">
-        <button onClick={() => setHubOpen(true)}>
-          <Microscope size={18} />
+      {source.demo && onUseOwnData && (
+        <aside className="journey-demo-note">
+          <div>
+            <strong>{translate("Você está explorando dados fictícios")}</strong>
+            <p>
+              {translate(
+                "Experimente os filtros e abra a lupa de um gráfico. Quando quiser, faça o mesmo com os dados da sua empresa.",
+              )}
+            </p>
+          </div>
+          <button className="primary-button" onClick={onUseOwnData}>
+            {translate("Criar com meus dados")}
+            <ArrowRight size={16} />
+          </button>
+        </aside>
+      )}
+      <details className="journey-panel-help">
+        <summary>{translate("O que posso fazer neste painel?")}</summary>
+        <div>
+          <button
+            onClick={() => {
+              setEditing(false);
+              requestAnimationFrame(() =>
+                (
+                  document.querySelector(
+                    '.editor-filterbar [role="combobox"]',
+                  ) as unknown as HTMLElement | null
+                )?.focus(),
+              );
+            }}
+          >
+            <strong>{translate("Comparar cenários")}</strong>
+            <span>
+              {translate(
+                "Use o período e os filtros abaixo. Limpe os filtros para voltar ao total.",
+              )}
+            </span>
+          </button>
+          <button onClick={() => setHubOpen(true)}>
+            <strong>{translate("Investigar os números")}</strong>
+            <span>
+              {translate(
+                "Abra a análise ou a lupa de um gráfico para conferir os registros por trás do resultado.",
+              )}
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setEditing(true);
+              setPanelOpen(false);
+            }}
+          >
+            <strong>{translate("Deixar do seu jeito")}</strong>
+            <span>
+              {translate(
+                "Adicione visuais, ajuste cores e arraste os gráficos. Salve suas alterações para continuar depois.",
+              )}
+            </span>
+          </button>
+        </div>
+      </details>
+      {editing && (
+        <div className="analysis-launch">
+          <button onClick={() => setHubOpen(true)}>
+            <Microscope size={18} />
+            <span>
+              <strong>{translate("Explorar e analisar")}</strong>
+              <small>
+                {translate("Tabela dinâmica, destaques e qualidade dos dados")}
+              </small>
+            </span>
+            <ArrowRight size={18} />
+          </button>
           <span>
-            <strong>{translate("Explorar e analisar")}</strong>
-            <small>
-              {translate("Tabela dinâmica, destaques e qualidade dos dados")}
-            </small>
+            {translate(
+              " Clique em Explorar nos visuais para investigar os registros. ",
+            )}
           </span>
-          <ArrowRight size={18} />
-        </button>
-        <span>
-          {translate(
-            " Clique em Explorar nos visuais para investigar os registros. ",
-          )}
-        </span>
-      </div>
-      <BookmarkBar config={config} onChange={commit} />
+        </div>
+      )}
+      {editing ||
+      config.bookmarks?.length ||
+      config.filter ||
+      config.filters?.rules.length ||
+      config.selections?.length ||
+      config.period !== "all" ? (
+        <BookmarkBar config={config} onChange={commit} />
+      ) : null}
       <div className="editor-filterbar">
         <div className="source-chip">
           <Database size={14} />
@@ -877,7 +949,6 @@ export function VisualEditor({
           </button>
         </div>
       )}
-      {config.businessContext&&<BusinessSummary source={source} context={config.businessContext}/>}
       <div
         className={`editor-workspace ${editing && !small ? "with-inspector" : ""}`}
       >
@@ -1126,6 +1197,9 @@ export function VisualEditor({
           </aside>
         )}
       </div>
+      {config.businessContext && (
+        <BusinessSummary source={source} context={config.businessContext} />
+      )}
       <Sheet open={small && panelOpen && editing} onOpenChange={setPanelOpen}>
         <SheetContent className="editor-sheet">
           <SheetHeader>

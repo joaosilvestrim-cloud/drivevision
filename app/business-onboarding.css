@@ -4,6 +4,232 @@
   gap: 16px;
   min-width: 0;
 }
+.studio-view .topbar {
+  padding-top: 10px;
+}
+.studio-view .page-content {
+  padding-top: 16px;
+}
+.studio-view .page-heading {
+  margin-bottom: 12px;
+  align-items: center;
+}
+.studio-view .page-heading h1 {
+  font-size: clamp(28px, 3vw, 44px);
+  margin: 4px 0 8px;
+}
+.studio-view .page-heading p {
+  display: none;
+}
+.is-reading .editor-topbar {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.is-reading .editor-filterbar {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.is-reading .journey-demo-note p {
+  max-width: 680px;
+}
+.is-reading .business-summary {
+  margin: 20px 24px;
+}
+.journey-start {
+  max-width: 760px !important;
+  width: calc(100vw - 32px) !important;
+  max-height: 92dvh;
+  overflow: auto;
+}
+.journey-options {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0;
+}
+.journey-option {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid #d1d9ce;
+  border-radius: 16px;
+  text-align: left;
+  background: #fff;
+  cursor: pointer;
+}
+.journey-option.preferred {
+  background: #ceffbf;
+  border-color: #7baf72;
+}
+.journey-option:hover {
+  border-color: #27623b;
+}
+.journey-option > svg {
+  flex-shrink: 0;
+}
+.journey-option > span {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.journey-option small {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #49574e;
+}
+.journey-existing {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #d1d9ce;
+  border-radius: 16px;
+  padding: 18px;
+}
+.journey-existing label {
+  font-weight: 600;
+}
+.journey-existing select {
+  min-width: 0;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #bfcabf;
+  border-radius: 8px;
+  background: #fff;
+}
+.journey-advanced {
+  margin-top: 4px;
+  min-height: 44px;
+  white-space: normal;
+  text-align: left;
+}
+.journey-progress {
+  display: flex;
+  list-style: none;
+  gap: 12px;
+  padding: 0;
+  margin: 18px 0 0;
+}
+.journey-progress li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #627064;
+  font-size: 12px;
+}
+.journey-progress li > span {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #abb8a8;
+  border-radius: 50%;
+}
+.journey-progress [aria-current="step"] {
+  font-weight: 700;
+  color: #142f1b;
+}
+.journey-progress [aria-current="step"] > span,
+.journey-progress .completed > span {
+  background: #ceffbf;
+  border-color: #427447;
+}
+.journey-upload-hint {
+  margin: 0;
+  color: #36533c;
+}
+.journey-demo-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 24px;
+  background: #eff8e9;
+}
+.journey-demo-note strong {
+  font-size: 15px;
+}
+.journey-demo-note p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+.journey-demo-note button {
+  flex-shrink: 0;
+}
+.journey-panel-help {
+  margin: 12px 24px;
+  border: 1px solid #d1d9ce;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.journey-panel-help summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  min-height: 24px;
+}
+.journey-panel-help > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.journey-panel-help button {
+  text-align: left;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  background: #f4f7f1;
+  border: 1px solid #dbe3d5;
+  padding: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.journey-panel-help button span {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #49574e;
+}
+.journey-option:focus-visible,
+.journey-panel-help button:focus-visible {
+  outline: 3px solid #246735;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .journey-option,
+  .journey-existing {
+    padding: 14px;
+  }
+  .journey-option > svg:last-child {
+    display: none;
+  }
+  .journey-progress {
+    gap: 6px;
+  }
+  .journey-progress li {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 11px;
+    gap: 6px;
+  }
+  .journey-demo-note {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  .journey-demo-note button {
+    white-space: normal;
+  }
+  .journey-panel-help {
+    margin: 12px;
+  }
+  .journey-panel-help > div {
+    grid-template-columns: 1fr;
+  }
+}
 .business-profile h3,
 .business-review h3 {
   font-size: 21px;

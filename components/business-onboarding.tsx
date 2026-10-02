@@ -25,6 +25,26 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 
+export function translateBusinessVisuals(base: Config): Config {
+  return {
+    ...base,
+    visuals: base.visuals?.map((v) => {
+      const ranking = v.title.match(/^(Vendas|Registros) por (.+)$/);
+      const title = ranking
+        ? translate(
+            ranking[1] === "Vendas" ? "Vendas por {v0}" : "Registros por {v0}",
+            { v0: ranking[2] },
+          )
+        : translate(v.title);
+      return {
+        ...v,
+        title,
+        measures: v.measures?.map((m) => ({ ...m, label: title })),
+      };
+    }),
+  };
+}
+
 export function BusinessProfileFields({
   value,
   onChange,
@@ -142,28 +162,12 @@ export function BusinessReview({
     try {
       const base = buildBusinessDashboard(source, profile, mapping, true);
       return {
-        ...base,
+        ...translateBusinessVisuals(base),
         title:
           `${translate(SEGMENTS.find((s) => s.value === profile.segment)!.label)} · ${source.name}`.slice(
             0,
             300,
           ),
-        visuals: base.visuals?.map((v) => {
-          const ranking = v.title.match(/^(Vendas|Registros) por (.+)$/);
-          const title = ranking
-            ? translate(
-                ranking[1] === "Vendas"
-                  ? "Vendas por {v0}"
-                  : "Registros por {v0}",
-                { v0: ranking[2] },
-              )
-            : translate(v.title);
-          return {
-            ...v,
-            title,
-            measures: v.measures?.map((m) => ({ ...m, label: title })),
-          };
-        }),
       };
     } catch {
       return null;

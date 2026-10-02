@@ -6,12 +6,16 @@ O menu **Conexões** acompanha arquivos e pastas do SharePoint, OneDrive e Googl
 
 ## Fluxo principal
 
+**Novo dashboard** é a entrada única para enviar uma planilha, reaproveitar uma fonte, conectar OneDrive/SharePoint ou experimentar dados fictícios. Criar um painel em branco é uma escolha explícita. A demonstração pública abre um painel interativo na primeira visita, sem gravá-lo automaticamente na biblioteca.
+
 1. Em **Importar planilha**, escolha a atividade da empresa e o objetivo. O modelo vazio e o exemplo preenchido explicam uma linha por item e a diferença entre item e pedido.
 2. Envie Excel, CSV ou TSV e confira a estrutura. Em **Revisar publicação**, selecione nova base ou atualização de uma base existente.
 3. Para um painel novo, confirme as correspondências de valor, data, pedido, cliente, produto/serviço, vendedor e canal. A prévia usa a fonte enviada. Colunas ambíguas ficam sem associação; dados inválidos impedem os indicadores afetados.
 4. **Salvar e abrir meu painel** salva fonte e dashboard na mesma operação e abre a leitura. O contexto e as correspondências ficam no dashboard, dentro do workspace do cliente, e podem ser reutilizados. Atualizações da mesma base preservam o vínculo e reabrem seu painel existente.
 5. Fontes já cadastradas oferecem **Criar painel guiado**. Em Conexões, analisar uma fonte abre seu painel existente ou a mesma conferência para criar o primeiro.
 6. **Editar painel**, **Preparar dados** e **Configurar** permanecem disponíveis para personalização. Alterações posteriores precisam ser salvas.
+
+O envio apresenta três etapas: negócio/arquivo, conferência da tabela e revisão do painel. Em leitura, os gráficos têm prioridade; **O que posso fazer neste painel?** explica filtros, investigação e personalização. A origem e as regras do painel ficam abaixo dos visuais. Uma falha de salvamento mantém a conferência e os campos disponíveis para tentar novamente.
 
 ### Escopo dos modelos de negócio
 

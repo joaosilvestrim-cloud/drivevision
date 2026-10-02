@@ -26,6 +26,7 @@ import {
   type ImportPlan,
 } from "@/lib/smart-import";
 import type { Source, Config } from "@/lib/analytics";
+import { ImportProgress } from "./dashboard-start";
 import { BusinessProfileFields, BusinessReview } from "./business-onboarding";
 import { EMPTY_PROFILE, type BusinessContext } from "@/lib/business-onboarding";
 import { planLoad, type LoadOptions } from "@/lib/source-lifecycle";
@@ -280,14 +281,21 @@ export function SmartImport({
               : translate("Revise antes de publicar.")}
           </DialogTitle>
           <DialogDescription>
-            {stage === "structure"
+            {!workbook
               ? translate(
-                  "1 de 2 · Confira a tabela e os campos encontrados no arquivo.",
+                  "Conte sobre seu negócio e escolha o arquivo. Você verá uma prévia antes de salvar.",
                 )
-              : translate(
-                  "2 de 2 · Escolha o destino e confira o impacto sobre seus dados.",
-                )}
+              : stage === "structure"
+                ? translate(
+                    "Confira se a tabela encontrada representa seus dados. Ajuste a estrutura apenas se necessário.",
+                  )
+                : translate(
+                    "Confirme o destino, o significado das colunas e o resultado antes de salvar.",
+                  )}
           </DialogDescription>
+          <ImportProgress
+            step={!workbook ? 0 : stage === "structure" ? 1 : 2}
+          />
         </DialogHeader>
         <input
           ref={input}
@@ -305,6 +313,13 @@ export function SmartImport({
               onChange={setProfile}
               templates
             />
+            {!profile.segment && (
+              <p className="journey-upload-hint" role="status">
+                {translate(
+                  "Escolha uma atividade acima para liberar o envio do arquivo.",
+                )}
+              </p>
+            )}
             <button
               className="smart-drop"
               disabled={reading || !profile.segment}

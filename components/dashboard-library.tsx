@@ -44,6 +44,7 @@ type Props = {
   onOpen: (d: SavedDashboard) => void;
   onNew: () => void;
   onImport: () => void;
+  onDemo: () => void;
   onDuplicate: (d: SavedDashboard) => void;
   onUpdate: (
     d: SavedDashboard,
@@ -60,6 +61,7 @@ export function DashboardLibrary({
   onOpen,
   onNew,
   onImport,
+  onDemo,
   onDuplicate,
   onUpdate,
   onDelete,
@@ -235,6 +237,16 @@ export function DashboardLibrary({
             <Upload size={16} /> {translate(" Começar com uma planilha")}{" "}
             <ArrowRight size={16} />
           </button>
+          {!dashboards.length && (
+            <button
+              className="secondary-button"
+              onClick={onDemo}
+              disabled={!loaded}
+            >
+              {translate("Experimentar um painel pronto")}
+              <ArrowRight size={16} />
+            </button>
+          )}
         </div>
         <div className="desk-stat">
           <LayoutDashboard size={20} />
@@ -244,7 +256,7 @@ export function DashboardLibrary({
         <div className="desk-stat">
           <Database size={20} />
           <strong>{sources.filter((s) => !s.demo).length}</strong>
-          <span>{translate("Fontes conectadas")}</span>
+          <span>{translate("Fontes de dados")}</span>
         </div>
         <div className="desk-stat">
           <Star size={20} />
@@ -384,7 +396,7 @@ export function DashboardLibrary({
                 {dashboards.length
                   ? translate("Tente outro nome, pasta ou filtro.")
                   : translate(
-                      "Comece em branco ou use um modelo com seus próprios dados.",
+                      "Envie uma planilha ou escolha uma fonte. Vamos orientar você até seu primeiro painel pronto.",
                     )}
               </p>
               <button

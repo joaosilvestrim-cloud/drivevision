@@ -17,13 +17,13 @@ const steps: {
   },
   {
     title: "Um lugar para todos os seus dashboards",
-    body: "Na Área de trabalho, crie painéis para diferentes objetivos. Depois, organize em pastas, marque favoritos e reabra suas análises.",
+    body: "Em Novo dashboard, envie uma planilha, use uma fonte existente ou experimente um painel pronto. Seus painéis salvos ficam aqui, organizados em pastas e favoritos.",
     view: "library",
     target: "[data-tour='new-dashboard']",
   },
   {
     title: "Traga sua primeira planilha",
-    body: "Em Dados, clique em Importar planilha para enviar Excel ou CSV. Revise a aba, os cabeçalhos e os tipos sugeridos antes de confirmar a importação.",
+    body: "Em Dados, clique em Importar planilha. Escolha seu segmento e objetivo, confira a tabela e confirme as colunas. Você verá uma prévia antes de salvar seu painel pronto.",
     view: "sources",
     target: "[data-tour='import']",
   },
