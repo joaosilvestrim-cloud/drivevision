@@ -2,7 +2,9 @@ import { t as translate, locale } from "@/lib/i18n";
 /* This Vite application uses native navigation for query-based public routes. */
 /* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 import { useState } from "react";
+import { LandingDemo } from "./landing-demo";
 import {
+  FileSpreadsheet,
   ArrowUpRight,
   ArrowRight,
   Check,
@@ -170,19 +172,20 @@ function Preview() {
 const faqs = [
   [
     "Preciso saber programar?",
-    "Não. Você importa sua base, prepara os dados e configura os gráficos pela interface. Pode explorar a demonstração antes de assinar para conhecer o funcionamento.",
+    "Não. O início guiado considera seu nível de experiência. Você revisa os dados, recebe sugestões de gráficos e ajusta o painel pela interface, sem programar.",
   ],
   [
     "Posso usar mais de uma planilha?",
     "Sim. Você pode importar Excel e CSV, preparar os dados e combinar fontes. Planilhas desorganizadas têm uma etapa de revisão: confira cabeçalhos, tipos e tabelas identificadas antes de confirmar.",
   ],
+  ["Como consigo ajuda?", "Dentro da conta, acesse Ajuda e contato para consultar os guias ou enviar sua solicitação à equipe DriveData. Antes de contratar, use o botão de ajuda nesta página."],
   [
     "As conexões ficam na minha conta?",
     "Sim. Você entra na sua própria conta Microsoft e autoriza o acesso no DriveVision. Depois escolhe os arquivos ou pastas do OneDrive ou SharePoint. A política da sua organização pode exigir aprovação do administrador Microsoft.",
   ],
   [
     "Qual é o tamanho de base suportado?",
-    "O plano comporta até 50 bases no workspace, 20 mil linhas e 100 colunas por base e até 24 visuais por painel. O salvamento também está sujeito ao limite total de 3,5 MB compactados. Explore a demonstração com uma amostra dos seus dados antes de contratar.",
+    "O plano comporta até 50 bases no workspace, 20 mil linhas e 100 colunas por base e até 24 visuais por painel. O salvamento também está sujeito ao limite total de 3,5 MB compactados. Confira se esses limites atendem ao volume de dados da sua operação antes de contratar.",
   ],
   [
     "Como funciona a cobrança e o cancelamento?",
@@ -193,46 +196,26 @@ const faqs = [
     "Neste plano, cada assinatura corresponde a uma conta responsável e um workspace privado. Não compartilhe sua senha. Para uma operação com vários responsáveis, converse com a DriveData.",
   ],
 ];
-export function LandingPage({ onDemo }: { onDemo: () => void }) {
+export function LandingPage() {
   const [open, setOpen] = useState<number | null>(0);
   return (
     <main className="sales-page">
       <PublicHeader />
-      <section className="sales-hero">
-        <h1>
-          {translate(" MENOS PLANILHAS ABERTAS. ")}
-          <br />
-          <em>{translate("MAIS VISÃO DO NEGÓCIO.")}</em>
-        </h1>
-        <p>
-          {translate(
-            " Junte suas bases, crie dashboards do seu jeito e acompanhe ",
-          )}
-          <br className="desktop-break" />{" "}
-          {translate(" os números que movem a sua empresa. Em um só lugar. ")}
-        </p>
-        <div className="sales-actions">
-          <a className="sales-button" href="/?view=signup">
-            {translate(" Testar grátis por 7 dias ")}
-            <ArrowUpRight size={20} />
-          </a>
-          <button className="sales-link" onClick={onDemo}>
-            {translate(" Explorar a demonstração ")}
-            <ArrowRight size={18} />
-          </button>
+      <section className="sales-hero sales-hero-split">
+        <div className="sales-hero-copy">
+          <h1>{translate("SEUS DADOS JÁ EXISTEM.")}<br /><em>{translate("TRANSFORME EM DECISÕES.")}</em></h1>
+          <p>{translate("Reúna suas planilhas, organize suas informações e crie dashboards interativos para acompanhar o que realmente importa no seu negócio.")}</p>
+          <div className="sales-actions">
+            <a className="sales-button" href="/?view=signup">{translate("Começar meus 7 dias grátis")}<ArrowUpRight size={20} /></a>
+            <a className="sales-link" href="#demonstracao">{translate("Veja como funciona")}<ArrowRight size={18} /></a>
+          </div>
+          <p className="sales-trial-note">{translate("Depois, R$ 59,90/mês. Cartão necessário. Cancele antes do fim do teste para evitar a primeira cobrança.")}</p>
+          <div className="sales-hero-note">
+            <span><Check size={14} />{translate("Sem programação")}</span>
+            <span><Check size={14} />{translate("Workspace privado")}</span>
+          </div>
         </div>
-        <div className="sales-hero-note">
-          <span>
-            <Check size={14} /> {translate(" Sem fidelidade ")}
-          </span>
-          <span>
-            <Check size={14} /> {translate(" Workspace privado ")}
-          </span>
-          <span>
-            <Check size={14} /> {translate(" Sem programação ")}
-          </span>
-        </div>
-        <Preview />
+        <div className="sales-hero-visual"><Preview /><p>{translate("Uma visão do que seus dados podem se tornar. Exemplo ilustrativo.")}</p></div>
       </section>
       <section
         className="sales-strip"
@@ -247,12 +230,32 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
         <span>+</span>
         <b>{translate("SharePoint")}</b>
       </section>
+      <section className="sales-pain" aria-labelledby="pain-title">
+        <h2 id="pain-title">{translate("MENOS TEMPO MONTANDO RELATÓRIOS.")}<br /><em>{translate("MAIS TEMPO ENTENDENDO SEU NEGÓCIO.")}</em></h2>
+        <div className="sales-pain-grid">
+          {[
+            ["Informações espalhadas?", "Reúna suas bases e prepare os dados em um só workspace."],
+            ["Sempre refazendo gráficos?", "Salve seus painéis e programe atualizações das fontes conectadas."],
+            ["Difícil saber por onde começar?", "Informe seu objetivo e revise sugestões de gráficos para a sua base."],
+          ].map(([title, text]) => <article key={title}><h3>{translate(title)}</h3><p>{translate(text)}</p></article>)}
+        </div>
+      </section>
+      <section className="sales-how" id="como-funciona">
+        <div><h2>{translate("DA SUA FONTE AO PRIMEIRO PAINEL.")}</h2><p>{translate("Orientação para começar. Liberdade para personalizar.")}</p><a className="sales-link" href="/?view=signup">{translate("Criar minha conta")}<ArrowUpRight size={18} /></a></div>
+        <ol>{[
+          ["Conte sobre seu negócio", "Escolha seu segmento, seu objetivo e seu nível de experiência com dados."],
+          ["Adicione seus dados", "Importe Excel ou CSV, ou escolha uma conexão disponível e selecione o conteúdo."],
+          ["Revise as sugestões", "Confira as tabelas e os campos identificados. Revise os gráficos sugeridos antes de criar seu painel."],
+          ["Deixe do seu jeito", "Ajuste indicadores, cores, rótulos e filtros. Arraste os gráficos para organizar sua visão."],
+        ].map(([title, text], i) => <li key={title}><span>{String(i + 1).padStart(2, "0")}</span><div><h3>{translate(title)}</h3><p>{translate(text)}</p></div></li>)}</ol>
+      </section>
+      <LandingDemo />
       <section className="sales-features" id="recursos">
         <div className="sales-section-heading">
           <h2>
-            {translate(" VOCÊ CONHECE O NEGÓCIO. ")}
+            {translate(" UM PAINEL QUE ACOMPANHA ")}
             <br />
-            <em>{translate("AGORA, ENXERGUE OS DADOS.")}</em>
+            <em>{translate("A SUA FORMA DE TRABALHAR.")}</em>
           </h2>
           <p>
             {translate(
@@ -290,7 +293,7 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
             </h3>
             <p>
               {translate(
-                " Escolha medidas, dimensões, filtros e tipos de visual. Organize o painel com arrastar e soltar. ",
+                " Escolha medidas e tipos de gráfico. Personalize cores, rótulos e filtros e organize o painel com arrastar e soltar. ",
               )}
             </p>
             <div className="feature-mini-bars" aria-hidden="true">
@@ -322,60 +325,20 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
           </article>
         </div>
       </section>
-      <section className="sales-how">
-        <div>
-          <h2>
-            {translate(" SEU PRIMEIRO PAINEL ")}
-            <br />
-            {translate(" COMEÇA AQUI. ")}
-          </h2>
-          <a className="sales-link" href="/?view=signup">
-            {translate(" Criar minha conta ")}
-            <ArrowUpRight size={18} />
-          </a>
+      <section className="sales-sources">
+        <div><h2>{translate("SEUS DADOS, NO SEU RITMO.")}</h2><p>{translate("Comece com uma planilha. Conecte suas fontes conforme a sua rotina evolui.")}</p></div>
+        <div className="sales-source-list">
+          <article><FileSpreadsheet size={24} /><div><h3>Excel / CSV</h3><p>{translate("Importe, revise e combine suas bases.")}</p></div></article>
+          <article><Database size={24} /><div><h3>OneDrive / SharePoint</h3><p>{translate("Autorize sua conta Microsoft, escolha arquivos ou pastas e programe a atualização.")}</p></div></article>
+          <article className="source-coming"><Layers3 size={24} /><div><h3>Google Drive</h3><p>{translate("Em breve")}</p></div></article>
         </div>
-        <ol>
-          <li>
-            <span>01</span>
-            <div>
-              <h3>{translate("Crie sua conta e teste")}</h3>
-              <p>
-                {translate(
-                  " Pagamento protegido no ambiente do Asaas. Seu acesso é liberado após a confirmação. ",
-                )}
-              </p>
-            </div>
-          </li>
-          <li>
-            <span>02</span>
-            <div>
-              <h3>{translate("Traga seus dados")}</h3>
-              <p>
-                {translate(
-                  " Importe um arquivo ou conecte uma origem. Revise e prepare as informações. ",
-                )}
-              </p>
-            </div>
-          </li>
-          <li>
-            <span>03</span>
-            <div>
-              <h3>{translate("Monte sua visão")}</h3>
-              <p>
-                {translate(
-                  " Escolha as métricas, ajuste os visuais e salve seu dashboard para acompanhar depois. ",
-                )}
-              </p>
-            </div>
-          </li>
-        </ol>
       </section>
       <section className="sales-pricing" id="plano">
         <div>
           <h2>
-            {translate(" UM INVESTIMENTO ")}
+            {translate(" COMECE COM ")}
             <br />
-            <em>{translate("QUE CABE NO MÊS.")}</em>
+            <em>{translate("7 DIAS GRÁTIS.")}</em>
           </h2>
           <p>
             {translate(" Saia das abas espalhadas para um workspace ")}
@@ -429,7 +392,7 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
               " Cartão necessário. Após 7 dias grátis, renovação mensal automática. Cancele antes da primeira cobrança para não cobrar. ",
             )}
             <br />
-            {translate(" Confira os limites de uso nas perguntas abaixo. ")}
+            {translate(" Uma conta responsável. Até 50 bases, 20 mil linhas e 100 colunas por base, 24 visuais por painel e 3,5 MB compactados por salvamento. ")}
           </small>
         </article>
       </section>
@@ -455,7 +418,7 @@ export function LandingPage({ onDemo }: { onDemo: () => void }) {
       </section>
       <section className="sales-last">
         <div>
-          <h2>{translate("DÊ UMA NOVA VISÃO A ELES.")}</h2>
+          <h2>{translate("SEU PRÓXIMO PASSO PODE ESTAR NA SUA PLANILHA.")}</h2><p>{translate("Comece a descobrir com o DriveVision.")}</p>
         </div>
         <a className="sales-button" href="/?view=signup">
           {translate(" Começar agora ")}

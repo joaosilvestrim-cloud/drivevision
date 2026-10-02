@@ -137,7 +137,7 @@ export default function App() {
       !localMode &&
       !["login", "signup", "admin"].includes(view || "")
     )
-      return <LandingPage onDemo={() => setLocalMode(true)} />;
+      return <LandingPage />;
     if (
       !activationToken &&
       !verifiedLogin &&
