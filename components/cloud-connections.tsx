@@ -82,12 +82,20 @@ export function CloudConnections({
   onReload,
   onAnalyze,
   locked,
+  unavailable,
+  unsaved,
+  onSaveDraft,
+  onConfigure,
 }: {
   cloud: boolean;
   onLogin: () => void;
   onReload: () => Promise<void>;
   onAnalyze: (id: string) => void;
   locked: boolean;
+  unavailable: boolean;
+  unsaved: boolean;
+  onSaveDraft: () => void;
+  onConfigure: (action: () => void) => void;
 }) {
   const [state, setState] = useState<ConnectorState | null>(null),
     [error, setError] = useState(callbackMessage),
@@ -236,6 +244,19 @@ export function CloudConnections({
           </button>
         </div>
       )}
+      {unsaved && (
+        <div className="connection-alert" role="status">
+          <AlertCircle size={18} />
+          <span>{translate("Você tem alterações não salvas. Ao conectar, vamos salvar seu painel antes de continuar.")}</span>
+          <button className="secondary-button" disabled={unavailable} onClick={onSaveDraft}>
+            {translate("Salvar dashboard")}
+          </button>
+        </div>
+      )}
+      {unavailable && (
+        <p className="connection-alert" role="status">{translate("Aguarde o workspace carregar. Se houver um erro, recarregue os dados para liberar as conexões.")}</p>
+      )}
+      {!state && !error && <p role="status">{translate("Verificando integrações disponíveis…")}</p>}
       <div className="provider-grid">
         {(["sharepoint", "onedrive", "google"] as Provider[]).map((p) => {
           const comingSoon = p === "google";
@@ -263,19 +284,21 @@ export function CloudConnections({
               </span>
               <button
                 className="secondary-button"
-                disabled={!!busy || !state || !ready}
+                disabled={!!busy || unavailable || !state || !ready}
                 onClick={() =>
-                  action(p, async () => {
+                  onConfigure(() => { void action(p, async () => {
                     const result = await apiJson<{ url: string }>(
                       "connectors/start",
                       { provider: p },
                     );
                     location.assign(result.url);
-                  })
+                  }); })
                 }
               >
                 {comingSoon
                   ? translate("Em breve")
+                  : !state
+                    ? translate("Verificando integrações disponíveis…")
                   : busy === p
                     ? translate("Abrindo autorização…")
                     : ready
@@ -306,10 +329,10 @@ export function CloudConnections({
           <span className="connection-tag">{translate("Somente leitura")}</span>
           <button
             className="secondary-button"
-            disabled={!!busy || locked || !state?.omieConfigured}
-            onClick={() => setOmie({})}
+            disabled={!!busy || unavailable || !state?.omieConfigured}
+            onClick={() => onConfigure(() => setOmie({}))}
           >
-            {translate("Conectar Omie")}
+            {state ? translate("Conectar Omie") : translate("Verificando integrações disponíveis…")}
             <Plus size={15} />
           </button>
           {state && !state.omieConfigured && (
@@ -333,10 +356,10 @@ export function CloudConnections({
           <span className="connection-tag">{translate("Somente leitura")}</span>
           <button
             className="secondary-button"
-            disabled={!!busy || locked || !state?.contaAzulConfigured}
-            onClick={() => setContaAzul({})}
+            disabled={!!busy || unavailable || !state?.contaAzulConfigured}
+            onClick={() => onConfigure(() => setContaAzul({}))}
           >
-            {translate("Conectar Conta Azul")}
+            {state ? translate("Conectar Conta Azul") : translate("Verificando integrações disponíveis…")}
             <Plus size={15} />
           </button>
           {state && !state.contaAzulConfigured && (
@@ -466,7 +489,7 @@ export function CloudConnections({
               : translate("Atualização manual disponível")}
           </span>
         </div>
-        {locked && (
+        {unsaved && (
           <p className="connection-alert">
             {translate(
               " Salve seu rascunho antes de atualizar as fontes nesta tela. ",

@@ -2190,5 +2190,9 @@
   "Total ao longo do tempo": "Total a lo largo del tiempo",
   "Total por {v0}": "Total por {v0}",
   "Ajustar a estrutura da tabela": "Ajustar la estructura de la tabla",
-  "Se a prévia já representa sua tabela, continue para os gráficos. Abra estes ajustes apenas para corrigir linhas, colunas ou células mescladas.": "Si la vista previa ya representa tu tabla, continúa a los gráficos. Abre estos ajustes solo para corregir filas, columnas o celdas combinadas."
+  "Se a prévia já representa sua tabela, continue para os gráficos. Abra estes ajustes apenas para corrigir linhas, colunas ou células mescladas.": "Si la vista previa ya representa tu tabla, continúa a los gráficos. Abre estos ajustes solo para corregir filas, columnas o celdas combinadas.",
+  "Salvar painel e continuar a conexão": "Guardar panel y continuar la conexión",
+  "Você tem alterações não salvas. Ao conectar, vamos salvar seu painel antes de continuar.": "Tienes cambios sin guardar. Al conectar, guardaremos tu panel antes de continuar.",
+  "Aguarde o workspace carregar. Se houver um erro, recarregue os dados para liberar as conexões.": "Espera a que se cargue tu espacio. Si ocurre un error, vuelve a cargar los datos para habilitar las conexiones.",
+  "Verificando integrações disponíveis…": "Comprobando las integraciones disponibles…"
 }

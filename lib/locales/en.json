@@ -2190,5 +2190,9 @@
   "Total ao longo do tempo": "Total over time",
   "Total por {v0}": "Total by {v0}",
   "Ajustar a estrutura da tabela": "Adjust the table structure",
-  "Se a prévia já representa sua tabela, continue para os gráficos. Abra estes ajustes apenas para corrigir linhas, colunas ou células mescladas.": "If the preview already matches your table, continue to the charts. Open these settings only to correct rows, columns or merged cells."
+  "Se a prévia já representa sua tabela, continue para os gráficos. Abra estes ajustes apenas para corrigir linhas, colunas ou células mescladas.": "If the preview already matches your table, continue to the charts. Open these settings only to correct rows, columns or merged cells.",
+  "Salvar painel e continuar a conexão": "Save dashboard and continue connecting",
+  "Você tem alterações não salvas. Ao conectar, vamos salvar seu painel antes de continuar.": "You have unsaved changes. When connecting, we will save your dashboard before continuing.",
+  "Aguarde o workspace carregar. Se houver um erro, recarregue os dados para liberar as conexões.": "Wait for your workspace to load. If an error occurs, reload the data to enable connections.",
+  "Verificando integrações disponíveis…": "Checking available integrations…"
 }

@@ -202,6 +202,7 @@ export default function Workspace({
     [storageError, setStorageError] = useState(false),
     [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const afterConnectionSave = useRef<(() => void) | null>(null);
   const [remoteChanged, setRemoteChanged] = useState(false);
   const [modal, setModal] = useState<
     "new" | "blank" | "save" | "import" | "help" | "source" | null
@@ -472,6 +473,9 @@ export default function Workspace({
       setConfig(saved.config);
       setDirty(false);
       setModal(null);
+      const continueConnection = afterConnectionSave.current;
+      afterConnectionSave.current = null;
+      continueConnection?.();
       toast.success(
         storage.cloud
           ? "Dashboard salvo na sua conta."
@@ -781,6 +785,16 @@ export default function Workspace({
               onLogin={onAccount}
               onReload={reloadRemoteWorkspace}
               locked={dirty || busy || !loaded || storageError}
+              unavailable={busy || !loaded || storageError}
+              unsaved={dirty}
+              onSaveDraft={openSave}
+              onConfigure={(action) => {
+                if (busy || !loaded || storageError) return;
+                if (dirty) {
+                  afterConnectionSave.current = action;
+                  openSave();
+                } else action();
+              }}
               onAnalyze={(id) => {
                 const s = workspace.sources.find((s) => s.id === id);
                 const saved = workspace.dashboards.find(
@@ -1160,12 +1174,17 @@ export default function Workspace({
       <Dialog
         open={modal === "save"}
         onOpenChange={(v) => {
-          if (!v && !busy) setModal(null);
+          if (!v && !busy) {
+            afterConnectionSave.current = null;
+            setModal(null);
+          }
         }}
       >
         <DialogContent className="app-dialog">
           <DialogHeader>
-            <DialogTitle>{translate("Salvar dashboard")}</DialogTitle>
+            <DialogTitle>{afterConnectionSave.current
+              ? translate("Salvar painel e continuar a conexão")
+              : translate("Salvar dashboard")}</DialogTitle>
             <DialogDescription>
               {storage.cloud
                 ? translate(
