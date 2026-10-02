@@ -398,24 +398,15 @@ export function LoginScreen({
               {translate(" Já ativei minha conta · voltar para o login ")}
             </button>
           )}
-          <div className="login-local">
-            <span>
-              {hasSession
-                ? translate("Sua conta já está conectada.")
-                : translate("Quer conhecer primeiro?")}
-            </span>
-            <button type="button" disabled={busy} onClick={onLocal}>
-              {hasSession
-                ? translate("Voltar ao meu workspace")
-                : translate("Explorar no modo local")}{" "}
-              <ChevronRight size={15} />
-            </button>
-            <small>
-              {hasSession
-                ? translate("Seu acesso atual continua ativo.")
-                : translate("As análises ficam apenas neste navegador.")}
-            </small>
-          </div>
+          {hasSession && (
+            <div className="login-local">
+              <span>{translate("Sua conta já está conectada.")}</span>
+              <button type="button" disabled={busy} onClick={onLocal}>
+                {translate("Voltar ao meu workspace")} <ChevronRight size={15} />
+              </button>
+              <small>{translate("Seu acesso atual continua ativo.")}</small>
+            </div>
+          )}
         </section>
       </div>
       <footer className="login-footer">
