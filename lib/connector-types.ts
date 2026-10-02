@@ -20,7 +20,7 @@ export type RemoteOptions = {
 };
 export type CloudConnection = {
   id: string;
-  provider: Provider | "omie";
+  provider: Provider | "omie" | "contaazul";
   label: string;
 };
 export type CloudBinding = {
@@ -29,7 +29,7 @@ export type CloudBinding = {
   source_id: string;
   name: string;
   target: RemoteItem;
-  options: RemoteOptions | import("./omie-types").OmieOptions;
+  options: RemoteOptions | import("./omie-types").OmieOptions | import('./contaazul-types').ContaAzulOptions;
   interval_minutes: number;
   paused: boolean;
   last_success_at: string | null;
@@ -50,4 +50,5 @@ export type ConnectorState = {
   bindings: CloudBinding[];
   scheduled: boolean;
   omieConfigured?: boolean;
+  contaAzulConfigured?: boolean;
 };

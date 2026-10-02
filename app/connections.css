@@ -275,6 +275,11 @@
   background: #e0edff;
   color: #17388c;
 }
+.provider-symbol.contaazul {background: #e0edff; color: #17388c;}
+.contaazul-dialog {background: #fff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 28px;}
+.contaazul-fields {grid-template-columns: 1fr; gap: 16px;}
+.contaazul-fields > .primary-button {width: 100%; min-height: 46px; margin-top: 8px;}
+.contaazul-dialog progress {height: 12px; accent-color: #0b9b72; margin-top: 18px;}
 .omie-dialog {
   width: min(760px, calc(100vw - 24px)) !important;
   max-width: 760px !important;

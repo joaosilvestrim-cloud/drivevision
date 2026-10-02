@@ -25,6 +25,8 @@ import {
 } from "../lib/smart-import.ts";
 import { workspaceSchema } from "./validation.ts";
 import { omieSource } from "./omie-connectors.ts";
+import { contaAzulStep } from "./contaazul-connectors.ts";
+import { financialDashboard } from "../lib/financial-dashboard.ts";
 
 export async function connectionAccess(owner: string, id: string) {
   return transaction(owner, async (c) => {
@@ -44,7 +46,7 @@ export async function connectionAccess(owner: string, id: string) {
       )
     ).rows[0];
     if (!row) throw new ConnectorError(404, "Conexão não encontrada.");
-    if (row.provider === "omie")
+    if (row.provider === "omie" || row.provider === "contaazul")
       throw new ConnectorError(
         400,
         "Use a seleção de dados Omie para esta conexão.",
@@ -245,6 +247,7 @@ async function syncBindingWithinDeadline(
   let interval = 60;
   let daily: import("../lib/refresh-schedule.ts").DailySchedule | undefined;
   let failed = false;
+  let pending = false;
   try {
     const binding = await transaction(
       owner,
@@ -262,7 +265,16 @@ async function syncBindingWithinDeadline(
     daily = binding.options.daily;
     let merged: Source | undefined;
     let fingerprint: string;
-    if (binding.options.dataset === "omie-invoiced-orders") {
+    if (binding.options.dataset === "contaazul-financial") {
+      merged = (await contaAzulStep(owner, binding, lease)) || undefined;
+      if (!merged) {
+        pending = true;
+        return { ok: true, pending: true };
+      }
+      fingerprint = createHash("sha256")
+        .update(JSON.stringify(merged.rows))
+        .digest("hex");
+    } else if (binding.options.dataset === "omie-invoiced-orders") {
       const result = await omieSource(
         owner,
         binding.connection_id,
@@ -357,6 +369,17 @@ async function syncBindingWithinDeadline(
         ),
         dashboards,
       };
+      const starter =
+        nextSource.remoteInfo?.provider === "contaazul" &&
+        !dashboards.some((d) => d.sourceId === nextSource.id)
+          ? {
+              id: randomUUID(),
+              sourceId: nextSource.id,
+              config: financialDashboard(nextSource),
+              updatedAt: new Date().toISOString(),
+            }
+          : null;
+      if (starter) workspace.dashboards.push(starter);
       if (
         !workspaceSchema.safeParse(workspace).success ||
         gzipSync(
@@ -368,11 +391,17 @@ async function syncBindingWithinDeadline(
           "A atualização excederia o limite do workspace. A última versão foi preservada.",
         );
       const unchanged =
+        !starter &&
         binding.fingerprint === fingerprint &&
         old &&
         old.name === nextSource.name &&
         JSON.stringify(old.rows) === JSON.stringify(nextSource.rows);
       if (!unchanged) {
+        if (starter)
+          await c.query(
+            "insert into drivevision.dashboards(workspace_id,id,position,payload) values($1,$2,$3,$4)",
+            [w.id, starter.id, dashboards.length - 1, JSON.stringify(starter)],
+          );
         await c.query(
           "insert into drivevision.sources(workspace_id,id,position,payload) values($1,$2,$3,$4) on conflict(workspace_id,id) do update set payload=excluded.payload,updated_at=now()",
           [w.id, binding.source_id, rows.length, JSON.stringify(nextSource)],
@@ -398,6 +427,11 @@ async function syncBindingWithinDeadline(
         "update drivevision.cloud_bindings set fingerprint=$2,columns=$3,last_success_at=now(),last_checked_at=now(),last_error=null where id=$1",
         [id, fingerprint, JSON.stringify(nextSource.columns)],
       );
+      if (nextSource.remoteInfo?.provider === "contaazul")
+        await c.query(
+          "delete from drivevision.contaazul_jobs where binding_id=$1",
+          [id],
+        );
       await c.query(
         "insert into drivevision.cloud_runs(id,binding_id,owner_id,status,message,rows_count) values($1,$2,$3,$4,$5,$6)",
         [
@@ -436,6 +470,7 @@ async function syncBindingWithinDeadline(
   } finally {
     await transaction(owner, async (c) => {
       let due = nextRefreshAt(interval, daily);
+      if (pending) due = new Date(Date.now() + 60000);
       if (failed) {
         const recent = (
           await c.query(

@@ -15,6 +15,8 @@ import {
 import { connectionAccess, previewRemote, syncBinding } from "./cloud-sync.ts";
 import { nextRefreshAt, validTimeZone } from "../lib/refresh-schedule.ts";
 import { omieReady, omieRoute } from "./omie-connectors.ts";
+import { contaAzulRoute } from "./contaazul-connectors.ts";
+import { contaAzulReady } from "./contaazul-provider.ts";
 
 const uuid = z.string().uuid();
 const provider = z.enum(["onedrive", "sharepoint", "google"]);
@@ -71,6 +73,11 @@ export async function connectorsRoute(
   url: URL,
   origin: string,
 ) {
+  if (
+    path.startsWith("/api/connectors/contaazul/") ||
+    path === "/api/connectors/callback/contaazul"
+  )
+    return contaAzulRoute(owner, sessionHash, path, method, input, url, origin);
   if (path.startsWith("/api/connectors/omie/") && method === "POST")
     return omieRoute(owner, path, input);
   if (path === "/api/connectors" && method === "GET") {
@@ -97,6 +104,7 @@ export async function connectorsRoute(
         })),
         scheduled: !!process.env.CRON_SECRET,
         omieConfigured: omieReady(),
+        contaAzulConfigured: contaAzulReady(),
       },
     };
   }

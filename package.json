@@ -34,7 +34,9 @@
     "test:i18n": "node scripts/test-i18n.mjs",
     "db:support-trial": "node scripts/setup-support-trial.mjs",
     "test:omie": "node scripts/test-omie-provider.mjs && node scripts/test-omie-connectors.mjs",
-    "db:omie": "node scripts/setup-omie.mjs"
+    "db:omie": "node scripts/setup-omie.mjs",
+    "test:contaazul": "node scripts/test-contaazul.mjs",
+    "db:contaazul": "node scripts/setup-contaazul.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

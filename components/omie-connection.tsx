@@ -31,7 +31,11 @@ export function OmieConnection({
   onAnalyze: (id: string) => void;
 }) {
   const initial =
-    binding && "dataset" in binding.options ? binding.options : undefined;
+    binding &&
+    "dataset" in binding.options &&
+    binding.options.dataset === "omie-invoiced-orders"
+      ? binding.options
+      : undefined;
   const [connectionId, setConnectionId] = useState(connection?.id);
   const [label, setLabel] = useState(connection?.label || "");
   const [appKey, setAppKey] = useState(""),

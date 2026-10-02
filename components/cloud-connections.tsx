@@ -21,6 +21,7 @@ import {
 import { apiJson } from "@/lib/cloud-workspace";
 import { validTimeZone } from "@/lib/refresh-schedule";
 import { OmieConnection } from "./omie-connection";
+import { ContaAzulConnection } from "./contaazul-connection";
 import type {
   Provider,
   RemoteItem,
@@ -38,7 +39,8 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 
-const labels: Record<Provider | "omie", string> = {
+const labels: Record<Provider | "omie" | "contaazul", string> = {
+  contaazul: "Conta Azul",
   omie: "Omie",
   sharepoint: "SharePoint",
   onedrive: "OneDrive",
@@ -95,6 +97,11 @@ export function CloudConnections({
     binding?: CloudBinding;
     credentialsOnly?: boolean;
   } | null>(null);
+  const [contaAzul, setContaAzul] = useState<{
+    connection?: CloudConnection;
+    binding?: CloudBinding;
+    progressOnly?: boolean;
+  } | null>(null);
   const [browser, setBrowser] = useState<CloudConnection | null>(null),
     [editing, setEditing] = useState<CloudBinding | null>(null),
     [history, setHistory] = useState<{
@@ -115,7 +122,18 @@ export function CloudConnections({
     if (cloud)
       apiJson<ConnectorState>("connectors")
         .then((data) => {
-          if (live) setState(data);
+          if (live) {
+            setState(data);
+            const params = new URLSearchParams(location.search);
+            if (params.get("connection") === "contaazul") {
+              const c = data.connections.find(
+                (c) =>
+                  c.id === params.get("account") && c.provider === "contaazul",
+              );
+              if (c) setContaAzul({ connection: c });
+              historyReplace();
+            }
+          }
         })
         .catch((e) => {
           if (live) setError(e.message);
@@ -126,7 +144,7 @@ export function CloudConnections({
   }, [cloud]);
   useEffect(() => {
     const value = new URLSearchParams(location.search).get("connection");
-    if (value) historyReplace();
+    if (value && value !== "contaazul") historyReplace();
   }, []);
   async function action(key: string, fn: () => Promise<void>) {
     if (busy) return;
@@ -143,7 +161,20 @@ export function CloudConnections({
   async function sync(id: string) {
     await action(id, async () => {
       try {
-        await apiJson("connectors/sync", { id });
+        const result = await apiJson<{ pending?: boolean }>("connectors/sync", {
+          id,
+        });
+        if (result.pending) {
+          const b = state?.bindings.find((b) => b.id === id);
+          if (b)
+            setContaAzul({
+              connection: state?.connections.find(
+                (c) => c.id === b.connection_id,
+              ),
+              binding: b,
+              progressOnly: true,
+            });
+        }
         await onReload();
       } finally {
         await load();
@@ -293,6 +324,33 @@ export function CloudConnections({
           <span className="provider-symbol" aria-hidden="true">
             ↔
           </span>
+          <h3>Conta Azul</h3>
+          <p>
+            {translate(
+              "Contas a pagar e a receber, com painel financeiro e atualização diária.",
+            )}
+          </p>
+          <span className="connection-tag">{translate("Somente leitura")}</span>
+          <button
+            className="secondary-button"
+            disabled={!!busy || locked || !state?.contaAzulConfigured}
+            onClick={() => setContaAzul({})}
+          >
+            {translate("Conectar Conta Azul")}
+            <Plus size={15} />
+          </button>
+          {state && !state.contaAzulConfigured && (
+            <small>
+              {translate(
+                "A integração precisa ser habilitada pelo administrador.",
+              )}
+            </small>
+          )}
+        </article>
+        <article className="provider-card">
+          <span className="provider-symbol" aria-hidden="true">
+            ↔
+          </span>
           <h3>{translate("Outros sistemas")}</h3>
           <p>
             {translate(
@@ -352,7 +410,14 @@ export function CloudConnections({
                 onClick={() =>
                   c.provider === "omie"
                     ? setOmie({ connection: c })
-                    : setBrowser(c)
+                    : c.provider === "contaazul"
+                      ? setContaAzul({
+                          connection: c,
+                          binding: state.bindings.find(
+                            (b) => b.connection_id === c.id,
+                          ),
+                        })
+                      : setBrowser(c)
                 }
               >
                 <Folder size={16} /> {translate(" Escolher conteúdo ")}
@@ -366,6 +431,15 @@ export function CloudConnections({
                   }
                 >
                   {translate("Atualizar credenciais")}
+                </button>
+              )}
+              {c.provider === "contaazul" && (
+                <button
+                  className="text-button"
+                  disabled={!!busy || locked}
+                  onClick={() => setContaAzul({})}
+                >
+                  {translate("Reconectar empresa")}
                 </button>
               )}
               <button
@@ -428,7 +502,9 @@ export function CloudConnections({
                       <FileSpreadsheet size={13} />
                     )}{" "}
                     {"dataset" in b.options
-                      ? "Omie"
+                      ? b.options.dataset === "contaazul-financial"
+                        ? "Conta Azul"
+                        : "Omie"
                       : b.target.kind === "folder"
                         ? translate("Pasta")
                         : translate("Arquivo")}
@@ -462,9 +538,14 @@ export function CloudConnections({
                     <dt>{translate("Seleção")}</dt>
                     <dd>
                       {"dataset" in b.options ? (
-                        translate("Últimos {v0} dias", {
-                          v0: b.options.periodDays,
-                        })
+                        translate(
+                          b.options.dataset === "contaazul-financial"
+                            ? "Últimos {v0} dias e próximos 30 dias"
+                            : "Últimos {v0} dias",
+                          {
+                            v0: b.options.periodDays,
+                          },
+                        )
                       ) : (
                         <>
                           {translate(" Linha ")}
@@ -580,12 +661,19 @@ export function CloudConnections({
                     disabled={!!busy || locked}
                     onClick={() =>
                       "dataset" in b.options
-                        ? setOmie({
-                            connection: state.connections.find(
-                              (c) => c.id === b.connection_id,
-                            ),
-                            binding: b,
-                          })
+                        ? b.options.dataset === "contaazul-financial"
+                          ? setContaAzul({
+                              connection: state.connections.find(
+                                (c) => c.id === b.connection_id,
+                              ),
+                              binding: b,
+                            })
+                          : setOmie({
+                              connection: state.connections.find(
+                                (c) => c.id === b.connection_id,
+                              ),
+                              binding: b,
+                            })
                         : setEditing(b)
                     }
                   >
@@ -621,6 +709,20 @@ export function CloudConnections({
           </div>
         )}
       </section>
+      {contaAzul && (
+        <ContaAzulConnection
+          {...contaAzul}
+          onClose={() => {
+            setContaAzul(null);
+            void load();
+          }}
+          onSaved={async () => {
+            await onReload();
+            await load();
+          }}
+          onAnalyze={onAnalyze}
+        />
+      )}
       {omie && (
         <OmieConnection
           {...omie}
