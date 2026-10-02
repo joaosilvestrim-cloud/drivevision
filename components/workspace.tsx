@@ -884,7 +884,7 @@ export default function Workspace({
                 onClick={() => setView("connections")}
               >
                 <Cloud size={16} />{" "}
-                {translate(" Conectar SharePoint, OneDrive ou Google Drive ")}
+                {translate(" Conectar SharePoint, OneDrive ou Omie ")}
                 <ArrowRight size={15} />
               </button>
               <div className="import-banner">

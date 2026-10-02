@@ -18,14 +18,18 @@ export type RemoteOptions = {
   skipTotals: boolean;
   nameContains: string;
 };
-export type CloudConnection = { id: string; provider: Provider; label: string };
+export type CloudConnection = {
+  id: string;
+  provider: Provider | "omie";
+  label: string;
+};
 export type CloudBinding = {
   id: string;
   connection_id: string;
   source_id: string;
   name: string;
   target: RemoteItem;
-  options: RemoteOptions;
+  options: RemoteOptions | import("./omie-types").OmieOptions;
   interval_minutes: number;
   paused: boolean;
   last_success_at: string | null;
@@ -45,4 +49,5 @@ export type ConnectorState = {
   connections: CloudConnection[];
   bindings: CloudBinding[];
   scheduled: boolean;
+  omieConfigured?: boolean;
 };

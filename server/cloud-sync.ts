@@ -24,6 +24,7 @@ import {
   planFor,
 } from "../lib/smart-import.ts";
 import { workspaceSchema } from "./validation.ts";
+import { omieSource } from "./omie-connectors.ts";
 
 export async function connectionAccess(owner: string, id: string) {
   return transaction(owner, async (c) => {
@@ -43,6 +44,11 @@ export async function connectionAccess(owner: string, id: string) {
       )
     ).rows[0];
     if (!row) throw new ConnectorError(404, "Conexão não encontrada.");
+    if (row.provider === "omie")
+      throw new ConnectorError(
+        400,
+        "Use a seleção de dados Omie para esta conexão.",
+      );
     let tokens = unseal<OAuthTokens>(row.tokens, owner);
     if (new Date(row.expires_at).getTime() < Date.now() + 60000) {
       tokens = await exchange(row.provider, {
@@ -254,40 +260,60 @@ async function syncBindingWithinDeadline(
       throw new ConnectorError(404, "Acompanhamento não encontrado.");
     interval = binding.interval_minutes;
     daily = binding.options.daily;
-    const { provider, access } = await connectionAccess(
-      owner,
-      binding.connection_id,
-    );
-    const files = await selectedFiles(
-      provider,
-      access,
-      binding.target,
-      binding.options,
-    );
-    const fingerprint = createHash("sha256")
-      .update(JSON.stringify(files.map((f) => [f.id, f.version])))
-      .digest("hex");
     let merged: Source | undefined;
-    for (const item of files) {
-      if (Date.now() > deadline)
-        throw new ConnectorError(
-          422,
-          "A seleção levou tempo demais. Reduza a quantidade de arquivos.",
-        );
-      const file = await download(provider, access, item);
-      const source = normalizedRemoteSource(
-        await readRemoteWorkbook(file),
+    let fingerprint: string;
+    if (binding.options.dataset === "omie-invoiced-orders") {
+      const result = await omieSource(
+        owner,
+        binding.connection_id,
         binding.options,
       );
-      if (merged) {
-        assertCompatible(merged, source);
-        merged.rows.push(...source.rows);
-      } else merged = source;
-      if (merged.rows.length > 20000)
-        throw new ConnectorError(
-          422,
-          "A seleção ultrapassa 20 mil linhas. Reduza o intervalo ou os arquivos.",
+      merged = result.source;
+      fingerprint = createHash("sha256")
+        .update(
+          JSON.stringify([
+            merged.rows,
+            result.from,
+            result.to,
+            result.excluded,
+          ]),
+        )
+        .digest("hex");
+    } else {
+      const { provider, access } = await connectionAccess(
+        owner,
+        binding.connection_id,
+      );
+      const files = await selectedFiles(
+        provider,
+        access,
+        binding.target,
+        binding.options,
+      );
+      fingerprint = createHash("sha256")
+        .update(JSON.stringify(files.map((f) => [f.id, f.version])))
+        .digest("hex");
+      for (const item of files) {
+        if (Date.now() > deadline)
+          throw new ConnectorError(
+            422,
+            "A seleção levou tempo demais. Reduza a quantidade de arquivos.",
+          );
+        const file = await download(provider, access, item);
+        const source = normalizedRemoteSource(
+          await readRemoteWorkbook(file),
+          binding.options,
         );
+        if (merged) {
+          assertCompatible(merged, source);
+          merged.rows.push(...source.rows);
+        } else merged = source;
+        if (merged.rows.length > 20000)
+          throw new ConnectorError(
+            422,
+            "A seleção ultrapassa 20 mil linhas. Reduza o intervalo ou os arquivos.",
+          );
+      }
     }
     if (!merged) throw new ConnectorError(422, "A seleção não contém dados.");
     merged = { ...merged, id: binding.source_id, name: binding.name };

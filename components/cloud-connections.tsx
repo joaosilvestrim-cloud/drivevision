@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { apiJson } from "@/lib/cloud-workspace";
 import { validTimeZone } from "@/lib/refresh-schedule";
+import { OmieConnection } from "./omie-connection";
 import type {
   Provider,
   RemoteItem,
@@ -37,7 +38,8 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 
-const labels: Record<Provider, string> = {
+const labels: Record<Provider | "omie", string> = {
+  omie: "Omie",
   sharepoint: "SharePoint",
   onedrive: "OneDrive",
   google: "Google Drive",
@@ -88,6 +90,11 @@ export function CloudConnections({
   const [state, setState] = useState<ConnectorState | null>(null),
     [error, setError] = useState(callbackMessage),
     [busy, setBusy] = useState("");
+  const [omie, setOmie] = useState<{
+    connection?: CloudConnection;
+    binding?: CloudBinding;
+    credentialsOnly?: boolean;
+  } | null>(null);
   const [browser, setBrowser] = useState<CloudConnection | null>(null),
     [editing, setEditing] = useState<CloudBinding | null>(null),
     [history, setHistory] = useState<{
@@ -179,7 +186,7 @@ export function CloudConnections({
             <b>01</b> {translate(" Autorize a leitura ")}
           </span>
           <span>
-            <b>02</b> {translate(" Escolha arquivo ou pasta ")}
+            <b>02</b> {translate(" Escolha os dados ")}
           </span>
           <span>
             <b>03</b> {translate(" Defina sua atualização ")}
@@ -256,12 +263,41 @@ export function CloudConnections({
           );
         })}
         <article className="provider-card">
+          <span className="provider-symbol omie" aria-hidden="true">
+            O
+          </span>
+          <h3>Omie</h3>
+          <p>
+            {translate(
+              "Pedidos faturados da sua empresa, com atualização diária e painel guiado.",
+            )}
+          </p>
+          <span className="connection-tag">{translate("Somente leitura")}</span>
+          <button
+            className="secondary-button"
+            disabled={!!busy || locked || !state?.omieConfigured}
+            onClick={() => setOmie({})}
+          >
+            {translate("Conectar Omie")}
+            <Plus size={15} />
+          </button>
+          {state && !state.omieConfigured && (
+            <small>
+              {translate(
+                "A integração precisa ser habilitada pelo administrador.",
+              )}
+            </small>
+          )}
+        </article>
+        <article className="provider-card">
           <span className="provider-symbol" aria-hidden="true">
             ↔
           </span>
-          <h3>{translate("APIs externas")}</h3>
+          <h3>{translate("Outros sistemas")}</h3>
           <p>
-            {translate("Integrações diretas com outros sistemas e serviços.")}
+            {translate(
+              "Bling e outras integrações serão liberados após a configuração e validação de cada fornecedor.",
+            )}
           </p>
           <span className="connection-tag">{translate("Em breve")}</span>
           <button className="secondary-button" disabled>
@@ -296,7 +332,9 @@ export function CloudConnections({
                 className={`provider-symbol ${c.provider}`}
                 aria-hidden="true"
               >
-                {c.provider === "google" ? (
+                {c.provider === "omie" ? (
+                  "O"
+                ) : c.provider === "google" ? (
                   "G"
                 ) : c.provider === "sharepoint" ? (
                   "S"
@@ -311,10 +349,25 @@ export function CloudConnections({
               <button
                 className="primary-button"
                 disabled={!!busy || locked}
-                onClick={() => setBrowser(c)}
+                onClick={() =>
+                  c.provider === "omie"
+                    ? setOmie({ connection: c })
+                    : setBrowser(c)
+                }
               >
                 <Folder size={16} /> {translate(" Escolher conteúdo ")}
               </button>
+              {c.provider === "omie" && (
+                <button
+                  className="text-button"
+                  disabled={!!busy || locked}
+                  onClick={() =>
+                    setOmie({ connection: c, credentialsOnly: true })
+                  }
+                >
+                  {translate("Atualizar credenciais")}
+                </button>
+              )}
               <button
                 className="text-button"
                 aria-label={translate("Desconectar {v0}", { v0: c.label })}
@@ -374,9 +427,11 @@ export function CloudConnections({
                     ) : (
                       <FileSpreadsheet size={13} />
                     )}{" "}
-                    {b.target.kind === "folder"
-                      ? translate("Pasta")
-                      : translate("Arquivo")}
+                    {"dataset" in b.options
+                      ? "Omie"
+                      : b.target.kind === "folder"
+                        ? translate("Pasta")
+                        : translate("Arquivo")}
                   </span>
                   <span
                     className={`connection-state ${b.last_error ? "error" : ""}`}
@@ -394,21 +449,34 @@ export function CloudConnections({
                 </div>
                 <h3>{b.name}</h3>
                 <p className="connection-path">
-                  {b.target.name} {translate(" · Aba ")}
-                  {b.options.sheet}
+                  {b.target.name}{" "}
+                  {"sheet" in b.options && (
+                    <>
+                      {translate(" · Aba ")}
+                      {b.options.sheet}
+                    </>
+                  )}
                 </p>
                 <dl>
                   <div>
                     <dt>{translate("Seleção")}</dt>
                     <dd>
-                      {translate(" Linha ")}
-                      {b.options.header} {translate(" · colunas ")}
-                      {b.options.left}–{b.options.right}
-                      {b.options.end
-                        ? translate(" · até a linha {v0}", {
-                            v0: b.options.end,
-                          })
-                        : translate(" · novas linhas incluídas")}
+                      {"dataset" in b.options ? (
+                        translate("Últimos {v0} dias", {
+                          v0: b.options.periodDays,
+                        })
+                      ) : (
+                        <>
+                          {translate(" Linha ")}
+                          {b.options.header} {translate(" · colunas ")}
+                          {b.options.left}–{b.options.right}
+                          {b.options.end
+                            ? translate(" · até a linha {v0}", {
+                                v0: b.options.end,
+                              })
+                            : translate(" · novas linhas incluídas")}
+                        </>
+                      )}
                     </dd>
                   </div>
                   <div>
@@ -421,9 +489,11 @@ export function CloudConnections({
                           })
                         : b.interval_minutes === 1440
                           ? translate("A cada 24 horas")
-                          : translate(intervals.find(
-                              (i) => i.value === b.interval_minutes,
-                            )?.label)}
+                          : translate(
+                              intervals.find(
+                                (i) => i.value === b.interval_minutes,
+                              )?.label,
+                            )}
                     </dd>
                   </div>
                   <div>
@@ -508,7 +578,16 @@ export function CloudConnections({
                   <button
                     className="text-button"
                     disabled={!!busy || locked}
-                    onClick={() => setEditing(b)}
+                    onClick={() =>
+                      "dataset" in b.options
+                        ? setOmie({
+                            connection: state.connections.find(
+                              (c) => c.id === b.connection_id,
+                            ),
+                            binding: b,
+                          })
+                        : setEditing(b)
+                    }
                   >
                     <Settings2 size={15} /> {translate(" Seleção ")}
                   </button>
@@ -542,6 +621,18 @@ export function CloudConnections({
           </div>
         )}
       </section>
+      {omie && (
+        <OmieConnection
+          {...omie}
+          onClose={() => setOmie(null)}
+          onRefresh={load}
+          onSaved={async () => {
+            await onReload();
+            await load();
+          }}
+          onAnalyze={onAnalyze}
+        />
+      )}
       {(browser || editing) && (
         <RemoteBrowser
           connection={
@@ -672,7 +763,7 @@ function RemoteBrowser({
       binding?.target || null,
     ),
     [options, setOptions] = useState<RemoteOptions | null>(
-      binding?.options || null,
+      binding && "sheet" in binding.options ? binding.options : null,
     ),
     [name, setName] = useState(binding?.name || ""),
     [interval, setInterval] = useState(binding?.interval_minutes || 1440);

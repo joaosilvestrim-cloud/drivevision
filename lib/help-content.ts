@@ -61,11 +61,20 @@ export const helpTopics = [
     text: "Após vincular o conteúdo do OneDrive ou SharePoint, configure a frequência e o horário disponíveis. Consulte o histórico de execuções para conferir falhas e a última atualização. Se mover o arquivo ou revogar a autorização Microsoft, a conexão poderá precisar de nova seleção ou autorização.",
   },
   {
+    id: "omie",
+    title: "Conectar Omie",
+    group: "Conexões",
+    keywords: "omie api erp vendas pedidos faturados chave app key secret integrar",
+    text: "Abra Conexões → Conectar Omie. Informe as chaves da sua empresa, disponíveis no Omie em Meus aplicativos → engrenagem → Resumo do App → Chave de Integração (API). Escolha 30, 90 ou 365 dias, confira a prévia e defina o horário diário. A conexão lê até 5.000 pedidos de produtos faturados, uma linha por pedido, excluindo cancelados, denegados e pedidos com devolução total ou parcial. Depois da importação, escolha seu segmento e crie o painel sugerido. Em caso de falha, os dados anteriores são preservados; confira o histórico em Conexões.",
+    href: "/?view=connections",
+    action: "Abrir Conexões",
+  },
+  {
     id: "futuro",
     title: "Google Drive e APIs externas",
     group: "Conexões",
     keywords: "google drive api externa integração sistema erp plugplay",
-    text: "Google Drive e conexões com APIs externas estão em breve. Por enquanto, importe Excel/CSV ou conecte OneDrive e SharePoint. Você pode falar com a equipe para informar qual integração precisa; isso não representa uma promessa de prazo.",
+    text: "A conexão com Omie já permite consultar pedidos faturados. Google Drive, Bling e outros sistemas continuam em breve. Você também pode importar Excel/CSV ou conectar OneDrive e SharePoint. Fale com a equipe para informar qual integração precisa; isso não representa uma promessa de prazo.",
   },
   {
     id: "plano",

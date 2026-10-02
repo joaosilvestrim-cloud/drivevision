@@ -14,6 +14,7 @@ import {
 } from "./cloud-providers.ts";
 import { connectionAccess, previewRemote, syncBinding } from "./cloud-sync.ts";
 import { nextRefreshAt, validTimeZone } from "../lib/refresh-schedule.ts";
+import { omieReady, omieRoute } from "./omie-connectors.ts";
 
 const uuid = z.string().uuid();
 const provider = z.enum(["onedrive", "sharepoint", "google"]);
@@ -70,6 +71,8 @@ export async function connectorsRoute(
   url: URL,
   origin: string,
 ) {
+  if (path.startsWith("/api/connectors/omie/") && method === "POST")
+    return omieRoute(owner, path, input);
   if (path === "/api/connectors" && method === "GET") {
     const state = await transaction(owner, async (c) => ({
       connections: (
@@ -93,6 +96,7 @@ export async function connectorsRoute(
           configured: id !== "google" && providerReady(id),
         })),
         scheduled: !!process.env.CRON_SECRET,
+        omieConfigured: omieReady(),
       },
     };
   }
@@ -334,7 +338,7 @@ export async function connectorsRoute(
     );
     await transaction(owner, async (c) => {
       const found = await c.query(
-        "update drivevision.cloud_bindings set options=$2,name=$3,interval_minutes=$4,fingerprint=null where id=$1 returning id,paused",
+        "update drivevision.cloud_bindings set options=$2,name=$3,interval_minutes=$4,fingerprint=null where id=$1 and not (options ? 'dataset') returning id,paused",
         [r.id, JSON.stringify(r.options), r.name, r.interval],
       );
       if (!found.rowCount)

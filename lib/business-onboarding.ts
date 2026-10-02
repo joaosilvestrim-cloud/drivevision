@@ -86,6 +86,7 @@ const aliases: Record<Role, string[]> = {
     "data venda",
     "data da venda",
     "data emissao",
+    "data de faturamento",
     "date",
     "fecha",
   ],
@@ -105,6 +106,7 @@ const aliases: Record<Role, string[]> = {
     "razao social",
     "customer",
     "customer name",
+    "cliente (codigo)",
   ],
   product: [
     "produto",
@@ -114,7 +116,14 @@ const aliases: Record<Role, string[]> = {
     "product",
     "service",
   ],
-  seller: ["vendedor", "representante", "responsavel", "seller", "salesperson"],
+  seller: [
+    "vendedor",
+    "vendedor (codigo)",
+    "representante",
+    "responsavel",
+    "seller",
+    "salesperson",
+  ],
   channel: ["canal", "canal venda", "origem", "channel"],
 };
 const normalized = (s: string) =>
@@ -137,7 +146,12 @@ export function suggestMapping(
       aliases[role].includes(normalized(c)),
     );
     // Ambiguous aliases are left for the customer, never silently pick the first numeric column.
-    if (candidates.length === 1) mapping[role] = candidates[0];
+    if (
+      candidates.length === 1 &&
+      (["value", "date", "order"].includes(role) ||
+        source.rows.some((row) => row[candidates[0]]?.trim()))
+    )
+      mapping[role] = candidates[0];
   }
   return mapping;
 }

@@ -47,7 +47,7 @@ const steps: {
   },
   {
     title: "Mantenha suas fontes atualizadas",
-    body: "Em Conexões, autorize sua conta OneDrive ou SharePoint, escolha os arquivos ou pastas e defina a atualização. Google Drive e APIs externas estão em breve.",
+    body: "Em Conexões, escolha arquivos do OneDrive ou SharePoint, ou conecte o Omie com as chaves da sua empresa para analisar pedidos faturados. Confira a prévia e defina a atualização. Google Drive e outros sistemas estão em breve.",
     view: "connections",
     target: "[data-tour='nav-connections']",
   },

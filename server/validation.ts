@@ -11,6 +11,16 @@ const source = z
     rows: z.array(z.record(z.string().max(100000))).max(20000),
     demo: z.literal(false),
     createdAt: z.string().max(100),
+    remoteInfo: z
+      .object({
+        provider: z.literal("omie"),
+        from: z.string().max(10),
+        to: z.string().max(10),
+        excluded: z.number().int().nonnegative(),
+        fetchedAt: z.string().max(100),
+      })
+      .strict()
+      .optional(),
     recipe: z
       .object({
         leftId: id,

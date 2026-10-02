@@ -32,7 +32,9 @@
     "test:email": "node scripts/test-email.mjs",
     "test:support": "node scripts/test-support.mjs",
     "test:i18n": "node scripts/test-i18n.mjs",
-    "db:support-trial": "node scripts/setup-support-trial.mjs"
+    "db:support-trial": "node scripts/setup-support-trial.mjs",
+    "test:omie": "node scripts/test-omie-provider.mjs && node scripts/test-omie-connectors.mjs",
+    "db:omie": "node scripts/setup-omie.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

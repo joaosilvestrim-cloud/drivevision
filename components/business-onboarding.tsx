@@ -452,10 +452,19 @@ export function BusinessSummary({
           ? `${check.from} → ${check.to}`
           : translate("Data não associada")}{" "}
         · {translate("Última carga")}:{" "}
-        {new Date(source.lastLoad?.at || source.createdAt).toLocaleString(
-          locale(),
-        )}
+        {new Date(
+          source.lastLoad?.at ||
+            source.remoteInfo?.fetchedAt ||
+            source.createdAt,
+        ).toLocaleString(locale())}
       </p>
+      {source.remoteInfo?.provider === "omie" && (
+        <p>
+          {translate(
+            "Omie: uma linha por pedido faturado. Cancelados, denegados e pedidos com devolução total ou parcial são excluídos. O valor não representa recebimentos nem lucro.",
+          )}
+        </p>
+      )}
       <details>
         <summary>{translate("Como este painel foi montado")}</summary>
         <p>
@@ -477,9 +486,13 @@ export function BusinessSummary({
           )}
         </p>
         <p>
-          {translate(
-            "Para atualizar, envie novos dados para a mesma base. Os painéis mantêm o vínculo com ela.",
-          )}
+          {source.remoteInfo
+            ? translate(
+                "Esta fonte é atualizada pela conexão Omie. Confira o horário, a seleção e o histórico em Conexões.",
+              )
+            : translate(
+                "Para atualizar, envie novos dados para a mesma base. Os painéis mantêm o vínculo com ela.",
+              )}
         </p>
       </details>
       {check.errors.length > 0 && (
