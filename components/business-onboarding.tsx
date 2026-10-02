@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { t as translate, locale, getLanguage } from "@/lib/i18n";
 import {
   SEGMENTS,
+  KNOWLEDGE_LEVELS,
   OBJECTIVES,
   ROLES,
   EMPTY_PROFILE,
@@ -29,10 +30,10 @@ export function translateBusinessVisuals(base: Config): Config {
   return {
     ...base,
     visuals: base.visuals?.map((v) => {
-      const ranking = v.title.match(/^(Vendas|Registros) por (.+)$/);
+      const ranking = v.title.match(/^(Vendas|Registros|Total) por (.+)$/);
       const title = ranking
         ? translate(
-            ranking[1] === "Vendas" ? "Vendas por {v0}" : "Registros por {v0}",
+            ranking[1] === "Vendas" ? "Vendas por {v0}" : ranking[1] === "Total" ? "Total por {v0}" : "Registros por {v0}",
             { v0: ranking[2] },
           )
         : translate(v.title);
@@ -68,10 +69,22 @@ export function BusinessProfileFields({
   }
   return (
     <section className="business-profile">
+      <fieldset className="knowledge-choice">
+        <legend>{translate("Como você se sente ao trabalhar com dados?")}</legend>
+        <p>{translate("Sua escolha adapta a ajuda. Você pode mudar de nível a qualquer momento nesta etapa.")}</p>
+        <div className="knowledge-options">
+          {KNOWLEDGE_LEVELS.map((level) => (
+            <button type="button" key={level.value} aria-pressed={value.knowledge === level.value}
+              onClick={() => onChange({ ...value, knowledge: level.value })}>
+              <strong>{translate(level.label)}</strong><span>{translate(level.detail)}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <h3>{translate("Qual atividade melhor descreve sua empresa?")}</h3>
       <p>
         {translate(
-          "Vamos sugerir um painel de vendas e clientes. Estoque, caixa, produção e lucro completo ainda não fazem parte destes modelos.",
+          "Escolha seu contexto e objetivo. As sugestões usam somente os campos disponíveis na sua fonte.",
         )}
       </p>
       <div className="business-segments">
@@ -80,7 +93,7 @@ export function BusinessProfileFields({
             type="button"
             key={s.value}
             aria-pressed={value.segment === s.value}
-            onClick={() => onChange({ ...value, segment: s.value })}
+            onClick={() => onChange({ ...value, segment: s.value, objective: s.value === "other" ? "explore" : value.objective })}
           >
             <strong>{translate(s.label)}</strong>
             <span>{translate(s.detail)}</span>
@@ -104,7 +117,7 @@ export function BusinessProfileFields({
           options={[...OBJECTIVES]}
         />
       </div>
-      {templates && value.segment && (
+      {templates && value.segment && value.segment !== "other" && (
         <div className="business-templates">
           <p>
             {translate(
@@ -153,6 +166,9 @@ export function BusinessReview({
     suggestMapping(source, previous),
   );
   const [confirmed, setConfirmed] = useState(false);
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const [step, setStep] = useState<"fields" | "charts">("fields");
+  const beginner = !profile.knowledge || profile.knowledge === "beginner";
   const language = getLanguage();
   const check = useMemo(
     () => inspectBusinessSource(source, mapping),
@@ -173,22 +189,36 @@ export function BusinessReview({
       return null;
     }
   }, [source, profile, mapping, language]);
+  const selected = useMemo(() => proposed ? { ...proposed, visuals: proposed.visuals?.filter((v) => !excluded.includes(v.id)) } : null, [proposed, excluded]);
   useEffect(() => {
-    onReady(confirmed ? proposed : null);
-  }, [confirmed, proposed, onReady]);
+    onReady(confirmed && profile.knowledge && selected?.visuals?.length ? selected : null);
+  }, [confirmed, selected, profile.knowledge, onReady]);
   const change = (role: Role, field: string) => {
     setConfirmed(false);
+    setExcluded([]);
     setMapping({ ...mapping, [role]: field });
   };
   return (
     <section className="business-review">
+      <div hidden={beginner && step === "charts"}>
       <BusinessProfileFields
         value={profile}
         onChange={(p) => {
           setConfirmed(false);
+          setExcluded([]);
+          setStep("fields");
           onProfile(p);
         }}
       />
+      </div>
+      {beginner && (
+        <div className="onboarding-guide" role="status">
+          <strong>{translate(step === "fields" ? "1. Vamos entender seus dados" : "2. Escolha seu primeiro painel")}</strong>
+          <p>{translate("O sistema usa os nomes e o conteúdo das colunas para propor análises. Confira as sugestões: ele não conhece sozinho as regras do seu negócio.")}</p>
+          <p>{translate("Fonte: {v0} · {v1} registros · {v2} colunas", { v0: source.name, v1: source.rows.length, v2: source.columns.length })}</p>
+        </div>
+      )}
+      {(!beginner || step === "fields") && <>
       <h3>{translate("Confira o significado das suas colunas")}</h3>
       <p>
         {translate(
@@ -232,8 +262,7 @@ export function BusinessReview({
             {check.total === null
               ? "—"
               : new Intl.NumberFormat(locale(), {
-                  style: "currency",
-                  currency: "BRL",
+                  ...(profile.objective === "explore" ? { maximumFractionDigits: 2 } : { style: "currency", currency: "BRL" }),
                 }).format(check.total)}
           </strong>
           <span>{translate("Total da coluna de valor")}</span>
@@ -292,10 +321,16 @@ export function BusinessReview({
         )}
         <li>
           {translate(
-            "Vendas informadas é a soma da coluna escolhida, sem deduções automáticas. Este painel não calcula lucro, margem ou ticket médio.",
+            "Os totais usam a coluna escolhida, sem deduções automáticas. Não representam lucro, margem ou ticket médio.",
           )}
         </li>
       </ul>
+      {beginner && <button type="button" className="primary-button" disabled={!proposed || !profile.knowledge} onClick={() => setStep("charts")}>
+        {translate("Ver os gráficos sugeridos")}
+      </button>}
+      </>}
+      {(!beginner || step === "charts") && <>
+      {beginner && <button type="button" className="secondary-button" onClick={() => { setStep("fields"); setConfirmed(false); }}>{translate("Voltar e revisar os campos")}</button>}
       {proposed && (
         <>
           <h3>{translate("Seu painel já tem um ponto de partida")}</h3>
@@ -305,9 +340,13 @@ export function BusinessReview({
             )}
           </p>
           <div className="business-preview">
-            {proposed.visuals?.slice(0, 4).map((v) => (
-              <article key={v.id}>
-                <h4>{translate(v.title)}</h4>
+            {proposed.visuals?.map((v) => (
+              <article key={v.id} className={excluded.includes(v.id) ? "suggestion-excluded" : ""}>
+                <label className="suggestion-toggle"><input type="checkbox" checked={!excluded.includes(v.id)} onChange={(e) => {
+                  setConfirmed(false);
+                  setExcluded(e.target.checked ? excluded.filter((id) => id !== v.id) : [...excluded, v.id]);
+                }} /><strong>{v.title}</strong></label>
+                {beginner && <p className="suggestion-reason">{translate(v.type === "line" ? "Veja como os resultados mudam ao longo das datas disponíveis." : v.type === "horizontal" ? "Compare as categorias e encontre as maiores participações. Mostra até 10 categorias." : v.type === "table" ? "Confira os dados que sustentam sua análise." : v.measures?.[0]?.aggregation === "distinct" ? "Conta cada identificador preenchido uma única vez, mesmo que apareça em várias linhas." : v.measures?.[0]?.aggregation === "count" ? "Mostra quantas linhas chegaram nesta fonte; uma linha não significa necessariamente uma venda." : "Soma os valores da coluna confirmada. Não calcula lucro nem desconta custos automaticamente.")}</p>}
                 <div style={{ height: v.type === "kpi" ? 100 : 220 }}>
                   <VisualChart
                     source={source}
@@ -323,7 +362,7 @@ export function BusinessReview({
           <p>
             {translate(
               "{v0} visuais serão criados com as colunas confirmadas.",
-              { v0: proposed.visuals?.length || 0 },
+              { v0: selected?.visuals?.length || 0 },
             )}
           </p>
         </>
@@ -332,7 +371,7 @@ export function BusinessReview({
         <input
           type="checkbox"
           checked={confirmed}
-          disabled={!proposed}
+          disabled={!selected?.visuals?.length || !profile.knowledge}
           onChange={(e) => setConfirmed(e.target.checked)}
         />
         <span>
@@ -341,6 +380,7 @@ export function BusinessReview({
           )}
         </span>
       </label>
+      </>}
     </section>
   );
 }

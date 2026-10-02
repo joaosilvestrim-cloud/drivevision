@@ -9,6 +9,7 @@ import {
 import { makeVisual, type Visual } from "./visual-builder.ts";
 
 export const SEGMENTS = [
+  { value: "other", label: "Outra atividade", detail: "Dados de outra área ou operação" },
   {
     value: "commerce",
     label: "Comércio",
@@ -36,6 +37,7 @@ export const SEGMENTS = [
   },
 ] as const;
 export const OBJECTIVES = [
+  { value: "explore", label: "Explorar outros dados" },
   { value: "sales", label: "Acompanhar minhas vendas" },
   { value: "products", label: "Entender o que mais vende" },
   { value: "customers", label: "Conhecer meus clientes" },
@@ -48,12 +50,19 @@ export const ROLES = [
   { value: "product", label: "Produto ou serviço" },
   { value: "seller", label: "Vendedor ou responsável" },
   { value: "channel", label: "Canal de venda" },
+  { value: "category", label: "Categoria para comparar" },
+] as const;
+export const KNOWLEDGE_LEVELS = [
+  { value: "beginner", label: "Estou começando", detail: "Quero sugestões e explicações em cada etapa." },
+  { value: "intermediate", label: "Já uso planilhas", detail: "Quero um ponto de partida e liberdade para ajustar." },
+  { value: "advanced", label: "Tenho experiência com BI", detail: "Quero conferir os campos e personalizar os gráficos." },
 ] as const;
 export type Role = (typeof ROLES)[number]["value"];
 export type BusinessProfile = {
   segment: string;
   operation: string;
   objective: string;
+  knowledge?: (typeof KNOWLEDGE_LEVELS)[number]["value"];
 };
 export type BusinessContext = {
   version: 1;
@@ -125,6 +134,7 @@ const aliases: Record<Role, string[]> = {
     "salesperson",
   ],
   channel: ["canal", "canal venda", "origem", "channel"],
+  category: ["categoria", "category", "categoria financeira", "departamento", "regiao", "status", "situacao"],
 };
 const normalized = (s: string) =>
   normalize(s)
@@ -241,8 +251,9 @@ export function buildBusinessDashboard(
     confirmedAt: new Date().toISOString(),
   };
   const metric = mapping.value || source.columns[0];
+  const generic = profile.objective === "explore";
   const dimension =
-    mapping.product || mapping.customer || mapping.channel || source.columns[0];
+    mapping.category || mapping.product || mapping.customer || mapping.channel || source.columns[0];
   const config: Config = {
     ...defaultConfig(source),
     title:
@@ -283,7 +294,7 @@ export function buildBusinessDashboard(
       legend: false,
       numberStyle: {
         kind:
-          mapping.value && field === mapping.value && !distinct
+          !generic && mapping.value && field === mapping.value && !distinct
             ? "currency"
             : "number",
         decimals: mapping.value && field === mapping.value && !distinct ? 2 : 0,
@@ -303,7 +314,7 @@ export function buildBusinessDashboard(
       subtitle: `${source.name} · ${field}`,
     });
   };
-  add("kpi", mapping.value ? "Vendas informadas" : "Registros recebidos");
+  add("kpi", mapping.value ? (generic ? "Total informado" : "Vendas informadas") : "Registros recebidos");
   if (mapping.order)
     add(
       "kpi",
@@ -316,14 +327,14 @@ export function buildBusinessDashboard(
     add("kpi", "Clientes identificados", mapping.customer, dimension, true);
   const rankings: Role[] =
     profile.objective === "customers"
-      ? ["customer", "product", "seller", "channel"]
-      : ["product", "customer", "seller", "channel"];
+      ? ["customer", "product", "seller", "channel", "category"]
+      : ["product", "customer", "seller", "channel", "category"];
   const trend = () => {
     if (mapping.date && check.from !== check.to)
       add(
         "line",
         mapping.value
-          ? "Vendas ao longo do tempo"
+          ? (generic ? "Total ao longo do tempo" : "Vendas ao longo do tempo")
           : "Registros ao longo do tempo",
         metric,
         mapping.date,
@@ -335,7 +346,7 @@ export function buildBusinessDashboard(
     if (field)
       add(
         "horizontal",
-        `${mapping.value ? "Vendas" : "Registros"} por ${field}`,
+        `${mapping.value ? (generic ? "Total" : "Vendas") : "Registros"} por ${field}`,
         metric,
         field,
       );

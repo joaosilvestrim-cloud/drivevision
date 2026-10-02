@@ -137,6 +137,10 @@ export function SmartImport({
     setError("");
   }
   async function read(file?: File) {
+    if (!profile.knowledge) {
+      setError(translate("Escolha seu nível de conhecimento para continuar."));
+      return;
+    }
     if (!file) return;
     if (!profile.segment) {
       setError(translate("Escolha seu segmento antes de enviar a planilha."));
@@ -313,16 +317,16 @@ export function SmartImport({
               onChange={setProfile}
               templates
             />
-            {!profile.segment && (
+            {(!profile.segment || !profile.knowledge) && (
               <p className="journey-upload-hint" role="status">
                 {translate(
-                  "Escolha uma atividade acima para liberar o envio do arquivo.",
+                  "Escolha seu nível e sua atividade para liberar o envio do arquivo.",
                 )}
               </p>
             )}
             <button
               className="smart-drop"
-              disabled={reading || !profile.segment}
+              disabled={reading || !profile.segment || !profile.knowledge}
               onClick={() => input.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -440,6 +444,9 @@ export function SmartImport({
                       ]}
                     />
                   )}
+                  <details className="import-structure-controls" open={profile.knowledge !== "beginner" || candidates.length === 0 || !!preview.error}>
+                    <summary>{translate("Ajustar a estrutura da tabela")}</summary>
+                    <p className="model-note">{translate("Se a prévia já representa sua tabela, continue para os gráficos. Abra estes ajustes apenas para corrigir linhas, colunas ou células mescladas.")}</p>
                   <div className="model-two">
                     <TextField
                       label={translate("Linha do cabeçalho")}
@@ -595,6 +602,7 @@ export function SmartImport({
                         />
                       </>
                     )}
+                  </details>
                   </details>
                   <TextField
                     label={translate("Nome da base")}

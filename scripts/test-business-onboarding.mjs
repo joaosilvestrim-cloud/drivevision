@@ -9,6 +9,7 @@ import {
   SEGMENTS,
   OBJECTIVES,
   ROLES,
+  KNOWLEDGE_LEVELS,
 } from "../lib/business-onboarding.ts";
 import { chartData } from "../lib/chart-model.ts";
 import { workspaceSchema } from "../server/validation.ts";
@@ -140,11 +141,23 @@ assert.equal(
 console.log(
   "PASS objective ordering, server schema roundtrip, mapping reuse and idempotent source refresh with existing dashboard.",
 );
+const operational = parseCSV("Data;Categoria;Valor\n01/09/2026;A;2\n02/09/2026;B;3", "operacao.csv", "ops");
+for (const level of KNOWLEDGE_LEVELS) {
+  const c = buildBusinessDashboard(operational, { segment: "other", operation: "", objective: "explore", knowledge: level.value }, suggestMapping(operational), true);
+  assert.equal(c.visuals[0].title, "Total informado");
+  assert.equal(c.visuals[0].numberStyle.kind, "number");
+  assert.equal(chartData(operational.rows, operational, c.visuals[0]).value, 5);
+  assert.ok(c.visuals.some(v => v.dimension === "Categoria" && v.type === "horizontal"));
+  assert.ok(!c.visuals.some(v => /vendas|lucro|margem/i.test(v.title)));
+  const stored=workspaceSchema.parse({version:1,sources:[operational],dashboards:[{id:"ops-panel",sourceId:operational.id,config:c,updatedAt:new Date().toISOString()}]});
+  assert.equal(stored.dashboards[0].config.businessContext.profile.knowledge,level.value);
+}
+console.log("PASS all knowledge levels survive persistence; operational data is not labeled as sales or currency.");
 for (const lang of ["en", "es"]) {
   const dictionary = JSON.parse(
     readFileSync(new URL(`../lib/locales/${lang}.json`, import.meta.url)),
   );
-  for (const option of [...SEGMENTS, ...OBJECTIVES, ...ROLES])
+  for (const option of [...SEGMENTS, ...OBJECTIVES, ...ROLES, ...KNOWLEDGE_LEVELS])
     assert.ok(dictionary[option.label], `${lang}: ${option.label}`);
   for (const segment of SEGMENTS) assert.ok(dictionary[segment.detail]);
 }
