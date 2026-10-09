@@ -21,6 +21,7 @@ import {
 import { apiJson } from "@/lib/cloud-workspace";
 import { CONNECTION_ERRORS } from "@/lib/connection-errors";
 import { validTimeZone } from "@/lib/refresh-schedule";
+import { ProtheusConnection } from "./protheus-connection";
 import { OmieConnection } from "./omie-connection";
 import { ContaAzulConnection } from "./contaazul-connection";
 import type {
@@ -40,7 +41,8 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 
-const labels: Record<Provider | "omie" | "contaazul", string> = {
+const labels: Record<Provider | "omie" | "contaazul" | "protheus", string> = {
+  protheus: "Protheus",
   contaazul: "Conta Azul",
   omie: "Omie",
   sharepoint: "SharePoint",
@@ -109,6 +111,7 @@ export function CloudConnections({
     const p = new URLSearchParams(location.search);
     return p.get("connection") === "error" && p.get("provider") === "contaazul";
   });
+  const [protheus, setProtheus] = useState<{ connection?: CloudConnection; binding?: CloudBinding; credentialsOnly?: boolean } | null>(null);
   const [omie, setOmie] = useState<{
     connection?: CloudConnection;
     binding?: CloudBinding;
@@ -329,6 +332,15 @@ export function CloudConnections({
           );
         })}
         <article className="provider-card">
+          <span className="provider-symbol" aria-hidden="true">P</span>
+          <h3>Protheus · {translate("Integração piloto")}</h3>
+          <p>{translate("Contas a pagar e receber em aberto, conferência de totais e painel financeiro com atualização diária.")}</p>
+          <small>{translate("Requer REST habilitado. Valide os dados com seu administrador Protheus.")}</small>
+          <button className="secondary-button" disabled={!!busy || unavailable || !state?.protheusConfigured}
+            onClick={() => onConfigure(() => setProtheus({}))}>{translate("Configurar Protheus")}<Plus size={15}/></button>
+          {state && !state.protheusConfigured && <small>{translate("A integração precisa ser habilitada pelo administrador.")}</small>}
+        </article>
+        <article className="provider-card">
           <span className="provider-symbol omie" aria-hidden="true">
             O
           </span>
@@ -443,7 +455,7 @@ export function CloudConnections({
                 className="primary-button"
                 disabled={!!busy || locked}
                 onClick={() =>
-                  c.provider === "omie"
+                  c.provider === "protheus" ? setProtheus({ connection: c }) : c.provider === "omie"
                     ? setOmie({ connection: c })
                     : c.provider === "contaazul"
                       ? setContaAzul({
@@ -457,6 +469,7 @@ export function CloudConnections({
               >
                 <Folder size={16} /> {translate(" Escolher conteúdo ")}
               </button>
+              {c.provider === "protheus" && <button className="text-button" disabled={!!busy || locked} onClick={() => setProtheus({ connection: c, credentialsOnly: true })}>{translate("Atualizar credenciais")}</button>}
               {c.provider === "omie" && (
                 <button
                   className="text-button"
@@ -537,7 +550,7 @@ export function CloudConnections({
                       <FileSpreadsheet size={13} />
                     )}{" "}
                     {"dataset" in b.options
-                      ? b.options.dataset === "contaazul-financial"
+                      ? b.options.dataset === "protheus-financial" ? "Protheus" : b.options.dataset === "contaazul-financial"
                         ? "Conta Azul"
                         : "Omie"
                       : b.target.kind === "folder"
@@ -574,7 +587,7 @@ export function CloudConnections({
                     <dd>
                       {"dataset" in b.options ? (
                         translate(
-                          b.options.dataset === "contaazul-financial"
+                          (b.options.dataset === "contaazul-financial" || b.options.dataset === "protheus-financial")
                             ? "Últimos {v0} dias e próximos 30 dias"
                             : "Últimos {v0} dias",
                           {
@@ -696,7 +709,7 @@ export function CloudConnections({
                     disabled={!!busy || locked}
                     onClick={() =>
                       "dataset" in b.options
-                        ? b.options.dataset === "contaazul-financial"
+                        ? b.options.dataset === "protheus-financial" ? setProtheus({ connection: state.connections.find(c => c.id === b.connection_id), binding: b }) : b.options.dataset === "contaazul-financial"
                           ? setContaAzul({
                               connection: state.connections.find(
                                 (c) => c.id === b.connection_id,
@@ -758,6 +771,8 @@ export function CloudConnections({
           onAnalyze={onAnalyze}
         />
       )}
+      {protheus && <ProtheusConnection {...protheus} onClose={() => setProtheus(null)} onRefresh={load}
+        onSaved={async () => { await onReload(); await load(); }} onAnalyze={onAnalyze} />}
       {omie && (
         <OmieConnection
           {...omie}

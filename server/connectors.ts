@@ -1,3 +1,4 @@
+import { protheusReady, protheusRoute } from "./protheus-connectors.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { transaction } from "./database.ts";
@@ -78,6 +79,8 @@ export async function connectorsRoute(
     path === "/api/connectors/callback/contaazul"
   )
     return contaAzulRoute(owner, sessionHash, path, method, input, url, origin);
+  if (path.startsWith("/api/connectors/protheus/") && method === "POST")
+    return protheusRoute(owner, path, input);
   if (path.startsWith("/api/connectors/omie/") && method === "POST")
     return omieRoute(owner, path, input);
   if (path === "/api/connectors" && method === "GET") {
@@ -103,6 +106,7 @@ export async function connectorsRoute(
           configured: id !== "google" && providerReady(id),
         })),
         scheduled: !!process.env.CRON_SECRET,
+        protheusConfigured: protheusReady(),
         omieConfigured: omieReady(),
         contaAzulConfigured: contaAzulReady(),
       },

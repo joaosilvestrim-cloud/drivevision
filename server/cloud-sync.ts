@@ -1,3 +1,4 @@
+import { protheusSource } from "./protheus-connectors.ts";
 import { randomUUID, createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { database, transaction } from "./database.ts";
@@ -46,10 +47,10 @@ export async function connectionAccess(owner: string, id: string) {
       )
     ).rows[0];
     if (!row) throw new ConnectorError(404, "Conexão não encontrada.");
-    if (row.provider === "omie" || row.provider === "contaazul")
+    if (row.provider === "omie" || row.provider === "contaazul" || row.provider === "protheus")
       throw new ConnectorError(
         400,
-        "Use a seleção de dados Omie para esta conexão.",
+        "Use a configuração de dados do sistema conectado para esta conexão.",
       );
     let tokens = unseal<OAuthTokens>(row.tokens, owner);
     if (new Date(row.expires_at).getTime() < Date.now() + 60000) {
@@ -274,6 +275,10 @@ async function syncBindingWithinDeadline(
       fingerprint = createHash("sha256")
         .update(JSON.stringify(merged.rows))
         .digest("hex");
+    } else if (binding.options.dataset === "protheus-financial") {
+      const result = await protheusSource(owner, binding.connection_id, binding.options);
+      merged = result.source;
+      fingerprint = result.fingerprint;
     } else if (binding.options.dataset === "omie-invoiced-orders") {
       const result = await omieSource(
         owner,
@@ -370,7 +375,7 @@ async function syncBindingWithinDeadline(
         dashboards,
       };
       const starter =
-        nextSource.remoteInfo?.provider === "contaazul" &&
+        (nextSource.remoteInfo?.provider === "contaazul" || nextSource.remoteInfo?.provider === "protheus") &&
         !dashboards.some((d) => d.sourceId === nextSource.id)
           ? {
               id: randomUUID(),

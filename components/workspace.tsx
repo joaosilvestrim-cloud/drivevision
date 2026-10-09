@@ -833,6 +833,10 @@ export default function Workspace({
                   </>
                 )}
               </div>
+              {source.remoteInfo?.provider === "protheus" && <p className="protheus-source-context">
+                {translate("Títulos em aberto por vencimento")} · {source.remoteInfo.from} → {source.remoteInfo.to}<br />
+                {translate("Empresa / filial · tipos · moeda")}: {source.remoteInfo.scope} · {translate("Extraído em")}: {new Date(source.remoteInfo.fetchedAt).toLocaleString(locale())}
+              </p>}
               <AnalyticsStudio
                 key={`${source.id}-${draftKey}`}
                 source={source}

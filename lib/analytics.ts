@@ -4,7 +4,7 @@ import type { Visual, BoardAppearance } from "./visual-builder";
 import type { DataStep, FilterSet } from "./data-model";
 export type DataRow = Record<string, string>;
 export type Source = {
-  remoteInfo?: { provider: "omie" | "contaazul"; from: string; to: string; excluded: number; fetchedAt: string };
+  remoteInfo?: { provider: "omie" | "contaazul" | "protheus"; from: string; to: string; excluded: number; fetchedAt: string; scope?: string };
   recipe?: import("./source-lifecycle").SourceRecipe;
   lastLoad?: import("./source-lifecycle").LoadOptions & { at: string; file: string; summary: import("./source-lifecycle").LoadSummary };
   importNotes?: {

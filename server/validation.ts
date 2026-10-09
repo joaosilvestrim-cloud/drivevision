@@ -13,11 +13,12 @@ const source = z
     createdAt: z.string().max(100),
     remoteInfo: z
       .object({
-        provider: z.enum(["omie", "contaazul"]),
+        provider: z.enum(["omie", "contaazul", "protheus"]),
         from: z.string().max(10),
         to: z.string().max(10),
         excluded: z.number().int().nonnegative(),
         fetchedAt: z.string().max(100),
+        scope: z.string().max(300).optional(),
       })
       .strict()
       .optional(),

@@ -38,7 +38,9 @@
     "test:omie": "node scripts/test-omie-provider.mjs && node scripts/test-omie-connectors.mjs",
     "db:omie": "node scripts/setup-omie.mjs",
     "test:contaazul": "node scripts/test-contaazul.mjs",
-    "db:contaazul": "node scripts/setup-contaazul.mjs"
+    "db:contaazul": "node scripts/setup-contaazul.mjs",
+    "test:protheus": "node scripts/test-protheus-provider.mjs && node scripts/test-protheus-connectors.mjs",
+    "db:protheus": "node scripts/setup-protheus.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
