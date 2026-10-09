@@ -10,6 +10,18 @@ Escopo v1: títulos SE1/SE2 com saldo positivo, moeda 1, tipos explicitamente es
 
 Indicadores: A receber, A pagar, Recebimentos vencidos e Pagamentos vencidos. Vencidos considera a data da extração em America/Sao_Paulo; não se recalcula em tempo real no navegador. Todos os valores são saldos dos títulos selecionados, não caixa realizado, DRE, lucro nem todo o passivo/ativo da empresa. O vencimento define o recorte e títulos fora dele não entram.
 
+### Leitura financeira e conferência
+
+O estúdio apresenta uma leitura da fonte completa, independente dos filtros e transformações do editor de gráficos. Não altera dashboards existentes. Cada indicador abre os títulos correspondentes, ordenados por vencimento, com busca por título/pessoa/loja/natureza/empresa/filial, filtro de pagar/receber, paginação de 25 linhas e exportação CSV de todos os resultados filtrados. Valores são somados em centavos; dados incompatíveis não são silenciosamente omitidos.
+
+A agenda inclui o dia da extração e os seis dias seguintes. Faixas de atraso (1–7, 8–30, 31–60 e mais de 60 dias) separam os saldos a pagar e receber. Nenhuma dessas leituras pretende reconstruir pagamentos realizados. O limite de vencimentos da fonte também limita os atrasos visíveis.
+
+Conferir com o ERP permite informar quatro totais e comparar diferenças exatas em centavos. Não consulta automaticamente um relatório do ERP. Valores digitados são temporários; o cliente pode baixar um relatório com escopo, data da extração e data da conferência. Fechar a janela descarta os valores digitados.
+
+O estado da conexão é consultado a cada minuto com a página visível. Falha, pausa, falta de agendamento, execução atrasada e carga com mais de 26 horas são mostradas no próprio painel, com acesso à gestão da atualização. Falha na consulta de estado aparece como situação desconhecida, nunca como atualização bem-sucedida. Alertas são visuais dentro da aplicação; não há envio de e-mail implementado nesta versão.
+
+Compatibilidade em produção: esta evolução não faz migrações nem regrava fontes ou configurações. A leitura aparece apenas para fontes Protheus e funciona com as fontes da versão anterior. Conta Azul, Omie e planilhas mantêm o fluxo atual.
+
 ## Arquitetura e segurança
 
 - Navegador → rotas autenticadas `/api/connectors/protheus/{connect,preview,watch}` → adaptador no servidor → Protheus HTTPS.

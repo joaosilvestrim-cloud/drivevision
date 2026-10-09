@@ -74,6 +74,7 @@ import { duplicateDashboard } from "@/lib/dashboard-library";
 import { buildBusinessDashboard } from "@/lib/business-onboarding";
 import { DashboardStart } from "./dashboard-start";
 import { CloudConnections } from "./cloud-connections";
+import { FinancialReview } from "./financial-review";
 import { refreshDerived } from "@/lib/source-lifecycle";
 import { AdminPanel } from "./admin-panel";
 import { SourceHistory } from "./source-history";
@@ -833,10 +834,7 @@ export default function Workspace({
                   </>
                 )}
               </div>
-              {source.remoteInfo?.provider === "protheus" && <p className="protheus-source-context">
-                {translate("Títulos em aberto por vencimento")} · {source.remoteInfo.from} → {source.remoteInfo.to}<br />
-                {translate("Empresa / filial · tipos · moeda")}: {source.remoteInfo.scope} · {translate("Extraído em")}: {new Date(source.remoteInfo.fetchedAt).toLocaleString(locale())}
-              </p>}
+              {source.remoteInfo?.provider === "protheus" && <FinancialReview key={`${source.id}-${source.remoteInfo.fetchedAt}`} source={source} cloud={storage.cloud} onConnections={() => setView("connections")} />}
               <AnalyticsStudio
                 key={`${source.id}-${draftKey}`}
                 source={source}
