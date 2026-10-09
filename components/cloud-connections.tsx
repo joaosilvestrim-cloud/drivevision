@@ -681,6 +681,7 @@ export function CloudConnections({
                   {b.last_success_at && (
                     <button
                       className="secondary-button"
+                      disabled={unavailable}
                       onClick={() => onAnalyze(b.source_id)}
                     >
                       {translate(" Analisar ")}
