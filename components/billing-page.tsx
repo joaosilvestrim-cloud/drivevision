@@ -13,6 +13,7 @@ import {
 import { apiJson, type Account } from "@/lib/cloud-workspace";
 import { PublicHeader, PublicFooter } from "./landing-page";
 type Billing = {
+  shared?: boolean;
   required: boolean;
   access: boolean;
   state: string;
@@ -179,7 +180,9 @@ export function BillingPage({
           {data && (
             <>
               <p>
-                {!data.required
+                {data.shared
+                  ? translate("Seu usuário participa de um ambiente compartilhado, sem cobrança individual. A disponibilidade é administrada pelo responsável do ambiente. Se o acesso estiver bloqueado, fale com a DriveData.")
+                  : !data.required
                   ? translate(
                       "Seu acesso foi concedido pela administração e não possui renovação automática neste plano.",
                     )

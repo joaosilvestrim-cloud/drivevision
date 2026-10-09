@@ -2,7 +2,6 @@
 import { t as translate, locale } from "@/lib/i18n";
 import { SupportInbox } from "./help-center";
 import { EmailAdmin } from "./email-access";
-("use client");
 import { BillingAdmin } from "./billing-page";
 import {
   useCallback,
@@ -44,6 +43,9 @@ type Client = {
   access: boolean;
   confirmed: boolean;
   createdAt: string;
+  shared: boolean;
+  workspaceName: string;
+  workspaceOwnerId: string;
 };
 type Listing = {
   clients: Client[];
@@ -73,7 +75,7 @@ const emptyForm = {
   name: "",
   contact: "",
   email: "",
-  plan: "Manual",
+  plan: "Cortesia DriveData",
   status: "active" as "active" | "suspended",
 };
 
@@ -87,7 +89,28 @@ export function AdminPanel() {
     [busy, setBusy] = useState(false);
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [passwordClient, setPasswordClient] = useState<Client | null>(null);
+  const [password, setPassword] = useState(""), [passwordConfirm, setPasswordConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [workspaceMode, setWorkspaceMode] = useState<"new" | "existing">("new");
+  const [workspaceOwnerId, setWorkspaceOwnerId] = useState("");
+  const [workspaceQuery, setWorkspaceQuery] = useState("");
+  const [workspaces, setWorkspaces] = useState<{id:string;name:string;email:string}[]>([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState("");
   const [editor, setEditor] = useState<Client | "new" | null>(null);
+  useEffect(() => {
+    if (editor !== "new" || workspaceMode !== "existing") return;
+    let live = true;
+    const timer = setTimeout(() => {
+      void apiJson<{workspaces:{id:string;name:string;email:string}[]}>(`admin/workspaces?q=${encodeURIComponent(workspaceQuery)}`)
+        .then(result => { if(live) setWorkspaces(result.workspaces); })
+        .catch(error => { if(live) { setWorkspaces([]); setWorkspaceError((error as Error).message); } })
+        .finally(() => { if(live) setWorkspaceLoading(false); });
+    }, 250);
+    return () => { live = false; clearTimeout(timer); };
+  }, [editor, workspaceMode, workspaceQuery]);
   const [form, setForm] = useState(emptyForm),
     [formError, setFormError] = useState("");
   const [invitation, setInvitation] = useState<Invitation | null>(null),
@@ -123,10 +146,14 @@ export function AdminPanel() {
     }
   }, [search, status, page]);
   useEffect(() => {
-    void load();
+    const timer = setTimeout(() => { void load(); }, 0);
+    return () => clearTimeout(timer);
   }, [load]);
   function edit(client: Client | "new") {
     setEditor(client);
+    setCreatePassword("");
+    setWorkspaceMode("new"); setWorkspaceOwnerId(""); setWorkspaceQuery(""); setWorkspaces([]);
+    setWorkspaceLoading(false); setWorkspaceError("");
     setForm(
       client === "new"
         ? emptyForm
@@ -143,20 +170,26 @@ export function AdminPanel() {
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!editor || busy) return;
+    if (editor === "new" && workspaceMode === "existing" && !workspaceOwnerId) {
+      setFormError("Escolha um ambiente existente."); return;
+    }
     setBusy(true);
     setFormError("");
     setNotice("");
     try {
       if (editor === "new") {
-        const value = await apiJson<Invitation>("admin/clients", {
+        const value = await apiJson<Partial<Invitation>>("admin/clients", {
           name: form.name,
           contact: form.contact,
           email: form.email,
           plan: form.plan,
+          ...(createPassword ? { password: createPassword } : {}),
+          ...(workspaceMode === "existing" ? { workspaceOwnerId } : {}),
         });
-        setInvitation(value);
+        if (value.invitationUrl && value.expiresAt) setInvitation(value as Invitation);
         setCopied(false);
-        setNotice("Cliente criado. Compartilhe o convite com o responsável.");
+        setNotice(createPassword ? "Usuário criado com senha e acesso ao ambiente. Compartilhe o acesso com o responsável." : "Cliente criado. Compartilhe o convite com o responsável.");
+        setCreatePassword("");
       } else {
         await apiJson("admin/clients/update", {
           id: editor.id,
@@ -174,6 +207,19 @@ export function AdminPanel() {
     } finally {
       setBusy(false);
     }
+  }
+  async function changePassword(event: FormEvent) {
+    event.preventDefault();
+    if (!passwordClient || busy) return;
+    if (password !== passwordConfirm) { setPasswordError("As senhas não conferem."); return; }
+    setBusy(true); setPasswordError("");
+    try {
+      await apiJson("admin/clients/password", { id: passwordClient.id, revision: passwordClient.revision, password });
+      setPasswordClient(null); setPassword(""); setPasswordConfirm("");
+      setNotice("Senha redefinida. As sessões anteriores do cliente foram encerradas.");
+      await load();
+    } catch (e) { setPasswordError((e as Error).message); }
+    finally { setBusy(false); }
   }
   async function invite(client: Client) {
     if (busy) return;
@@ -222,13 +268,13 @@ export function AdminPanel() {
       <div className="admin-banner">
         <div>
           <h2>
-            {translate(" Cada cliente. ")}
+            {translate("Clientes e equipes.")}
             <br />
-            {translate(" Seu próprio espaço. ")}
+            {translate("Você no controle.")}
           </h2>
           <p>
             {translate(
-              " Ambientes separados, gestão centralizada. Você controla quem entra e quando. ",
+              "Crie acessos de cortesia, escolha ambientes exclusivos ou compartilhados e gerencie cada usuário.",
             )}
           </p>
         </div>
@@ -372,6 +418,7 @@ export function AdminPanel() {
                       <strong>{client.name}</strong>
                       <span>{client.contact}</span>
                       <span>{client.email}</span>
+                      <span>{translate(client.shared ? "Ambiente compartilhado" : "Ambiente exclusivo")} · {client.workspaceName}</span>
                     </td>
                     <td>
                       <span className="admin-plan">{client.plan}</span>
@@ -411,6 +458,9 @@ export function AdminPanel() {
                         >
                           <History size={18} />
                         </button>
+                        <button className="admin-link" disabled={busy || client.status === "suspended"} onClick={() => {
+                          setPasswordClient(client); setPassword(""); setPasswordConfirm(""); setPasswordError("");
+                        }}>{translate("Definir senha")}</button>
                         {client.pending && client.status === "active" && (
                           <button
                             className="admin-link"
@@ -461,7 +511,7 @@ export function AdminPanel() {
       <Dialog
         open={editor !== null}
         onOpenChange={(open) => {
-          if (!open && !busy) setEditor(null);
+          if (!open && !busy) { setEditor(null); setCreatePassword(""); }
         }}
       >
         <DialogContent className="admin-dialog">
@@ -474,7 +524,7 @@ export function AdminPanel() {
             <DialogDescription>
               {editor === "new"
                 ? translate(
-                    "Crie um ambiente exclusivo. O responsável recebe um link para definir a própria senha.",
+                    "Conceda um acesso de cortesia. Escolha o ambiente e defina uma senha ou envie um convite.",
                   )
                 : translate(
                     "Atualize o cadastro ou controle o acesso. Os dados são preservados ao suspender.",
@@ -482,6 +532,27 @@ export function AdminPanel() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={save} className="admin-form">
+            {editor === "new" && <>
+              <p className="admin-notice">{translate("Cortesia DriveData: este cadastro não gera assinatura, cobrança ou renovação automática.")}</p>
+              <label>{translate("Ambiente do usuário")}
+                <select value={workspaceMode} onChange={e => { setWorkspaceMode(e.target.value as "new"|"existing"); setWorkspaceOwnerId(""); setWorkspaceLoading(e.target.value === "existing"); setWorkspaceError(""); }}>
+                  <option value="new">{translate("Criar ambiente exclusivo")}</option>
+                  <option value="existing">{translate("Compartilhar ambiente existente")}</option>
+                </select>
+              </label>
+              {workspaceMode === "existing" && <>
+                <label>{translate("Buscar ambiente por empresa ou e-mail")}<input value={workspaceQuery} onChange={e => { setWorkspaceQuery(e.target.value); setWorkspaceOwnerId(""); setWorkspaceLoading(true); setWorkspaceError(""); }} /></label>
+                <label>{translate("Selecione o ambiente")}
+                  <select required value={workspaceOwnerId} disabled={workspaceLoading} onChange={e => { setWorkspaceOwnerId(e.target.value); const selected=workspaces.find(w=>w.id===e.target.value); if(selected && !form.name) setForm({...form,name:selected.name}); }}>
+                    <option value="">{translate(workspaceLoading ? "Carregando ambientes…" : "Escolha um ambiente existente.")}</option>
+                    {workspaces.map(w => <option value={w.id} key={w.id}>{w.name} · {w.email}</option>)}
+                  </select>
+                </label>
+                {workspaceError && <p role="alert" className="inline-error">{translate(workspaceError)}</p>}
+                {!workspaceLoading && !workspaceError && !workspaces.length && <p>{translate("Nenhum ambiente encontrado. Tente outra busca ou crie um ambiente exclusivo.")}</p>}
+                <p>{translate("O usuário poderá visualizar e editar os mesmos dados, painéis e conexões da equipe. O acesso acompanha a disponibilidade do ambiente, sem cobrança adicional por este cadastro.")}</p>
+              </>}
+            </>}
             <label>
               {translate(" Nome da empresa ")}
               <input
@@ -514,6 +585,11 @@ export function AdminPanel() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
             </label>
+            {editor === "new" && <label>
+              {translate("Senha inicial (opcional)")}
+              <input type="password" autoComplete="new-password" minLength={12} maxLength={128} value={createPassword} onChange={e => setCreatePassword(e.target.value)} />
+              <small>{translate("Use pelo menos 12 caracteres. Em branco, será gerado um convite para o cliente definir a senha.")}</small>
+            </label>}
             <label>
               {translate(" Plano / identificação comercial ")}
               <input
@@ -557,7 +633,7 @@ export function AdminPanel() {
                 type="button"
                 className="secondary-button"
                 disabled={busy}
-                onClick={() => setEditor(null)}
+                onClick={() => { setEditor(null); setCreatePassword(""); }}
               >
                 {translate(" Cancelar ")}
               </button>
@@ -568,10 +644,23 @@ export function AdminPanel() {
                   <Check size={17} />
                 )}
                 {editor === "new"
-                  ? translate("Criar cliente e convite")
+                  ? translate(createPassword ? "Criar cliente com senha" : "Criar cliente e convite")
                   : translate("Salvar alterações")}
               </button>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!passwordClient} onOpenChange={open => { if (!open && !busy) { setPasswordClient(null); setPassword(""); setPasswordConfirm(""); } }}>
+        <DialogContent className="admin-dialog">
+          <DialogHeader><DialogTitle>{translate("Definir senha")}</DialogTitle>
+            <DialogDescription>{passwordClient?.email}<br />{translate("A senha anterior e os links de recuperação serão invalidados. O cliente precisará entrar novamente. Esta ação não altera a assinatura nem confirma o e-mail.")}</DialogDescription>
+          </DialogHeader>
+          <form className="admin-form" onSubmit={changePassword}>
+            <label>{translate("Nova senha")}<input type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} /></label>
+            <label>{translate("Confirmar nova senha")}<input type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} /></label>
+            {passwordError && <p role="alert" className="inline-error">{translate(passwordError)}</p>}
+            <div className="admin-dialog-actions"><button type="button" className="secondary-button" disabled={busy} onClick={() => { setPasswordClient(null); setPassword(""); setPasswordConfirm(""); }}>{translate("Cancelar")}</button><button type="submit" className="primary-button" disabled={busy}>{translate(busy ? "Salvando…" : "Salvar nova senha")}</button></div>
           </form>
         </DialogContent>
       </Dialog>
@@ -664,6 +753,7 @@ export function AdminPanel() {
                     {(
                       {
                         created: "Cliente cadastrado",
+                        password_changed: "Senha redefinida",
                         updated: "Cadastro atualizado",
                         invited: "Novo convite gerado",
                       } as Record<string, string>

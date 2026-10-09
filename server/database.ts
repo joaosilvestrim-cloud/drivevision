@@ -4,6 +4,19 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getCACertificates } from "node:tls";
 import { databaseEndpoint } from "./database-endpoint.ts";
+import { AsyncLocalStorage } from "node:async_hooks";
+
+// Keep the authenticated person separate from the owner of shared data.
+const workspaceActor = new AsyncLocalStorage<{ actor: string; owner: string }>();
+export function withWorkspaceActor<T>(actor: string, owner: string, fn: () => Promise<T>) {
+  return workspaceActor.run({ actor, owner }, fn);
+}
+export async function workspaceOwner(actor: string): Promise<string> {
+  return transaction(actor, async c => {
+    const result = await c.query("select workspace_owner_id from drivevision.workspace_members where account_id=$1", [actor]);
+    return result.rows[0]?.workspace_owner_id || actor;
+  }, { allowUnpaid: true });
+}
 
 let pool: Pool | undefined;
 export function databaseConfigured() {
@@ -95,6 +108,15 @@ export async function transaction<T>(
   try {
     await client.query("begin");
     await client.query("set local statement_timeout = '20s'");
+    const context = workspaceActor.getStore();
+    if (context && context.actor !== userId) {
+      if (context.owner !== userId) throw new ConnectorError(403, "Ambiente não autorizado.");
+      await client.query("select set_config('drivevision.user_id',$1,true)", [context.actor]);
+      const actor = await client.query("select disabled_at from drivevision.accounts where id=$1 for share", [context.actor]);
+      const membership = await client.query("select 1 from drivevision.workspace_members where account_id=$1 and workspace_owner_id=$2", [context.actor, userId]);
+      if (!actor.rowCount || actor.rows[0].disabled_at || !membership.rowCount)
+        throw new ConnectorError(403, "Seu acesso a este ambiente foi revogado.");
+    }
     await client.query("select set_config('drivevision.user_id', $1, true)", [
       userId,
     ]);

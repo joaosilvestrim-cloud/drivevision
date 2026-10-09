@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { PoolClient } from "pg";
 import { transaction } from "./database.ts";
 import { ConnectorError } from "./connector-security.ts";
-import { newToken, tokenHash } from "./security.ts";
+import { newToken, tokenHash, hashPassword } from "./security.ts";
 
 const fields = {
   name: z.string().trim().min(2).max(120),
@@ -12,6 +12,8 @@ const fields = {
 const createSchema = z
   .object({
     ...fields,
+    password: z.string().min(12).max(128).optional(),
+    workspaceOwnerId: z.string().uuid().optional(),
     contact: z.string().trim().min(2).max(100),
     email: z
       .string()
@@ -29,6 +31,7 @@ const updateSchema = z
   .object({ ...identity, ...fields, status: z.enum(["active", "suspended"]) })
   .strict();
 const inviteSchema = z.object(identity).strict();
+const passwordSchema = z.object({ ...identity, password: z.string().min(12).max(128) }).strict();
 const err = (status: number, message: string): never => {
   throw new ConnectorError(status, message);
 };
@@ -96,6 +99,17 @@ export async function adminRoute(
         ).rowCount
       )
         err(403, "Esta área é exclusiva da administração DriveData.");
+      if (path === "/api/admin/workspaces" && method === "GET") {
+        const q = (url.searchParams.get("q") || "").trim().slice(0, 120);
+        const rows = await c.query(`select t.owner_id as id,t.name,a.email
+          from drivevision.clients t join drivevision.accounts a on a.id=t.owner_id
+          where a.disabled_at is null and a.email_verified_at is not null and a.password_hash not like 'setup:%'
+          and not exists(select 1 from drivevision.platform_admins p where p.account_id=a.id)
+          and not exists(select 1 from drivevision.workspace_members m where m.account_id=a.id)
+          and ($1='' or strpos(lower(t.name || ' ' || a.email),lower($1))>0)
+          order by t.name,t.id limit 50`, [q]);
+        return { workspaces: rows.rows };
+      }
       if (path === "/api/admin/clients" && method === "GET") {
         const q = (url.searchParams.get("q") || "").trim().slice(0, 120);
         const status = url.searchParams.get("status") || "all";
@@ -106,6 +120,8 @@ export async function adminRoute(
           err(400, "Página inválida.");
         // Admin accounts are platform operators, not customers. Never return credentials.
         const filter = `from drivevision.clients t join drivevision.accounts a on a.id=t.owner_id
+          left join drivevision.workspace_members m on m.account_id=a.id
+          left join drivevision.clients environment on environment.owner_id=m.workspace_owner_id
           where not exists(select 1 from drivevision.platform_admins p where p.account_id=a.id)
           and ($1='' or strpos(lower(t.name || ' ' || a.email || ' ' || a.name),lower($1))>0)
           and ($2='all' or ($2='active' and a.disabled_at is null) or ($2='suspended' and a.disabled_at is not null) or ($2='pending' and a.password_hash like 'setup:%'))`;
@@ -119,7 +135,7 @@ export async function adminRoute(
           page = Math.min(requested, pages);
         const clients = (
           await c.query(
-            `select t.id,t.name,case when exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id) then 'DriveVision mensal · Asaas' else t.plan end plan,t.revision,t.created_at as "createdAt",a.name contact,a.email,case when a.disabled_at is null then 'active' else 'suspended' end status,(a.password_hash like 'setup:%') as pending, (a.disabled_at is null and a.email_verified_at is not null and a.password_hash not like 'setup:%' and not exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id and coalesce(greatest(b.paid_until,b.trial_ends_at),'-infinity'::timestamptz)<=now())) as access, (a.email_verified_at is not null) as confirmed ${filter} order by t.created_at desc,t.id limit 25 offset $3`,
+            `select t.id,t.name,coalesce(m.workspace_owner_id,a.id) as "workspaceOwnerId",coalesce(environment.name,t.name) as "workspaceName",(m.account_id is not null) as shared,case when exists(select 1 from drivevision.billing_accounts b where b.owner_id=t.owner_id) then 'DriveVision mensal · Asaas' else t.plan end plan,t.revision,t.created_at as "createdAt",a.name contact,a.email,case when a.disabled_at is null then 'active' else 'suspended' end status,(a.password_hash like 'setup:%') as pending, (a.disabled_at is null and a.email_verified_at is not null and a.password_hash not like 'setup:%' and not exists(select 1 from drivevision.accounts owner where owner.id=m.workspace_owner_id and owner.disabled_at is not null) and not exists(select 1 from drivevision.billing_accounts b where b.owner_id=coalesce(m.workspace_owner_id,t.owner_id) and coalesce(greatest(b.paid_until,b.trial_ends_at),'-infinity'::timestamptz)<=now())) as access, (a.email_verified_at is not null) as confirmed ${filter} order by t.created_at desc,t.id limit 25 offset $3`,
             [q, status, (page - 1) * 25],
           )
         ).rows;
@@ -132,22 +148,37 @@ export async function adminRoute(
         const v = parsed.data!,
           id = randomUUID(),
           invitationValue = invitation();
+        if (v.workspaceOwnerId) {
+          const target = await c.query(`select a.id from drivevision.accounts a
+            where a.id=$1 and a.disabled_at is null and a.email_verified_at is not null and a.password_hash not like 'setup:%'
+            and not exists(select 1 from drivevision.platform_admins p where p.account_id=a.id)
+            and not exists(select 1 from drivevision.workspace_members m where m.account_id=a.id) for share`, [v.workspaceOwnerId]);
+          if (!target.rowCount) err(400, "Escolha um ambiente ativo de cliente.");
+          await c.query("select set_config('drivevision.user_id',$1,true)", [v.workspaceOwnerId]);
+          const workspace = await c.query("select id from drivevision.workspaces where owner_id=$1", [v.workspaceOwnerId]);
+          await c.query("select set_config('drivevision.user_id',$1,true)", [actor]);
+          if (!workspace.rowCount) err(400, "Escolha um ambiente ativo de cliente.");
+        }
         await c.query(
           "insert into drivevision.accounts(id,email,name,password_hash) values($1,$2,$3,$4)",
-          [id, v.email, v.contact, invitationValue.marker],
+          [id, v.email, v.contact, v.password ? await hashPassword(v.password) : invitationValue.marker],
         );
         await c.query(
           "update drivevision.clients set name=$2,plan=$3 where id=$1",
           [id, v.name, v.plan],
         );
-        await audit(c, actor, id, "created", { name: v.name, plan: v.plan });
+        await audit(c, actor, id, "created", { name: v.name, plan: v.plan, workspaceOwnerId: v.workspaceOwnerId || id, complimentary: true });
+        if (v.workspaceOwnerId) {
+          await c.query("insert into drivevision.workspace_members(account_id,workspace_owner_id,granted_by) values($1,$2,$3)", [id, v.workspaceOwnerId, actor]);
+          return v.password ? { id, ready: true } : { id, ...invitationResult(origin, invitationValue) };
+        }
         // Scope the workspace INSERT to its owner. No admin policy exposes customer datasets.
         await c.query("select set_config('drivevision.user_id',$1,true)", [id]);
         await c.query(
           "insert into drivevision.workspaces(id,owner_id,name) values($1,$2,$3)",
           [randomUUID(), id, v.name],
         );
-        return { id, ...invitationResult(origin, invitationValue) };
+        return v.password ? { id, ready: true } : { id, ...invitationResult(origin, invitationValue) };
       }
       if (path === "/api/admin/audit" && method === "GET") {
         const id = z.string().uuid().safeParse(url.searchParams.get("id"));
@@ -162,13 +193,13 @@ export async function adminRoute(
         };
       }
       if (
-        ["/api/admin/clients/update", "/api/admin/clients/invite"].includes(
+        ["/api/admin/clients/update", "/api/admin/clients/invite", "/api/admin/clients/password"].includes(
           path,
         ) &&
         method === "POST"
       ) {
         const parsed = (
-          path.endsWith("/update") ? updateSchema : inviteSchema
+          path.endsWith("/update") ? updateSchema : path.endsWith("/password") ? passwordSchema : inviteSchema
         ).safeParse(input);
         if (!parsed.success)
           err(400, "Dados inválidos. Atualize a lista e tente novamente.");
@@ -198,6 +229,19 @@ export async function adminRoute(
             409,
             "Este cliente foi alterado em outra sessão. Atualize a lista antes de continuar.",
           );
+        if (path.endsWith("/password")) {
+          if (row.disabled_at) err(409, "Reative o cliente antes de redefinir a senha.");
+          const password = passwordSchema.parse(input).password;
+          await c.query("update drivevision.accounts set password_hash=$2 where id=$1", [row.owner_id, await hashPassword(password)]);
+          await c.query("delete from drivevision.sessions where user_id=$1", [row.owner_id]);
+          // Invalidate recovery links in the customer's scope, then restore the operator for audit.
+          await c.query("select set_config('drivevision.user_id',$1,true)", [row.owner_id]);
+          await c.query("update drivevision.email_tokens set used_at=now() where owner_id=$1 and purpose='reset' and used_at is null", [row.owner_id]);
+          await c.query("select set_config('drivevision.user_id',$1,true)", [actor]);
+          await c.query("update drivevision.clients set revision=revision+1,updated_at=now() where id=$1", [v.id]);
+          await audit(c, actor, v.id, "password_changed");
+          return { ok: true };
+        }
         if (path.endsWith("/invite")) {
           if (!row.password_hash.startsWith("setup:"))
             err(

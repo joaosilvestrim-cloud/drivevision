@@ -26,6 +26,8 @@
     "db:admin": "node scripts/setup-admin.mjs",
     "account:superadmin": "node scripts/grant-superadmin.mjs",
     "test:admin": "node scripts/test-admin.mjs",
+    "test:shared-workspaces": "node scripts/test-shared-workspaces.mjs",
+    "db:shared-workspaces": "node scripts/setup-shared-workspaces.mjs",
     "db:billing": "node scripts/setup-billing.mjs",
     "test:billing": "node scripts/test-billing.mjs",
     "db:email": "node scripts/setup-email.mjs",

@@ -2,7 +2,7 @@ import { emailVerified, queueEmail } from "./email.ts";
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { z } from "zod";
-import { database, transaction } from "./database.ts";
+import { database, transaction, workspaceOwner, withWorkspaceActor } from "./database.ts";
 import {
   ConnectorError,
   seal,
@@ -895,8 +895,9 @@ export async function adminBilling(actor: string, input?: unknown) {
   );
 }
 
-export async function workspaceAccess(owner: string) {
-  return transaction(
+export async function workspaceAccess(actor: string) {
+  const owner = await workspaceOwner(actor);
+  try { return await withWorkspaceActor(actor, owner, () => transaction(
     owner,
     async (c) =>
       !(
@@ -906,5 +907,8 @@ export async function workspaceAccess(owner: string) {
         )
       ).rowCount,
     { allowUnpaid: true },
-  );
+  )); } catch (error) {
+    if (error instanceof ConnectorError && [401,403].includes(error.status)) return false;
+    throw error;
+  }
 }

@@ -294,6 +294,39 @@ try {
       .status,
     403,
   );
+  // Direct passwords must preserve authorization, audit, recovery-token and session guarantees.
+  const directPassword = "QA-initial-" + randomUUID();
+  const directEmail = `qa-${randomUUID()}@drivevision.invalid`;
+  const direct = await request("/api/admin/clients", { ...payload, email: directEmail, password: directPassword }, operator.cookie);
+  assert.equal(direct.status, 200, JSON.stringify(direct.data));
+  ids.push(direct.data.id);
+  assert.equal(direct.data.ready, true);
+  assert.equal(direct.data.invitationUrl, undefined);
+  assert.ok(!JSON.stringify(direct.data).includes(directPassword));
+  const initialLogin = await request("/api/login", { email: directEmail, password: directPassword });
+  assert.equal(initialLogin.status, 200);
+  const recovery = newToken();
+  await admin.query("insert into drivevision.email_tokens(token_hash,owner_id,purpose,expires_at) values($1,$2,'reset',now()+interval '30 minutes')", [tokenHash(recovery), direct.data.id]);
+  const replacement = "QA-replaced-" + randomUUID();
+  const reset = { id: direct.data.id, revision: 0, password: replacement };
+  assert.equal((await request("/api/admin/clients/password", reset, ordinary.cookie)).status, 403);
+  assert.equal((await request("/api/admin/clients/password", reset)).status, 401);
+  assert.equal((await request("/api/admin/clients/password", reset, operator.cookie, "https://foreign.invalid")).status, 403);
+  assert.equal((await request("/api/admin/clients/password", { ...reset, password: "short" }, operator.cookie)).status, 400);
+  assert.equal((await request("/api/admin/clients/password", { ...reset, id: operator.id }, operator.cookie)).status, 403);
+  const changed = await request("/api/admin/clients/password", reset, operator.cookie);
+  assert.equal(changed.status, 200, JSON.stringify(changed.data));
+  assert.equal((await request("/api/admin/clients/password", reset, operator.cookie)).status, 409);
+  assert.equal((await request("/api/workspace", undefined, initialLogin.cookie)).status, 401);
+  assert.equal((await request("/api/login", { email: directEmail, password: directPassword })).status, 401);
+  assert.equal((await request("/api/login", { email: directEmail, password: replacement })).status, 200);
+  assert.equal((await admin.query("select used_at is not null used from drivevision.email_tokens where token_hash=$1",[tokenHash(recovery)])).rows[0].used, true);
+  const passwordAudit = await request(`/api/admin/audit?id=${direct.data.id}`, undefined, operator.cookie);
+  assert.ok(passwordAudit.data.events.some(e => e.action === "password_changed"));
+  assert.ok(!JSON.stringify(passwordAudit.data).includes(replacement));
+  await request("/api/admin/clients/update", {id:direct.data.id,revision:1,name:payload.name,plan:"Manual",status:"suspended"},operator.cookie);
+  assert.equal((await request("/api/admin/clients/password", {...reset,revision:2},operator.cookie)).status,409);
+  console.log("PASS direct password creation, authenticated login, privileged reset, old-session and recovery revocation, stale revisions, suspended/admin protection and secret-free audit");
   // 26 clients in one QA-owned transaction exercises pagination without a product count cap.
   for (let i = 0; i < 26; i++) {
     const row = await seed(`QA page ${run} ${i}`);

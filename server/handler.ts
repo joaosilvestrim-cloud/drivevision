@@ -21,7 +21,7 @@ import {
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
-import { database, databaseConfigured, transaction } from "./database.ts";
+import { database, databaseConfigured, transaction, workspaceOwner, withWorkspaceActor } from "./database.ts";
 import { databaseFailureCode } from "./database-errors.ts";
 import { ConnectorError, secretMatches } from "./connector-security.ts";
 import { connectorsRoute } from "./connectors.ts";
@@ -475,6 +475,12 @@ export default async function handler(
       return;
     }
     if (path === "/api/billing" || path.startsWith("/api/billing/")) {
+      if (await workspaceOwner(user.id) !== user.id) {
+        if (path !== "/api/billing" || req.method !== "GET")
+          throw new HttpError(403, "A assinatura é administrada pelo responsável do ambiente.");
+        json(res, 200, { required: false, access: user.access, state: "shared", shared: true });
+        return;
+      }
       if (req.method === "POST") await rateLimit(`billing:${user.id}`, 12, 300);
       const origin = new URL(
         process.env.DRIVEVISION_APP_ORIGIN || `http://${req.headers.host}`,
@@ -527,6 +533,8 @@ export default async function handler(
         402,
         "Ative ou regularize sua assinatura em Minha assinatura para acessar o workspace.",
       );
+    const owner = await workspaceOwner(user.id);
+    return await withWorkspaceActor(user.id, owner, async () => {
     if (path === "/api/connectors" || path.startsWith("/api/connectors/")) {
       if (req.method === "POST")
         await rateLimit(`connectors:${user.id}`, 60, 300);
@@ -535,7 +543,7 @@ export default async function handler(
         `${process.env.VERCEL ? "https" : "http"}://${req.headers.host}`;
       try {
         const result = await connectorsRoute(
-          user.id,
+          owner,
           tokenHash(cookieToken(req)),
           path,
           req.method || "GET",
@@ -566,7 +574,7 @@ export default async function handler(
     }
     if (path === "/api/history" && ["GET", "POST"].includes(req.method || "")) {
       const result = await historyRoute(
-        user.id,
+        owner,
         req.method!,
         new URL(req.url || "/", "http://localhost"),
         req.method === "POST" ? await body(req) : undefined,
@@ -588,11 +596,11 @@ export default async function handler(
       return;
     }
     if (path === "/api/workspace/revision" && req.method === "GET") {
-      const revision = await transaction(user.id, async (c) => {
+      const revision = await transaction(owner, async (c) => {
         const row = (
           await c.query(
             "select revision from drivevision.workspaces where owner_id=$1",
-            [user.id],
+            [owner],
           )
         ).rows[0];
         if (!row) throw new HttpError(404, "Workspace não encontrado.");
@@ -602,11 +610,11 @@ export default async function handler(
       return;
     }
     if (path === "/api/workspace" && req.method === "GET") {
-      const result = await transaction(user.id, async (c) => {
+      const result = await transaction(owner, async (c) => {
         const workspace = (
           await c.query(
             "select id,revision from drivevision.workspaces where owner_id=$1 for share",
-            [user.id],
+            [owner],
           )
         ).rows[0];
         if (!workspace) throw new HttpError(404, "Workspace não encontrado.");
@@ -658,11 +666,11 @@ export default async function handler(
           413,
           "Seu workspace excede 3,5 MB compactados. Reduza as bases antes de salvar.",
         );
-      const next = await transaction(user.id, async (c) => {
+      const next = await transaction(owner, async (c) => {
         const current = (
           await c.query(
             "select id,revision from drivevision.workspaces where owner_id=$1 for update",
-            [user.id],
+            [owner],
           )
         ).rows[0];
         if (!current) throw new HttpError(404, "Workspace não encontrado.");
@@ -681,7 +689,7 @@ export default async function handler(
         // Removing a source stops its refresh and retains the last saved dashboards policy.
         await c.query(
           "delete from drivevision.cloud_bindings where owner_id=$1 and source_id in (select id from drivevision.sources where workspace_id=$2) and not (source_id=any($3::text[]))",
-          [user.id, id, workspace.sources.map((s) => s.id)],
+          [owner, id, workspace.sources.map((s) => s.id)],
         );
         // Identifiers are fixed constants; all user data is parameterized.
         for (const [table, items] of [
@@ -715,6 +723,7 @@ export default async function handler(
       return;
     }
     throw new HttpError(404, "Recurso não encontrado.");
+    });
   } catch (error) {
     if (res.headersSent) {
       res.end();
